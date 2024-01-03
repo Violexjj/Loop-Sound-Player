@@ -1,24 +1,23 @@
-# vue_pro
+# Loop Sound Player
 
-## Project setup
+一个用 Electron 和 Vue 制作的本地音乐播放器。
+
+## 安装依赖
 ```
 npm install
 ```
 
-### Compiles and hot-reloads for development
+### 运行 Vue
 ```
 npm run serve
 ```
 
-### Compiles and minifies for production
+### 运行 Electron
 ```
-npm run build
+npm start
 ```
 
-### Lints and fixes files
-```
-npm run lint
-```
+
 
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
