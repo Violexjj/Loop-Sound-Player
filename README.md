@@ -18,30 +18,12 @@
 
 ## 图片展示
 
-![](D:\Projects\Loop-Sound-Player\images\截图20240104224403.png)
-
-![截图20240104224443](D:\Projects\Loop-Sound-Player\images\截图20240104224443.png)
-
-![截图20240104224513](D:\Projects\Loop-Sound-Player\images\截图20240104224513.png)
-
-![截图20240104224537](D:\Projects\Loop-Sound-Player\images\截图20240104224537.png)
-
-## 安装依赖
-```
-npm install
-```
-
-## 运行 Vue
-```
-npm run serve
-```
-
-## 运行 Electron
-```
-npm start
-```
+在最上面的 images 文件夹中。
 
 
 
-## Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+## 视频展示
+
+b站地址：https://www.bilibili.com/video/BV1or4y1X7hc/
+
+（该视频是较早时候发布的，有很多新功能视频中没有，见谅。）
