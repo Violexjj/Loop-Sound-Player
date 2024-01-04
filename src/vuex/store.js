@@ -316,6 +316,9 @@ const mutations = {
     SET_SHOW_TLYRIC(state, value) {
             state.showTlyric = value;
     },
+    SET_CHECK(state, value) {
+        state.check = value;
+    },
     RENAME_PLAYLIST(state, { oldName, newName }){
         const playlistIndex = state.playlists.findIndex(playlist => playlist.name === oldName);
         if (playlistIndex !== -1) {
@@ -327,6 +330,11 @@ const mutations = {
 }
 
 const state = {
+    check: null,
+    nowVersion: "0.8.0",
+    latestVersion: null,
+    latestVersionInfo: "",
+    errorMessage:"请开启自动检查更新",
     songs : {songs :[]},
     miniMode: false,
     playlists : [],   //用户拥有的列表

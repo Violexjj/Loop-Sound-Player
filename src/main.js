@@ -56,6 +56,7 @@ new Vue({
                     this.$store.commit('SET_LYRIC_DIRECTORY',savingState.lyricDirectory)
                     this.$store.commit('SET_BIGGER_LYRIC',savingState.biggerLyric)
                     this.$store.commit('SET_SHOW_TLYRIC',savingState.showTlyric)
+                    this.$store.commit('SET_CHECK',savingState.check)
 
                 console.log("vue get savingState")
             }else{

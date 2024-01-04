@@ -123,6 +123,10 @@
         <div v-show="showIsExist" class="showIsExist">
             {{`歌曲已存在，请勿重复添加！ `}}
         </div>
+
+        <div v-show="showUpdate" class="showIsExist">
+            {{ `有新版本可用，请前往设置查看更新信息。` }}
+        </div>
     </div>
 </template>
 <style>
@@ -270,7 +274,7 @@
         align-items: center;
     }
     .logo img {
-        height: 40px;
+        height: 30px;
     }
 
     .playerName {
@@ -458,7 +462,7 @@
     import Library from './pages/Library'
     import Playlists from './pages/Playlists'
     import {mapGetters} from "vuex";
-    import {textTruncateMixin} from "./mixin"
+    import axios from 'axios';
 
     export default {
         name: "App",
@@ -466,10 +470,22 @@
         beforeDestroy() {
             this.$bus.$off()
         },
+        data(){
+            return{
+                showUpdate: false
+            }
+        },
         created() {
+
             this.$store.commit('SHUFFLE_INDEX_LIST')
-            myAPI.onSaveBeforeQuit((_event) => {
-                this.closeWindow(true)
+            myAPI.onSaveBeforeQuit((_event,arg) => {
+                if (arg === 1) {
+                    this.closeWindow(true)
+                }else{
+                    if (this.$store.state.globalShortcut) {
+                        this.closeWindow(true)
+                    }
+                }
             })
             myAPI.onCloseFromBottom((_event) => {
                 this.closeWindow(false)
@@ -496,6 +512,9 @@
             Search
         },
         computed: {
+            check(){
+                return this.$store.state.check
+            },
             isPlaying(){
                 return this.$store.state.isPlaying
             },
@@ -512,9 +531,35 @@
                         this.getSongCover();
                     }
                 },
+            },
+            check : {
+                handler(isCheck) {
+                    if (isCheck) {
+                        this.getLatestVersion();
+                    }
+                },
             }
         },
         methods : {
+            async getLatestVersion() {
+                try {
+                    const x = await axios.get(`https://api.github.com/repos/Violexjj/Loop-Sound-Player/releases/latest`)
+                    this.$store.state.latestVersion = x.data.tag_name.slice(1)
+                    this.$store.state.latestVersionInfo = x.data.body
+                    if (this.$store.state.latestVersion) {
+                        if (this.$store.state.latestVersion !== this.$store.state.nowVersion) {
+                            this.showUpdate = true
+                            setTimeout(()=>{
+                                this.showUpdate = false
+                            },3000)
+                        }
+                    }
+                } catch (error) {
+                    this.$store.state.errorMessage = error.message
+                    console.log('获取最新版本信息失败，错误信息：');
+                    console.log(error)
+                }
+            },
             closeContext(){
                 if (this.$store.state.showContextMenu === true) {
                     this.$store.state.showContextMenu = false
@@ -614,7 +659,8 @@
                     onlineLrc: this.$store.state.onlineLrc,
                     lyricDirectory : this.$store.state.lyricDirectory,
                     biggerLyric: this.$store.state.biggerLyric,
-                    showTlyric: this.$store.state.showTlyric
+                    showTlyric: this.$store.state.showTlyric,
+                    check: this.$store.state.check
                 }
                 myAPI.closeWindow(savingState)
             },

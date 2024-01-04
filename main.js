@@ -19,7 +19,6 @@ let tray = null
 const store = new Store();
 let win = null;
 let windowState = null;
-let savedWindowState = null
 
 // 基本配置
 const createWindow = () => {
@@ -35,7 +34,7 @@ const createWindow = () => {
         height: windowState.height,
         frame: false,
         show: false,
-        icon: path.join(__dirname, 'dist','img','logo2.ico'),
+        icon: path.join(__dirname, 'dist','img','logo.ico'),
         webPreferences: {
             preload: path.resolve(__dirname, './preload.js')
         }
@@ -43,10 +42,10 @@ const createWindow = () => {
         win.setMinimumSize(642, 629);
 
     // 装载页面
-    win.loadURL('http://10.163.137.110:8080');
+    //win.loadURL('http://10.163.137.110:8080');
     //win.loadURL('https://music.163.com/');
     // win.loadFile('./index.html');
-    //win.loadFile(path.join(__dirname, 'dist', 'index.html'));
+    win.loadFile(path.join(__dirname, 'dist', 'index.html'));
 
     // 打开开发者工具
     // win.webContents.openDevTools();
@@ -107,7 +106,7 @@ const createWindow = () => {
     });
 
     //设置托盘
-    const trayIcon = nativeImage.createFromPath(path.join(__dirname, 'dist','img','logo.ico'));
+    const trayIcon = nativeImage.createFromPath(path.join(__dirname, 'dist','img','logo2.ico'));
     tray = new Tray(trayIcon);
     // 设置托盘右键菜单
     tray.setToolTip('Loop Sound Player');
@@ -178,7 +177,7 @@ const createWindow = () => {
             } },
         { type: 'separator' },
         { label: '退出', click: () => {
-                win.webContents.send('saveBeforeQuit');
+                win.webContents.send('saveBeforeQuit',1);
             } },
     ]);
     tray.setContextMenu(contextMenu);
@@ -197,7 +196,7 @@ const createWindow = () => {
     //--------------------------------------------------------------------------
     //设置快捷键
     globalShortcut.register('Alt+E', () => {
-        win.webContents.send('saveBeforeQuit');
+        win.webContents.send('saveBeforeQuit',2);
     });
     globalShortcut.register('Alt+F9', () => {
         win.webContents.send('toggleG');
@@ -643,6 +642,7 @@ ipcMain.handle('getSavingState', async (event) => {
                 "\"volume\":18," +
                 "\"isMute\":false," +
                 "\"showLyrics\":true," +
+                "\"check\":true," +
                 "\"toHomeAfterChangeQueue\":true," +
                 "\"autoHideLrc\":true," +
                 "\"showQueue\":true," +

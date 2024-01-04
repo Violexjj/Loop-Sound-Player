@@ -30,7 +30,8 @@
           'lyrics-line',
           {
             'current-line': (index === currentLyricIndex),
-            'highlight': (index === currentLyricIndex && highlight),
+            'highlight': (index === currentLyricIndex && highlight && line.text1 !== ''),
+            'divide':(line.text1 === ''),
 
             'left-align': $store.state.lyricAlignmentMode === 0,
             'center-align': $store.state.lyricAlignmentMode === 1,
@@ -326,26 +327,44 @@
                 const lines = lyricsText.split('\n');
                 const lyrics = [];
 
+                let previousTime = null;
+                let previousLine = null;
+
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i];
-                    const matches = line.match(/\[(\d+):(\d+\.\d+)\](.+)/);
+                    const matches = line.match(/\[(\d+):(\d+\.\d+)\](.*)/);
+
+
                     if (matches) {
                         const minute = parseInt(matches[1]);
                         const second = parseFloat(matches[2]);
                         const time = minute * 60 + second;
-                        const text = matches[3];
+                        const text = matches[3].trim();
+
                         const xiegangcount = text.match(/[^ ] \/ [^ ]/g);
                         const parts = text.split(" / ");
+
                         if (xiegangcount && xiegangcount.length === 1 && (parts.length === 2 && parts[0].trim() !== "" && parts[1].trim() !== "")) {
                             const [originalText, translatedText] = text.split(' / ');
                             lyrics.push({time, text1: originalText, text2: translatedText, hasTranslation: true});
-                        } else {
-                            lyrics.push({time, text1:text,hasTranslation: false});
+                        }else{
+                            if (previousTime === time) {
+                                // 如果当前时间戳与上一行相同，则将当前文本视为译文，并与上一行的文本合并
+                                lyrics.pop(); // 移除上一次添加的原文
+                                const [originalText, translatedText] = [previousLine, text];
+                                lyrics.push({ time, text1: originalText, text2: translatedText, hasTranslation: true });
+                            } else {
+                                lyrics.push({ time, text1: text, hasTranslation: false });
+                                previousTime = time;
+                                previousLine = text;
+                            }
                         }
+
                     }
                 }
                 return lyrics;
             },
+
             ...mapMutations({
                 setCurrentIndex: 'SET_CURRENT_INDEX'
             }),
@@ -479,13 +498,15 @@
         color: rgba(255, 255, 255, 0.4);
         font-weight: bold;
         letter-spacing: 1px;
-        transition: 0.3s;
+        transition: 0.2s;
         border-radius: 10px;
         scroll-behavior: smooth;
     }
     .lyrics-line:hover{
         background-color: rgba(255, 255, 255, 0.1);
         cursor: pointer;
+        padding-bottom: 10px;
+        padding-top: 10px;
     }
     .left-align {
         text-align: left;
@@ -511,6 +532,10 @@
 
     .highlight{
         background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .divide{
+        height: 30px;
     }
 
 
@@ -586,5 +611,6 @@
     }
     .display:hover{
         text-decoration: underline;
+        cursor: pointer;
     }
 </style>

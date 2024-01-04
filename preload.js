@@ -20,7 +20,7 @@ contextBridge.exposeInMainWorld('myAPI', {
     onChangeMuteG: (callback) => ipcRenderer.on('changeMuteG', callback),
     onChangeModeG: (callback) => ipcRenderer.on('changeModeG', callback),
 
-    onSaveBeforeQuit: (callback) => ipcRenderer.on('saveBeforeQuit', callback),
+    onSaveBeforeQuit: (callback,arg) => ipcRenderer.on('saveBeforeQuit', callback, arg),
     onCloseFromBottom: (callback) => ipcRenderer.on('closeFromBottom', callback),
     onLoop: (callback) => ipcRenderer.on('loop', callback),
     onRandom: (callback) => ipcRenderer.on('random', callback),

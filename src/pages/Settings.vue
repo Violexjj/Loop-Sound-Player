@@ -1,11 +1,27 @@
 <template>
     <div class="unselectable settings">
+<!--        显示更新信息-->
+        <div v-if="showLatestInfoModal" class="modal">
+            <div class="playlist-panel">
+                <!-- 关闭按钮 -->
+                <div class="modal-close" @click="closeShowLatestInfoModal()">
+                    <div class="close-button">
+                        <div class="close-image-2"></div>
+                    </div>
+                </div>
+                <div class="new-playlist-name" style="font-weight: bold">
+                    {{ this.$store.state.latestVersionInfo }}
+                </div>
+            </div>
+        </div>
+<!--        显示文件扫描情况-->
         <div v-show="showReboot" class="showReboot">
             {{info}}
         </div>
         <h1 class="title">设置 & 说明</h1><br>
         <hr style="border-top: 3px solid #ccc;margin-right: 30px">
         <br>
+
         <div class="button-container">
             <div class="custom-button" @click="addFolders"><b>添加文件夹</b></div>
             <div class="custom-button" @click="addFiles"><b>添加文件</b></div>
@@ -13,7 +29,23 @@
         <br>
         <br>
         <hr style="border-top: 3px solid #ccc;margin-right: 30px">
+        <div class="version">
+            <h3>{{this.displayVersions}}</h3>
+            <div v-if="latest" class="custom-button" @click="closeShowLatestInfoModal()"><b>更新信息</b></div>
+        </div>
+        <hr style="border-top: 3px solid #ccc;margin-right: 30px">
         <table>
+            <tr style="height: 60px;">
+                <td>
+                    <b style="font-size: 20px">启动时自动检查更新：</b>
+                </td>
+                <td>
+                    <div class="custom-switch" @click="setCheck">
+                        <input type="checkbox" v-model="check" />
+                        <label ></label>
+                    </div>
+                </td>
+            </tr>
             <tr style="height: 60px;">
                 <td>
                     <b style="font-size: 20px">关闭时缩小到托盘：</b>
@@ -373,6 +405,64 @@
 </template>
 
 <style scoped>
+    .new-playlist-name {
+        margin-top: 60px;
+        white-space: pre-line;
+        user-select: text;
+    }
+    .close-image-2 {
+        width: 100%;
+        height: 100%;
+        background-image: url('../assets/close.png');
+        background-size: contain; /* 保持原始比例 */
+        background-repeat: no-repeat;
+    }
+    .close-button:hover {
+        background-color: rgba(255, 255, 255, 0.4);
+    }
+    .close-button {
+        width: 30px;
+        height: 30px;
+        border: 2px solid white; /* 设置边框为白色 */
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        color: white;
+    }
+    .modal-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        color: white;
+        cursor: pointer;
+        border-color: white;
+
+    }
+    .playlist-panel {
+        background-color: rgba(0, 0, 0, 1);
+        border-radius: 10px;
+        padding: 10px;
+        width: 80%;
+        max-width: 450px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0);
+        position: relative;
+    }
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.3); /* 半透明黑色背景 */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000; /* 确保在最上层 */
+    }
     .快捷键{
         margin-left: 2px;
     }
@@ -478,6 +568,11 @@
         margin-top: 20px;
         gap: 50px;
     }
+    .version {
+        display: flex;
+        align-items: center;
+        gap: 50px;
+    }
 
     .custom-button {
         position: relative;
@@ -545,9 +640,27 @@
                 folderPath : 0,
                 showReboot : false,
                 info : "",
+                showLatestInfoModal: false
             }
         },
         computed:{
+            check(){
+              return this.$store.state.check
+            },
+            errorMessage(){
+                return this.$store.state.errorMessage
+            },
+            latest(){
+                if (this.$store.state.latestVersion) {
+                    return this.$store.state.latestVersion !== this.$store.state.nowVersion
+                }else{
+                    return false
+                }
+            },
+            displayVersions() {
+                return `当前版本：${this.$store.state.nowVersion}\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0
+                最新版本：${this.$store.state.latestVersion !== null ? this.$store.state.latestVersion : `查找失败（${this.errorMessage}）`}`;
+            },
             hasTranslation(){
               return this.$store.getters.nowSong.hasTranslation
             },
@@ -557,6 +670,9 @@
             }
         },
         methods : {
+            closeShowLatestInfoModal(){
+                this.showLatestInfoModal = !this.showLatestInfoModal
+            },
             downFontSize(){
                 if (this.$store.state.lyricFont > 15) {
                     this.$store.state.lyricFont--
@@ -586,6 +702,9 @@
             },
             setExit(){
                 this.$store.state.exit = !this.$store.state.exit
+            },
+            setCheck(){
+                this.$store.state.check = !this.$store.state.check
             },
             setShowTlyric(){
                 this.$store.state.showTlyric = !this.$store.state.showTlyric
