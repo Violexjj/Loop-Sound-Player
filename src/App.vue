@@ -472,7 +472,8 @@
         },
         data(){
             return{
-                showUpdate: false
+                showUpdate: false,
+                playlistInitial: true
             }
         },
         created() {
@@ -512,6 +513,9 @@
             Search
         },
         computed: {
+            playlists(){
+                return this.$store.state.playlists
+            },
             check(){
                 return this.$store.state.check
             },
@@ -524,6 +528,15 @@
             ...mapGetters(['nowSong']),
         },
         watch:{
+            playlists:{
+                handler(newVal) {
+                    if (this.playlistInitial) {
+                        if (newVal !== null && newVal.length > 0) {
+                            this.getPlaylistsCovers()
+                        }
+                    }
+                },
+            },
             nowSong : {
                 immediate : true,
                 handler(newSong) {
@@ -541,6 +554,20 @@
             }
         },
         methods : {
+            async getPlaylistsCovers() {
+                this.playlistInitial = false
+                for (const playlist of this.$store.state.playlists) {
+                    // 根据 playlist.name 获取封面数据
+                    const cover = await myAPI.getPlaylistCover(playlist.name)
+                    // 创建包含列表名和封面数据的 JSON 对象
+                    const playlistCover = {
+                        name: playlist.name,
+                        cover: cover,
+                    };
+                    // 将 playlistCover 对象放入 Vuex 的 playlistsCovers 数组中
+                        this.$store.state.playlistsCovers.push(playlistCover);
+                    }
+            },
             async getLatestVersion() {
                 try {
                     const x = await axios.get(`https://api.github.com/repos/Violexjj/Loop-Sound-Player/releases/latest`)

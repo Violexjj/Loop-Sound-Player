@@ -15,9 +15,17 @@
 
                 <div class="playlist" v-for="(playlist,index) in playlists" :key="playlist.name" >
                     <div class="cover-container">
-                        <img src="../assets/playlist.png" alt="playlistCover" class="rounded-image click"
+                        <img v-if="getPlaylistCover(playlist.name)"
+                             :src="getPlaylistCover(playlist.name)"
+                             alt="playlistCover"
+                             class="rounded-image click"
                              @click="displaySongsInPlaylist(playlist.name)"
-                             @contextmenu = displayContext(playlist.name)>
+                             @contextmenu="displayContext(playlist.name)">
+                        <img v-else src="../assets/playlist.png"
+                             alt="defaultPlaylistCover"
+                             class="rounded-image click"
+                             @click="displaySongsInPlaylist(playlist.name)"
+                             @contextmenu="displayContext(playlist.name)">
                     </div>
                     <div class="playlist-name">{{truncateText(playlist.name,110)}} </div>
                 </div>
@@ -55,6 +63,9 @@
                 <div class="playlist-options-delete">
                     <div class="playlist-option-delete" @click="showRenameModel()">
                         重命名
+                    </div>
+                    <div class="playlist-option-delete" @click="setCover()">
+                        设置封面
                     </div>
                     <div class="playlist-option-delete" @dblclick="deletePlaylist()">
                         删除（双击）
@@ -106,8 +117,30 @@
                 newName : ""
             }
         },
+        computed:{
+            getPlaylistCover() {
+                return (playlistName) => {
+                    const playlist = this.$store.state.playlistsCovers.find(item => item.name === playlistName);
+                    if (playlist !== null && playlist.cover !== null) {
+                        return  playlist.cover
+                    }else{
+                        return null
+                    }
+                };
+            }
+        },
         mixins:[textTruncateMixin],
         methods : {
+            async setCover() {
+                const coverData = await myAPI.setPlaylistCover(this.toChangePlaylistName)
+                const playlistIndex = this.$store.state.playlistsCovers.findIndex(playlist => playlist.name === this.toChangePlaylistName);
+                if (playlistIndex !== -1) {
+                    // 如果找到了指定名称的 playlist 对象，则更新其 cover 属性
+                    this.$store.state.playlistsCovers[playlistIndex].cover = coverData;
+                }
+                this.showRenameAndDelete = false
+
+            },
             displayContext(playlistName){
                 this.showRenameAndDelete = true
                 this.toChangePlaylistName = playlistName
@@ -138,6 +171,11 @@
                     oldName: this.toChangePlaylistName,
                     newName: this.newName,
                 });
+                const index = this.$store.state.playlistsCovers.findIndex(item => item.name === this.toChangePlaylistName);
+                if (index !== -1) {
+                    // 如果找到匹配的 playlistName，则从数组中删除该项
+                    this.$store.state.playlistsCovers[index].name = this.newName
+                }
                 this.showRename = false
                 myAPI.rename({
                     oldName: this.toChangePlaylistName,
@@ -150,6 +188,11 @@
                 this.$store.commit('DELETE_PLAYLIST', this.toChangePlaylistName);
                 this.showRenameAndDelete = false
                 myAPI.addNewPlaylistOrDelete(this.toChangePlaylistName,false)
+                const index = this.$store.state.playlistsCovers.findIndex(item => item.name === this.toChangePlaylistName);
+                if (index !== -1) {
+                    // 如果找到匹配的 playlistName，则从数组中删除该项
+                    this.$store.state.playlistsCovers.splice(index, 1);
+                }
                 this.toChangePlaylistName = ""
             },
             ...mapMutations(['SET_FILTER_TYPE','SET_SELECTED_PLAYLIST_NAME']),
@@ -179,7 +222,13 @@
                         name : this.newPlaylistName,
                         songsId : []
                     }
+                const newPlaylistCover = {
+                    name: this.newPlaylistName,
+                    cover: null,
+                };
                 this.$store.state.playlists.push(newPlaylist)
+                this.$store.state.playlistsCovers.push(newPlaylistCover);
+
                     myAPI.addNewPlaylistOrDelete(newPlaylist,true)
 
                 this.clearNewPlaylistName()
@@ -376,7 +425,7 @@
         height: 100%;
     }
     .route-container {
-        max-height: calc(97vh - 270px); /* 100px 是顶部导航栏和底部控制栏的总高度 */
+        max-height: calc(97vh - 260px); /* 100px 是顶部导航栏和底部控制栏的总高度 */
         overflow-y: auto;
     }
     .main {
@@ -390,6 +439,18 @@
         gap: 40px; /* 间距 */
     }
 
+    .route-container::-webkit-scrollbar {
+        width: 20px;
+        background-color: rgba(0, 0, 0, 0); /* 设置为半透明的背景颜色 */
+        border-radius: 10px;
+    }
+    .route-container::-webkit-scrollbar-thumb {
+        background-color: white; /* 设置滑块的颜色 */
+        border-radius: 20px; /* 设置滑块的圆角 */
+    }
+    .route-container::-webkit-scrollbar-track {
+        background-color: rgba(255, 255, 255, 0); /* 设置轨道的颜色 */
+    }
     .playlist {
         display: flex;
         flex-direction: column;
@@ -407,11 +468,11 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: opacity 0.2s ease; /* 添加过渡效果 */
+        transition: 0.2s/* 添加过渡效果 */
     }
 
     .rounded-image:hover {
-        opacity: 0.5; /* 鼠标悬停时透明度增加 */
+        filter: brightness(50%);
     }
 
     .playlist-name {

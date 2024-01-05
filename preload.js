@@ -118,6 +118,25 @@ contextBridge.exposeInMainWorld('myAPI', {
             throw error;
         }
     },
+    getPlaylistCover: async (playlistName) => {
+        try {
+            const response = await ipcRenderer.invoke('getPlaylistCover',playlistName);
+            return response;
+        } catch (error) {
+            console.error('Error reading file:', error);
+            throw error;
+        }
+    },
+
+    setPlaylistCover: async (playlistName) => {
+        try {
+            const response = await ipcRenderer.invoke('setPlaylistCover',playlistName);
+            return response;
+        } catch (error) {
+            console.error('Error reading file:', error);
+            throw error;
+        }
+    },
 
     addNewPlaylistOrDelete:(newPlaylist, addOrDelete) =>{
         ipcRenderer.invoke('add-new-playlist-or-delete',newPlaylist,addOrDelete)

@@ -338,6 +338,7 @@ const state = {
     songs : {songs :[]},
     miniMode: false,
     playlists : [],   //用户拥有的列表
+    playlistsCovers: [],
     defaultCover: null,
     selectedPlaylistName :'',
     //过滤方式

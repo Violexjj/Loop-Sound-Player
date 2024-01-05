@@ -695,6 +695,13 @@ ipcMain.handle('getAllPlaylists', async (event) => {
 //添加新的列表
 ipcMain.handle('add-new-playlist-or-delete', async (event, newPlaylist, addOrDelete) => {
     const filePath = path.join(process.env.APPDATA, 'Loop Sound Player\\playlists.json');
+    const coverDir = path.join(app.getPath('appData'), 'Loop Sound Player', 'cover');
+    const coverPath = path.join(coverDir, newPlaylist + '.jpg'); // 假设使用 jpg 格式的封面图片
+
+    // 如果封面文件夹不存在，则创建一个名为 `cover` 的文件夹
+    if (!fs.existsSync(coverDir)) {
+        fs.mkdirSync(coverDir);
+    }
     if (!fs.existsSync(filePath)) {
         fs.mkdirSync(path.dirname(filePath), {recursive: true});
         fs.writeFileSync(filePath, '[]', 'utf-8');
@@ -705,7 +712,10 @@ ipcMain.handle('add-new-playlist-or-delete', async (event, newPlaylist, addOrDel
             playlists.push(newPlaylist);
         }
         else {
-            // 删除播放列表
+            // 删除播放列表及其封面
+            if (fs.existsSync(coverPath)) {
+                fs.unlinkSync(coverPath);
+            }
             const playlistIndex = playlists.findIndex(playlist => playlist.name === newPlaylist);
             if (playlistIndex !== -1) {
                 playlists.splice(playlistIndex, 1);
@@ -720,6 +730,22 @@ ipcMain.handle('add-new-playlist-or-delete', async (event, newPlaylist, addOrDel
 //修改播放列表名称
 ipcMain.handle('rename', (event, {oldName,newName}) => {
     const filePath = path.join(process.env.APPDATA, 'Loop Sound Player\\playlists.json');
+    const coverDir = path.join(app.getPath('appData'), 'Loop Sound Player', 'cover');
+    const oldCoverPath = path.join(coverDir, oldName + '.jpg'); // 假设使用 jpg 格式的封面图片
+    const newCoverPath = path.join(coverDir, newName + '.jpg'); // 假设使用 jpg 格式的封面图片
+
+    // 如果封面文件夹不存在，则创建一个名为 `cover` 的文件夹
+    if (!fs.existsSync(coverDir)) {
+        fs.mkdirSync(coverDir);
+    }
+    fs.rename(oldCoverPath, newCoverPath, (err) => {
+        if (err) {
+            console.error('Error renaming file:', err);
+        } else {
+            console.log('File renamed successfully!');
+        }
+    });
+
     try {
         const playlists = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
             const playlistIndex = playlists.findIndex(playlist => playlist.name === oldName);
@@ -831,6 +857,73 @@ ipcMain.handle('getSongCover', async (event, filePath,type) => {
             .toBuffer()
         // const imageBuffer2 = metadata.common.picture[0].data
         return nativeImage.createFromBuffer(imageBuffer).toDataURL();
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+});
+
+//获取播放列表的封面base64数据
+ipcMain.handle('getPlaylistCover', async (event, playlistName) => {
+    try {
+        const coverDir = path.join(app.getPath('appData'), 'Loop Sound Player', 'cover');
+        const coverPath = path.join(coverDir, playlistName + '.jpg'); // 假设使用 jpg 格式的封面图片
+
+        // 如果封面文件夹不存在，则创建一个名为 `cover` 的文件夹
+        if (!fs.existsSync(coverDir)) {
+            fs.mkdirSync(coverDir);
+        }
+
+        if (!fs.existsSync(coverPath)) {
+            return null
+        }else{
+            const imageBuffer = await sharp(fs.readFileSync(coverPath))
+                .resize(300, 300)
+                .toBuffer()
+            return nativeImage.createFromBuffer(imageBuffer).toDataURL();
+        }
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+});
+
+// 设置播放列表的封面
+ipcMain.handle('setPlaylistCover', async (event, playlistName) => {
+    try {
+        const coverDir = path.join(app.getPath('appData'), 'Loop Sound Player', 'cover');
+        const coverPath = path.join(coverDir, playlistName + '.jpg'); // 假设使用 jpg 格式的封面图片
+
+        // 如果封面文件夹不存在，则创建一个名为 `cover` 的文件夹
+        if (!fs.existsSync(coverDir)) {
+            fs.mkdirSync(coverDir);
+        }
+
+        // 打开文件选择对话框，限制选择的文件为图片格式（png 或 jpg）
+        const fileFilters = [{ name: 'Images', extensions: ['png', 'jpg'] }];
+        const filePaths = dialog.showOpenDialogSync({
+            properties: ['openFile'],
+            filters: fileFilters,
+            title: 'Select Playlist Cover Image',
+        });
+
+        if (filePaths && filePaths.length > 0) {
+            const selectedFilePath = filePaths[0];
+
+            // 读取选择的图片文件
+            const imageBuffer = fs.readFileSync(selectedFilePath);
+
+            // 将图片写入封面文件夹中
+            fs.writeFileSync(coverPath, imageBuffer);
+
+            const imageBuffer2 = await sharp(imageBuffer)
+                .resize(300, 300)
+                .toBuffer()
+            // const imageBuffer2 = metadata.common.picture[0].data
+            return nativeImage.createFromBuffer(imageBuffer2).toDataURL();
+        } else {
+            return null; // 如果用户取消了选择，则返回 null
+        }
     } catch (error) {
         console.error(error);
         return null;
