@@ -660,6 +660,8 @@ ipcMain.handle('getSavingState', async (event) => {
                 "\"savedCurrentPlaytime\":0," +
                 "\"lyricDirectory\":\"未设置\"," +
                 "\"biggerLyric\":5," +
+                "\"blur\":40," +
+                "\"bright\":100," +
                 "\"lyricFont\":20}}"
             fs.writeFileSync(filePath, rawDate, 'utf-8');
         }

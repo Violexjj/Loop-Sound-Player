@@ -52,18 +52,18 @@
         </div>
         <!-- 进度条 -->
 
-            <div class="progress-bar-container">
-                <vue-range-slider
-                        v-model="currentProgress"
-                        :min="0"
-                        :max="100"
-                        step="0.1"
-                ></vue-range-slider>
-                <div class="time-labels">
-                    <span class="played-time">{{ playedTime }}</span>
-                    <span class="total-time">{{ nowSongDuration }}</span>
-                </div>
+        <div class="progress-bar-container">
+            <vue-range-slider
+                    v-model="currentProgress"
+                    :min="0"
+                    :max="100"
+                    step="0.1"
+            ></vue-range-slider>
+            <div class="time-labels">
+                <span class="played-time">{{ playedTime }}</span>
+                <span class="total-time">{{ nowSongDuration }}</span>
             </div>
+        </div>
 
 
 <!--        ------------------------------------------------------------------------------------------->
@@ -86,14 +86,15 @@
                 <div v-show="!this.$store.state.isMute && this.volume !== 0" class="volume-image"></div>
                 <div v-show="this.$store.state.isMute || this.volume === 0" class="noVolume-image"></div>
             </div>
-            <!-- 音量range -->
-            <div class="progress-bar-container-volume">
-                <div class="progress-bar-wrapper" @wheel="adjustVolumeWithWheel">
-                    <div class="progress-bar-volume" ref="footerVolumeProgressBar" @click="updateProgressBarOnClickVolume">
-                        <div class="progress" :style="{ width: volume + '%' }"></div>
-                    </div>
-                </div>
-            </div>
+                <vue-slider
+                        v-model="$store.state.volume"
+                        :min="0"
+                        :max="100"
+                        :interval="1"
+                        :dot-size="12"
+                        :height="10"
+                        style="width:100px;margin-left: 5px"
+                ></vue-slider>
             <div v-show="showVolumeValue" class="volume-value">
                 {{ `音量 :  ${volume}` }}
             </div>
@@ -286,15 +287,6 @@
         width: 100%;
         height: 15px;
     }
-    .progress-bar-container-volume {
-        margin-left: 4px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        align-items: center;
-        width: 100px;
-        height: 10px;
-    }
 
     .time-labels {
         display: flex;
@@ -315,40 +307,6 @@
         letter-spacing: 1px;
     }
 
-    .progress-bar-wrapper {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .progress-bar {
-        margin-left: 2px;
-        margin-right: 2px;
-        width: 100%;
-        height: 15px;
-        background-color: rgba(255, 255, 255, 0.2);
-        border-radius: 100px;
-        cursor: pointer;
-        overflow: hidden;
-        position: relative;
-    }
-    .progress-bar-volume {
-        margin-left: 2px;
-        margin-right: 2px;
-        width: 100%;
-        height: 10px;
-        background-color: rgba(255, 255, 255, 0.2);
-        border-radius: 100px;
-        cursor: pointer;
-        overflow: hidden;
-        position: relative;
-    }
-
-    .progress {
-        height: 100%;
-        background-color: #f0f0f0;
-        border-radius: 100px;
-    }
 
     .volume-value {
         position: fixed;
@@ -627,8 +585,12 @@
     import { mix3} from "@/mixin";
     import {mapMutations, mapGetters,mapState} from "vuex"
     import HowlerPlayer from './HowlerPlayer'
-    import 'vue-range-slider/dist/vue-range-slider.css';
-    import VueRangeSlider from 'vue-range-slider';
+    import VueRangeSlider from 'vue-range-slider'
+    import 'vue-range-slider/dist/vue-range-slider.css'
+    import VueSlider from 'vue-slider-component';
+    import 'vue-slider-component/theme/default.css'
+
+
 
     export default {
         name: "Footer",
@@ -730,7 +692,7 @@
                 this.$store.commit('CHANGE_MODE_AND_INDEX')
             })
         },
-        components : {VueRangeSlider,HowlerPlayer},
+        components : {HowlerPlayer,VueRangeSlider,VueSlider},
         data() {
             return {
                 showPlaylistModal: false, // 控制弹出框显示状态

@@ -57,6 +57,8 @@ new Vue({
                     this.$store.commit('SET_BIGGER_LYRIC',savingState.biggerLyric)
                     this.$store.commit('SET_SHOW_TLYRIC',savingState.showTlyric)
                     this.$store.commit('SET_CHECK',savingState.check)
+                    this.$store.commit('SET_BLUR',savingState.blur)
+                    this.$store.commit('SET_BRIGHT',savingState.bright)
 
                 console.log("vue get savingState")
             }else{

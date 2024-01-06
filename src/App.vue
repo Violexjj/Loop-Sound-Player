@@ -58,8 +58,10 @@
             </div>
 
             <div class="background">
-                <img :src="this.$store.state.nowSongCover" alt="Background Image" class="background-image">
+                <img :src="this.$store.state.nowSongCover" alt="Background Image" class="background-image"
+                     :style="{ filter: 'blur(' + $store.state.blur + 'px) saturate(120%) brightness(' + $store.state.bright + '%)' }">
             </div>
+
 
             <header class="header">
                 <Header></Header>
@@ -369,7 +371,6 @@
         width: 100%;
         height: 100%;
         object-fit: cover; /* 控制图片填充方式，类似 background-size: cover */
-        filter: blur(40px) saturate(120%); /* 添加模糊效果，根据需要调整值 */
     }
     .background::before {
         content: "";
@@ -687,7 +688,9 @@
                     lyricDirectory : this.$store.state.lyricDirectory,
                     biggerLyric: this.$store.state.biggerLyric,
                     showTlyric: this.$store.state.showTlyric,
-                    check: this.$store.state.check
+                    check: this.$store.state.check,
+                    blur: this.$store.state.blur,
+                    bright: this.$store.state.bright
                 }
                 myAPI.closeWindow(savingState)
             },

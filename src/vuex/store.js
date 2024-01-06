@@ -316,6 +316,12 @@ const mutations = {
     SET_SHOW_TLYRIC(state, value) {
             state.showTlyric = value;
     },
+    SET_BRIGHT(state, value) {
+        state.bright = value;
+    },
+    SET_BLUR(state, value) {
+        state.blur = value;
+    },
     SET_CHECK(state, value) {
         state.check = value;
     },
@@ -331,7 +337,7 @@ const mutations = {
 
 const state = {
     check: null,
-    nowVersion: "0.8.0",
+    nowVersion: "0.8.2",
     latestVersion: null,
     latestVersionInfo: "",
     errorMessage:"请开启自动检查更新",
@@ -394,7 +400,9 @@ const state = {
     playNextSongs: false,
     nextSongs:[],
     nextSongsIndex:-1,
-    showTlyric: true
+    showTlyric: true,
+    bright: 100,
+    blur: 40
 }
 
 const getters = {

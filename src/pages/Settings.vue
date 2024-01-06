@@ -196,46 +196,81 @@
                 <td>
                     <b style="font-size: 20px">歌词字体大小：</b>
                 </td>
-                <td>
-                    <div class="custom-button align" @click="downFontSize()">
-                        <div class="centered-content">
-                            <img src="../assets/downVolume.png" alt="down" class="centered-img">
-                        </div>
+                <td colspan="2">
+                    <div style="padding-left: 15px;padding-right: 10px;padding-top: 5px">
+                        <vue-slider
+                                v-model="fontSize"
+                                :min="0"
+                                :max="15"
+                                :interval="1"
+                                :dot-size="12"
+                                :height="10"
+                                @click="console.log(this.$store.state.lyricFont)"
+                        ></vue-slider>
                     </div>
-
                 </td>
                 <td>
                     <div class="custom-button-font align"><b style="font-size: 25px">{{ this.$store.state.lyricFont-15 }}</b></div>
-                </td>
-                <td>
-                    <div class="custom-button align" @click="upFontSize()">
-                        <div class="centered-content">
-                            <img src="../assets/addPlaylist.png" alt="down" class="centered-img">
-                        </div>
-                    </div>
                 </td>
             </tr>
             <tr style="height: 60px;" >
                 <td>
                     <b style="font-size: 20px">当前歌词字体放大：</b>
                 </td>
-                <td>
-                    <div class="custom-button align" @click="downFontSize2()">
-                        <div class="centered-content">
-                            <img src="../assets/downVolume.png" alt="down" class="centered-img">
-                        </div>
+                <td colspan="2">
+                    <div style="padding-left: 15px;padding-right: 10px;padding-top: 5px">
+                        <vue-slider
+                            v-model="$store.state.biggerLyric"
+                            :min="0"
+                            :max="15"
+                            :interval="1"
+                            :dot-size="12"
+                            :height="10"
+                        ></vue-slider>
                     </div>
-
                 </td>
                 <td>
                     <div class="custom-button-font align"><b style="font-size: 25px">{{ this.$store.state.biggerLyric }}</b></div>
                 </td>
+            </tr>
+            <tr style="height: 60px;" >
                 <td>
-                    <div class="custom-button align" @click="upFontSize2()">
-                        <div class="centered-content">
-                            <img src="../assets/addPlaylist.png" alt="down" class="centered-img">
-                        </div>
+                    <b style="font-size: 20px">背景高斯模糊度：</b>
+                </td>
+                <td colspan="2">
+                    <div style="padding-left: 15px;padding-right: 10px;padding-top: 5px">
+                        <vue-slider
+                                v-model="$store.state.blur"
+                                :min="0"
+                                :max="100"
+                                :interval="1"
+                                :dot-size="12"
+                                :height="10"
+                        ></vue-slider>
                     </div>
+                </td>
+                <td>
+                    <div class="custom-button-font align"><b style="font-size: 25px">{{ this.$store.state.blur }}</b></div>
+                </td>
+            </tr>
+            <tr style="height: 60px;" >
+                <td>
+                    <b style="font-size: 20px">背景亮度：</b>
+                </td>
+                <td colspan="2">
+                    <div style="padding-left: 15px;padding-right: 10px;padding-top: 5px">
+                        <vue-slider
+                                v-model="$store.state.bright"
+                                :min="0"
+                                :max="150"
+                                :interval="1"
+                                :dot-size="12"
+                                :height="10"
+                        ></vue-slider>
+                    </div>
+                </td>
+                <td>
+                    <div class="custom-button-font align"><b style="font-size: 25px">{{ this.$store.state.bright }}</b></div>
                 </td>
             </tr>
 
@@ -621,8 +656,12 @@
 
 <script>
     import {mapState,mapMutations} from "vuex";
+    import VueSlider from 'vue-slider-component';
+    import 'vue-slider-component/theme/default.css'
+
     export default {
         name: "Settings",
+        components : {VueSlider},
         created() {
             myAPI.onFinishScan((_event) => {
                 this.finishScan()
@@ -644,6 +683,14 @@
             }
         },
         computed:{
+            fontSize:{
+                get(){
+                    return this.$store.state.lyricFont -15
+                },
+                set(val){
+                    this.$store.state.lyricFont = val+15
+                }
+            },
             check(){
               return this.$store.state.check
             },
