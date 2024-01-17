@@ -7,15 +7,18 @@
                     <input type="text" v-model="search"
                            @keyup.enter="sendSearchKeyword();displaySearch();setFilterType('bySearch')"
                            @focus="blockSpace(true)"
-                           @blur="search = '';blockSpace(false)" >
+                           @blur="search = '';blockSpace(false)"
+                            ref="search"
+                    >
                 </div>
             </div>
 
             <div :class="{ 'active': isActive('Home')}" @click="displayHome" class="nav-button unselectable"><b>主 页</b></div>
             <div :class="{ 'active': isActive('Library') }" @click="displayLibrary()" class="nav-button unselectable"><b>音 乐 库</b></div>
             <div :class="{ 'active': isActive('Playlists') }" @click="displayPlaylists" class="nav-button unselectable"><b>播 放 列 表</b></div>
-            <div :class="{ 'active': isActive('Albums') }" @click="displayAlbums()" class="nav-button unselectable"><b>专 辑</b></div>
-            <div :class="{ 'active': isActive('Artists') }" @click="displayArtists()" class="nav-button unselectable"><b>艺 术 家</b></div>
+            <div v-show="$store.state.showAlbums" :class="{ 'active': isActive('Albums') }" @click="displayAlbums()" class="nav-button unselectable"><b>专 辑</b></div>
+            <div v-show="$store.state.showArtists" :class="{ 'active': isActive('Artists') }" @click="displayArtists()" class="nav-button unselectable"><b>艺 术 家</b></div>
+            <div v-show="$store.state.showFolders" :class="{ 'active': isActive('Folders') }" @click="displayFolders()" class="nav-button unselectable"><b>文 件 夹</b></div>
             <div :class="{ 'active': isActive('Settings') }" @click="displaySettings" class="nav-button unselectable"><b>设 置</b></div>
         </div>
     </div>
@@ -82,7 +85,7 @@
         border: 2px solid #f0f0f0;
         padding: 10px;
         margin: 1px 2px;
-        margin-right: 20px;
+        margin-right: 10px;
         color: #f0f0f0;
         text-align: center;
         cursor: pointer;
@@ -119,9 +122,11 @@
                 search: "",
             };
         },
+
         mixins: [mix3],
         mounted() {
             this.$bus.$on("toHome", this.displayHome);
+            this.$bus.$on("startSearch", this.startSearch);
         },
         methods: {
             blockSpace(isBlock){
@@ -158,6 +163,15 @@
                     if (this.$route.path !== "/Playlists") {
                         this.$router.push({
                             name: "Playlists",
+                        });
+                    }
+                },5)
+            },
+            displayFolders() {
+                setTimeout(()=>{
+                    if (this.$route.path !== "/Folders") {
+                        this.$router.push({
+                            name: "Folders",
                         });
                     }
                 },5)
@@ -200,6 +214,12 @@
                     }
                 },5)
             },
+            startSearch(){
+                const searchInput = this.$refs.search;
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            }
         },
         computed: {
             // 判断按钮是否激活

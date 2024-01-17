@@ -72,12 +72,20 @@ export  const mix5 = {
     //改变播放模式并播放
     methods: {
         setNextSongToPlay(song, index){
-            this.$store.state.nextSongs.unshift(song[index])
+            if (this.$store.state.playNextSongs) {
+                this.$store.state.notChangeNextSong = true
+                this.$store.state.nextSongs.splice(this.$store.state.nextSongsIndex + 1, 0, song[index]);
+            }else{
+                this.$store.state.nextSongs.unshift(song[index])
+            }
         },
         changeQueueAndPlay(songs, index) {
             if (this.$store.state.selectMode) {
                 return
             }
+            this.$store.state.playNextSongs = false
+            this.$store.state.nextSongsIndex = -1
+            this.$store.state.nextSongs = []
             this.$store.commit('CHANGE_QUEUE_AND_PLAY', { songs, index });
             this.$store.state.showContextMenu =false
             if (this.$store.state.toHomeAfterChangeQueue) {

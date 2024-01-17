@@ -36,6 +36,9 @@ contextBridge.exposeInMainWorld('myAPI', {
     openFile:(filePath,directory)=>{
         ipcRenderer.invoke('openFile',filePath,directory)
     },
+    openFolder:(folderPath)=>{
+        ipcRenderer.invoke('openFolder', folderPath)
+    },
     readFile: async (filePath,lyricDirectory,songId) => {
         try {
             const response = await ipcRenderer.invoke('read-file', filePath,lyricDirectory,songId);
@@ -53,6 +56,9 @@ contextBridge.exposeInMainWorld('myAPI', {
             console.error('Error reading file:', error);
             throw error;
         }
+    },
+    changeInfo:(filePath)=>{
+        ipcRenderer.invoke('changeInfo',filePath)
     },
     minimize:()=>{
         ipcRenderer.invoke('minimize-window')

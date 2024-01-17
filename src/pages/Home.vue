@@ -49,7 +49,9 @@
         <transition name="slide-left-right">
             <div class="play-queue" ref="queueTable"
                  :class="{ 'add-background-modal': queueModal }"
-                 v-if="this.$store.state.showQueue === true">
+                 v-if="this.$store.state.showQueue === true"
+                 @mouseenter="changeScrollbarColor(true)"
+                 @mouseleave="changeScrollbarColor(false)">
                 <table class="queue-table">
                     <tbody>
                     <tr v-for="(song, index) in nowQueue" :key="index"
@@ -82,7 +84,8 @@
                 currentLyricIndex: 0, // 当前显示的歌词行索引
                 songCover : null,
                 nowSongTime:0,
-                smoothSpeed:50
+                smoothSpeed:50,
+                initial: true
             };
         },
 
@@ -229,9 +232,27 @@
             },
         },
         methods:{
+            changeScrollbarColor(isHovering) {
+                const scrollbars = document.getElementsByClassName('play-queue');
+                if (isHovering) {
+                    for (let i = 0; i < scrollbars.length; i++) {
+                        scrollbars[i].style.scrollbarColor = 'white';
+                    }
+                } else {
+                    for (let i = 0; i < scrollbars.length; i++) {
+                        scrollbars[i].style.scrollbarColor = 'transparent';
+                    }
+                }
+            },
             changeProgress(time){
-                const newProgress = (time / this.nowSongTime) * 100;
-                this.$bus.$emit('changeProgress', newProgress);
+                if (this.initial && this.$store.state.isPlaying === false) {
+                    this.$store.state.isPlaying = true
+                    this.initial = false
+                }
+                setTimeout(()=>{
+                    const newProgress = (time / this.nowSongTime) * 100;
+                    this.$bus.$emit('changeProgress', newProgress);
+                },10)
             },
             async displayArtistDetail(artistName){
                 const filteredArtistSong = this.$store.state.songs.songs.filter(song => song.artist === artistName);
@@ -283,6 +304,9 @@
             playSelectedSong(index) {
                 // 调用 setCurrentIndex 并传递 index 参数
                 this.setCurrentIndex(index);
+                this.$store.state.playNextSongs = false
+                this.$store.state.nextSongsIndex = -1
+                this.$store.state.nextSongs = []
                 this.$store.state.isPlaying = true
                 // 使用this.$nextTick确保在DOM更新后再操作滚动条位置
                 this.$nextTick(() => {
@@ -430,12 +454,15 @@
         border-radius: 10px;
     }
 
-    /* 滚动条滑块 */
+    /* 滚动条滑块默认颜色 */
     .play-queue::-webkit-scrollbar-thumb {
-        background-color: white; /* 设置滑块的颜色 */
-        border-radius: 20px; /* 设置滑块的圆角 */
+        background-color: transparent; /* 默认透明颜色 */
+        border-radius: 20px;
     }
-
+    /* 鼠标悬停时滑块颜色 */
+    .play-queue:hover::-webkit-scrollbar-thumb {
+        background-color: white; /* 鼠标悬停时的颜色 */
+    }
     /* 滚动条轨道 */
     .play-queue::-webkit-scrollbar-track {
         background-color: rgba(255, 255, 255, 0); /* 设置轨道的颜色 */
@@ -502,7 +529,7 @@
         border-radius: 10px;
         scroll-behavior: smooth;
     }
-    .lyrics-line:hover{
+    .lyrics-line:not(.divide):hover{
         background-color: rgba(255, 255, 255, 0.1);
         cursor: pointer;
         padding-bottom: 10px;

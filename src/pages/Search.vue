@@ -37,7 +37,6 @@
 
             <div class="playlist-panel">
                 <!-- 关闭按钮 -->
-                <span style="margin-left: 10px;font-weight: bold;font-size: 25px">添加至播放列表</span>
                 <div class="modal-close" @click="showPlaylistModal = false">
                     <div class="close-button ">
                         <img src="../assets/close.png" alt="close" class="close-image">
@@ -45,6 +44,15 @@
                 </div>
                 <!-- 选项列表内容 -->
                 <div class="playlist-options">
+                    <div class="playlist-option" @click="playThisSong()">
+                        {{ `播放`}}
+                    </div>
+                    <div class="playlist-option" @click="setNextSongToPlay()">
+                        {{ `下一首播放`}}
+                    </div>
+                    <div class="playlist-option2">
+                        {{ `添加至播放列表`}}
+                    </div>
                     <div v-for="playlist in playlists" :key="playlist.name" class="playlist-option"
                          @click="addToPlaylist(playlist.name)">
                         {{ playlist.name }}
@@ -129,9 +137,13 @@
         letter-spacing: 5px;
     }
     .playlist-options {
-        margin-top: 20px;
+        margin-top: 40px;
     }
     .playlist-option{font-weight: bold;
+        padding: 10px;
+        border-radius: 10px;
+    }
+    .playlist-option2{font-weight: bold;
         padding: 10px;
         border-radius: 10px;
     }
@@ -357,6 +369,15 @@
         },
         props: ['search'],
         methods : {
+            setNextSongToPlay(){
+                if (this.$store.state.playNextSongs) {
+                    this.$store.state.notChangeNextSong = true
+                    this.$store.state.nextSongs.splice(this.$store.state.nextSongsIndex + 1, 0, this.chosenSong);
+                }else{
+                    this.$store.state.nextSongs.unshift(this.chosenSong)
+                }
+                this.showPlaylistModal = false;
+            },
             ...mapMutations(['ADD_TO_PLAYLIST']),
             chooseSong(song){
                 this.chosenSong = song
@@ -377,13 +398,27 @@
                 return '';
             },
             changeQueueAndPlay(song, index) {
+                this.$store.state.playNextSongs = false
+                this.$store.state.nextSongsIndex = -1
+                this.$store.state.nextSongs = []
                 const songs = [song]
                 this.$store.commit('CHANGE_QUEUE_AND_PLAY', { songs, index });
                 if (this.$store.state.toHomeAfterChangeQueue) {
                     this.$router.push({ name: 'Home' });
                 }
             },
-
+            playThisSong(){
+                this.clearShuffledIndex()
+                this.$store.state.playNextSongs = false
+                this.$store.state.nextSongsIndex = -1
+                this.$store.state.nextSongs = []
+                const songs = [this.chosenSong]
+                const index = 0
+                this.$store.commit('CHANGE_QUEUE_AND_PLAY', { songs, index });
+                if (this.$store.state.toHomeAfterChangeQueue) {
+                    this.$router.push({ name: 'Home' });
+                }
+            }
         },
         computed: {
             ...mapState(['searchResults','playlists']),

@@ -92,7 +92,7 @@
             </tr>
             <tr style="height: 60px;">
                 <td>
-                    <b style="font-size: 20px">主页封面信息深色背景：</b>
+                    <b style="font-size: 20px">主页封面信息暗色背景：</b>
                 </td>
                 <td>
                     <div class="custom-switch" @click="setInfoModal">
@@ -103,7 +103,7 @@
             </tr>
             <tr style="height: 60px;">
                 <td>
-                    <b style="font-size: 20px">主页歌词区域深色背景：</b>
+                    <b style="font-size: 20px">主页歌词区域暗色背景：</b>
                 </td>
                 <td>
                     <div class="custom-switch" @click="setLyricsModal">
@@ -114,7 +114,7 @@
             </tr>
             <tr style="height: 60px;">
                 <td>
-                    <b style="font-size: 20px">主页播放队列深色背景：</b>
+                    <b style="font-size: 20px">主页播放队列暗色背景：</b>
                 </td>
                 <td>
                     <div class="custom-switch" @click="setQueueModal">
@@ -194,7 +194,21 @@
             </tr>
             <tr style="height: 60px;" >
                 <td>
-                    <b style="font-size: 20px">歌词字体大小：</b>
+                    <b style="font-size: 20px">导航栏显示：</b>
+                </td>
+                <td>
+                    <div class="custom-button align" :class="{'activee':(this.$store.state.showAlbums === true)}" @click="changeShowHeader(0)"><b>{{"专辑"}}</b></div>
+                </td>
+                <td>
+                    <div class="custom-button align" :class="{'activee':(this.$store.state.showArtists === true)}" @click="changeShowHeader(1)"><b>{{"艺术家"}}</b></div>
+                </td>
+                <td>
+                    <div class="custom-button align" :class="{'activee':(this.$store.state.showFolders === true)}" @click="changeShowHeader(2)"><b>{{"文件夹"}}</b></div>
+                </td>
+            </tr>
+            <tr style="height: 60px;" >
+                <td>
+                    <b style="font-size: 20px">所有歌词字体大小：</b>
                 </td>
                 <td colspan="2">
                     <div style="padding-left: 15px;padding-right: 10px;padding-top: 5px">
@@ -280,36 +294,35 @@
         <br>
         <hr style="border-top: 3px solid #ccc;margin-right: 30px">
         <h1 class="title">属性说明</h1><br>
-        <span><b>• 本播放器仅为实践小项目，如若出现问题页面爆红请重启播放器，大概率能恢复。</b></span><br><br>
+        <span><b>• 本播放器仅为实践小项目，如若出现问题（页面爆红、白屏、无法播放）请联系我，QQ：3059557534。</b></span><br><br>
         <span><b>• 仅支持 FLAC、MP3、WAV 格式的音频文件。</b></span><br><br>
         <span><b>• WAV 格式所有播放器默认都是缺少很多信息的，可以去操作说明第 1 点的目录里的“songsNoSameId.json”文件手动编辑信息。</b></span><br><br>
         <span><b>• 目前由于性能问题，时间过长的歌曲（超过 1 小时）大概率会卡死，歌曲时长计算也会出错，请谅解。</b></span><br><br>
         <hr style="border-top: 3px solid #ccc;margin-right: 30px">
 
         <h1 class="title">操作说明</h1><br>
-        <span><b>• 如若要手动更改歌曲信息、播放列表信息，请在 C:\Users\（本机用户）\AppData\Roaming\Loop Sound Player下修改文件内容，建议不要修改文件名。</b></span><br><br>
-        <span><b>• 不要快速连续地切换暂停播放，否则会和淡入淡出冲入，造成总是从头播放歌曲。如果出现了，重启播放器即可。</b></span><br><br>
+        <span><b>• 如果要手动更改歌曲信息、播放列表信息等，请在 C:\Users\（本机用户）\AppData\Roaming\Loop Sound Player 文件夹下修改文件内容，但不要修改文件名。</b></span><br><br>
+        <span><b>• 不要快速连续地切换暂停播放，否则会和淡入淡出冲入，造成总是从头播放歌曲。如果出现了，切换一次歌曲即可。</b></span><br><br>
         <span><b>• 从音乐库删除会一并删除播放列表中对应歌曲。</b></span><br><br>
-        <span><b>• 调节音量可以点击音量条，也可在音量条滚动鼠标，还可在音量按钮处滚动鼠标，或者使用↑↓快捷键以及全局快捷键，每次滚动调节音量数为3。</b></span><br><br>
+        <span><b>• 调节音量可以用音量条，还可在音量按钮处滚动鼠标，或者使用↑↓快捷键以及全局快捷键，每次滚动调节音量数为3。</b></span><br><br>
         <span><b>• 点击底部控制栏最左边的圆形封面也可显示主页。</b></span><br><br>
         <span><b>• 主页右边的播放队列不会随播放列表更新而更新，如果修改了播放列表数据请重新在底部控制栏切换播放列表。</b></span><br><br>
-        <span><b>• 播放列表右键可进行重命名或者删除。</b></span><br><br>
+        <span><b>• 播放列表右键可进行重命名、设置封面或者删除。</b></span><br><br>
         <span><b>• 选择模式下，除手动排序，其他排序功能必须是未选中歌曲才可以使用。</b></span><br><br>
         <span><b>• 选择模式下，播放列表选中一首歌曲可进行手动排序，输入要设置的新序号即可。音乐库不支持手动排序</b></span><br><br>
-        <span><b>• 搜索界面的歌曲搜索结果，双击播放，右键添加到播放列表。</b></span><br><br>
+        <span><b>• 搜索界面的歌曲搜索结果，双击播放，右键打开菜单。</b></span><br><br>
         <hr style="border-top: 3px solid #ccc;margin-right: 30px">
 
         <h1 class="title">歌词说明</h1><br>
         <span><b>• 建议先设置歌词文件夹！</b></span><br><br>
-        <span><b>• 歌词匹配优先级别：内嵌歌词 > 歌曲同文件夹同名歌词或自定义的歌词文件夹 > 在线搜索歌词。</b></span><br><br>
-        <span><b>• 如果没有内嵌歌词，会从自定义设置的文件夹找同名lrc文件，没有自定义则从同文件夹查找。</b></span><br><br>
-        <span><b>• 如果没有找到本地歌词会进行在线搜索，如果弹出需要"魔法"，懂的都懂。</b></span><br><br>
-        <span><b>• 如果开了魔法还遇到弹窗，网络问题，多切到那首歌几次即可成功。</b></span><br><br>
+        <span><b>• 歌词匹配优先级别：内嵌歌词 > 自定义的歌词文件夹 > 歌曲所在文件夹 > 在线搜索歌词。</b></span><br><br>
+        <span><b>• 如果没有找到本地歌词，可以进行在线搜索，如果弹出需要"魔法"，懂的都懂。</b></span><br><br>
+        <span><b>• 如果开了魔法还遇到弹窗，应该是网络问题，多切到那首歌几次即可成功。</b></span><br><br>
         <span><b>• 在线搜索默认使用歌曲“标题+艺术家”的格式搜索，如果匹配不满意，可以在音乐库和播放列表进行精确匹配。</b></span><br><br>
-        <span><b>• 在线搜索到歌词之后，会将lrc文件保存到自定义的文件夹，如果未设置会保存到歌曲同文件夹下。</b></span><br><br>
         <span><b>• 精确匹配需要输入歌曲ID，获取方法就是找到网易云对应的歌曲，复制链接，找到“song?”后面的id，输入对应的数字即可。</b></span><br><br>
+        <span><b>• 在线搜索到歌词之后，会将lrc文件保存到自定义的文件夹，如果未设置会保存到歌曲同文件夹下。</b></span><br><br>
         <span><b>• 精确匹配后会自动删除原来下载的歌词，以便更新。</b></span><br><br>
-        <span><b>• 原则上，开了魔法和精确匹配是（ID正确）一定能找到歌词的，除非网易云那首歌真的没有歌词。</b></span><br><br>
+        <span><b>• 原则上，开了魔法和精确匹配是（ID正确）一定能找到歌词的，除非网易云真的没有歌词。</b></span><br><br>
         <hr style="border-top: 3px solid #ccc;margin-right: 30px">
 
         <div class="shortcuts-container">
@@ -372,6 +385,10 @@
                     <tr>
                         <td class="table-cell-num">Ctrl + N</td>
                         <td class="table-cell-num">静音</td>
+                    </tr>
+                    <tr>
+                        <td class="table-cell-num">Ctrl + F</td>
+                        <td class="table-cell-num">搜索</td>
                     </tr>
                     <tr>
                         <td class="table-cell-num">Ctrl + Q</td>
@@ -646,7 +663,6 @@
         border-radius: 50px;
         text-align: center;
         line-height: 40px;
-        cursor: pointer;
         color: #f0f0f0;
     }
     .activee{
@@ -717,6 +733,15 @@
             }
         },
         methods : {
+            changeShowHeader(flag){
+                if (flag === 0) {
+                    this.$store.state.showAlbums = !this.$store.state.showAlbums
+                }else if(flag === 1){
+                    this.$store.state.showArtists = !this.$store.state.showArtists
+                }else{
+                    this.$store.state.showFolders = !this.$store.state.showFolders
+                }
+            },
             closeShowLatestInfoModal(){
                 this.showLatestInfoModal = !this.showLatestInfoModal
             },

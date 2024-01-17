@@ -85,7 +85,10 @@ const mutations = {
         state.playlists = playlists
     },
     SET_VOLUME(state, volume) {
-        state.volume = volume;
+        if (volume !== undefined) {
+            state.volume = volume;
+        }
+
     },
     SET_FILTER_TYPE(state, value){
         state.filterType = value;
@@ -148,35 +151,65 @@ const mutations = {
     },
 
     SET_CURRENT_INDEX(state, index) {
-        state.currentIndex = index;
+        if (index !== undefined) {
+            state.currentIndex = index;
+        }
+
     },
 
     SET_NOW_MODE(state, nowMode) {
-        state.nowMode = nowMode;
+        if (nowMode !== undefined) {
+            state.nowMode = nowMode;
+        }
+
     },
     SET_IS_MUTE(state, isMute) {
-        state.isMute = isMute;
+        if (isMute !== undefined) {
+            state.isMute = isMute;
+        }
+
     },
     SET_QUEUE(state, queue) {
-        state.queue = queue;
+        if (queue !== undefined) {
+            state.queue = queue;
+        }
+
     },
     SET_SHOW_LYRICS(state, showLyrics) {
-        state.showLyrics = showLyrics;
+        if (showLyrics !== undefined) {
+            state.showLyrics = showLyrics;
+        }
+
     },
     SET_SHOW_QUEUE(state, showQueue){
-        state.showQueue = showQueue;
+        if (showQueue !== undefined) {
+            state.showQueue = showQueue;
+        }
+
     },
     SET_SHOW_FORMAT(state, showFormat){
-        state.showFormat = showFormat
+        if (showFormat !== undefined) {
+            state.showFormat = showFormat
+        }
+
     },
     SET_LYRIC_ALIGNMENT_MODE(state, lyricAlignmentMode){
-        state.lyricAlignmentMode = lyricAlignmentMode;
+        if (lyricAlignmentMode !== undefined) {
+            state.lyricAlignmentMode = lyricAlignmentMode;
+        }
+
     },
     SET_TO_HOME_AFTER_CHANGE_QUEUE(state, toHomeAfterChangeQueue) {
-        state.toHomeAfterChangeQueue = toHomeAfterChangeQueue;
+        if (toHomeAfterChangeQueue !== undefined) {
+            state.toHomeAfterChangeQueue = toHomeAfterChangeQueue;
+        }
+
     },
     SET_AUTO_HIDE_LRC(state, autoHideLrc) {
-        state.autoHideLrc = autoHideLrc;
+        if (autoHideLrc !== undefined) {
+            state.autoHideLrc = autoHideLrc;
+        }
+
     },
     SET_NOW_SONG_COVER(state, nowSongCover) {
         state.nowSongCover = nowSongCover;
@@ -219,28 +252,46 @@ const mutations = {
         state.selectMode = value
     },
     SET_HIGHLIGHT(state,value){
-        state.highlight = value
+        if (value !== undefined) {
+            state.highlight = value
+        }
+
     },
     SET_INFO_MODAL(state,value){
-        state.infoModal = value
+        if (value !== undefined) {
+            state.infoModal = value
+        }
+
     },
     SET_LYRICS_MODAL(state,value){
-        state.lyricsModal = value
+        if (value !== undefined) {
+            state.lyricsModal = value
+        }
+
     },
     SET_QUEUE_MODAL(state,value){
-        state.queueModal = value
+        if (value !== undefined) {
+            state.queueModal = value
+        }
+
     },
     SET_GLOBAL_SHORTCUT(state,value){
-        state.globalShortcut = value
-    },
-    SET_DELETE_LOCAL_FILE(state,value){
-        state.deleteLocalFile = value
+        if (value !== undefined) {
+            state.globalShortcut = value
+        }
+
     },
     SET_SAVED_CURRENT_PLAYTIME(state, value){
-        state.savedCurrentPlaytime = value
+        if (value !== undefined) {
+            state.savedCurrentPlaytime = value
+        }
+
     },
     SET_EXIT(state,value){
-        state.exit = value
+        if (value !== undefined) {
+            state.exit = value
+        }
+
     },
     DELETE_FROM_PLAYLIST(state,indexArray){
         const playlistName = state.selectedPlaylistName; // 获取选中的播放列表名称
@@ -298,13 +349,19 @@ const mutations = {
         state.currentProgress = progress;
     },
     SET_LYRIC_FONT(state, value) {
-        state.lyricFont = value;
+        if (value !== undefined) {
+            state.lyricFont = value;
+        }
+
     },
     SET_ONLINE_LRC(state, value) {
-        state.onlineLrc = value;
+        if (value !== undefined) {
+            state.onlineLrc = value;
+        }
+
     },
     SET_LYRIC_DIRECTORY(state, value) {
-        if (value) {
+        if (value !== undefined) {
             state.lyricDirectory = value;
         }
     },
@@ -314,16 +371,45 @@ const mutations = {
         }
     },
     SET_SHOW_TLYRIC(state, value) {
+        if (value !== undefined) {
             state.showTlyric = value;
+        }
+
     },
     SET_BRIGHT(state, value) {
-        state.bright = value;
+        if (value !== undefined) {
+            state.bright = value;
+        }
+
     },
     SET_BLUR(state, value) {
-        state.blur = value;
+        if (value !== undefined) {
+            state.blur = value;
+        }
+
+    },
+    SET_SHOW_ALBUMS(state, value) {
+        if (value !== undefined) {
+            state.showAlbums = value;
+        }
+
+    },
+    SET_SHOW_ARTISTS(state, value) {
+        if (value !== undefined) {
+            state.showArtists = value;
+        }
+
+    },
+    SET_SHOW_FOLDERS(state, value) {
+        if (value !== undefined) {
+            state.showFolders = value;
+        }
     },
     SET_CHECK(state, value) {
-        state.check = value;
+        if (value !== undefined) {
+            state.check = value;
+        }
+
     },
     RENAME_PLAYLIST(state, { oldName, newName }){
         const playlistIndex = state.playlists.findIndex(playlist => playlist.name === oldName);
@@ -337,7 +423,7 @@ const mutations = {
 
 const state = {
     check: null,
-    nowVersion: "0.8.2",
+    nowVersion: "0.9.0",
     latestVersion: null,
     latestVersionInfo: "",
     errorMessage:"请开启自动检查更新",
@@ -371,7 +457,7 @@ const state = {
     currentPlayTime : 0,
     showLyrics : true,
     lyricFont : 20,
-    biggerLyric : 5,
+    biggerLyric : 10,
     showQueue : true,
     nowSongCover : null,
     nowArtistCover : null,
@@ -400,9 +486,15 @@ const state = {
     playNextSongs: false,
     nextSongs:[],
     nextSongsIndex:-1,
+    notChangeNextSong: false,
     showTlyric: true,
     bright: 100,
-    blur: 40
+    blur: 40,
+    folders:[],
+    selectedFolderPath:'',
+    showAlbums: true,
+    showArtists: true,
+    showFolders: true
 }
 
 const getters = {
@@ -461,20 +553,26 @@ const getters = {
                     return songsInSelectedPlaylist.filter(song => song !== null);
                 }
             }
-        }else {
+        }
+        else if(state.filterType === 'byFolder'){
+            const existingIndex = state.folders.findIndex(folder => folder.path === state.selectedFolderPath);
+            if (existingIndex !== -1) {
+                return state.folders[existingIndex].songs
+            }
+        }
+        else {
             return state.songs.songs; // Return all songs if no filter applied
         }
     },
     nowSong(state) {
         if (state.playNextSongs) {
-            return state.nextSongs[state.nextSongsIndex]
+                return state.nextSongs[state.nextSongsIndex]
         }else{
             if (state.currentIndex >= 0 && state.currentIndex < state.queue.length) {
                 return state.queue[state.currentIndex];
             }
             return null;
         }
-
     }
 }
 // 简写形式

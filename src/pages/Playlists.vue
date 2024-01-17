@@ -6,28 +6,32 @@
         <div class="main route-container">
             <div class="playlist-list">
                 <div id="addPlaylist" class="playlist" >
-                    <div class="cover-container">
-                        <img src="../assets/addPlaylist.png" alt="playlistCover" class="rounded-image click"
-                             @click="showAddPlaylistPanel = true">
+                    <div class="playlist-box" @click="showAddPlaylistPanel = true">
+                        <div class="cover-container">
+                            <img src="../assets/addPlaylist.png" alt="playlistCover" class="rounded-image click"
+                                 >
+                        </div>
+                        <div class="playlist-name">添加</div>
                     </div>
-                    <div class="playlist-name">添加</div>
+
                 </div>
 
                 <div class="playlist" v-for="(playlist,index) in playlists" :key="playlist.name" >
-                    <div class="cover-container">
-                        <img v-if="getPlaylistCover(playlist.name)"
-                             :src="getPlaylistCover(playlist.name)"
-                             alt="playlistCover"
-                             class="rounded-image click"
-                             @click="displaySongsInPlaylist(playlist.name)"
-                             @contextmenu="displayContext(playlist.name)">
-                        <img v-else src="../assets/playlist.png"
-                             alt="defaultPlaylistCover"
-                             class="rounded-image click"
-                             @click="displaySongsInPlaylist(playlist.name)"
-                             @contextmenu="displayContext(playlist.name)">
+                    <div class="playlist-box"
+                         @click="displaySongsInPlaylist(playlist.name)"
+                         @contextmenu="displayContext(playlist.name)">
+                        <div class="cover-container">
+                            <img v-if="getPlaylistCover(playlist.name)"
+                                 :src="getPlaylistCover(playlist.name)"
+                                 alt="playlistCover"
+                                 class="rounded-image click">
+                            <img v-else src="../assets/playlist.png"
+                                 alt="defaultPlaylistCover"
+                                 class="rounded-image click">
+                        </div>
+                        <div class="playlist-name">{{playlist.name}} </div>
                     </div>
-                    <div class="playlist-name">{{truncateText(playlist.name,110)}} </div>
+
                 </div>
             </div>
         </div>
@@ -242,6 +246,20 @@
 </script>
 
 <style scoped>
+    .playlist-box{
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        width: 130px;
+        height: 130px;
+        transition: 0.2s;
+        padding: 10px;
+        border-radius: 10px;
+    }
+    .playlist-box:hover{
+        background-color:rgba(255, 255, 255, 0.2);
+        cursor: pointer;
+    }
     .modal-delete {
         position: fixed;
         top: 0;
@@ -436,7 +454,7 @@
     .playlist-list {
         display: flex;
         flex-wrap: wrap; /* 换行排列 */
-        gap: 40px; /* 间距 */
+        gap: 10px; /* 间距 */
     }
 
     .route-container::-webkit-scrollbar {
@@ -460,7 +478,7 @@
     .cover-container {
         width: 100px;
         height: 100px;
-        border-radius: 20px;
+        border-radius: 15px;
         overflow: hidden;
     }
 
@@ -471,11 +489,11 @@
         transition: 0.2s/* 添加过渡效果 */
     }
 
-    .rounded-image:hover {
-        filter: brightness(50%);
-    }
-
     .playlist-name {
+        width: 100%;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
         margin-top: 10px;
         text-align: center;
         font-weight: bold;

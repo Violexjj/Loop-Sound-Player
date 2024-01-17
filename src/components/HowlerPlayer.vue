@@ -52,7 +52,11 @@
                 immediate : true,
                 handler(newSong) {
                     if (this.nowSong) {
-                        this.playAudio(newSong.path,newSong.id);
+                        if (!this.$store.state.notChangeNextSong) {
+                            this.playAudio(newSong.path,newSong.id);
+                        }else{
+                            this.$store.state.notChangeNextSong = false
+                        }
                     }
                 },
             },
@@ -368,19 +372,21 @@
                             }
                 }
 
+                setTimeout(()=>{
+                    this.$store.state.songDialogInfo= {
+                        cover:this.$store.state.nowSongCover,
+                        moreInfo: songAudioAndInfos[1],
+                        nowSong: this.$store.getters.nowSong,
+                        netId: songAudioAndInfos[3]
+                    }
+                    this.$store.state.nowSongDialogInfo={
+                        cover:this.$store.state.nowSongCover,
+                        moreInfo: songAudioAndInfos[1],
+                        nowSong: this.$store.getters.nowSong,
+                        netId: songAudioAndInfos[3]
+                    }
 
-                this.$store.state.songDialogInfo= {
-                    cover:this.$store.state.nowSongCover,
-                    moreInfo: songAudioAndInfos[1],
-                    nowSong: this.$store.getters.nowSong,
-                    netId: songAudioAndInfos[3]
-                }
-                this.$store.state.nowSongDialogInfo={
-                    cover:this.$store.state.nowSongCover,
-                    moreInfo: songAudioAndInfos[1],
-                    nowSong: this.$store.getters.nowSong,
-                    netId: songAudioAndInfos[3]
-                }
+                },1000)
 
 
                 const blob = new Blob([songAudio], { type: 'audio/flac' });
@@ -405,7 +411,6 @@
                                 this.$store.state.nextSongsIndex = -1
                                 this.$store.state.nextSongs = []
                                 this.$store.state.playNextSongs = false
-                                console.log("临时队列结束")
                             }
                             if (this.modeType[this.nowMode] === '循环' || this.modeType[this.nowMode] === '无序') {
                                 if (this.$store.state.queue.length === 1) {

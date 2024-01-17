@@ -13,12 +13,26 @@ import Artists from '../pages/Artists'
 import ArtistDetail from '../pages/ArtistDetail'
 import Settings from '../pages/Settings'
 import SongsInPlaylist from "@/pages/SongsInPlaylist";
+import SongsInFolder from "@/pages/SongsInFolder";
+import Folders from "@/pages/Folders";
 
 
 // 创建路由器对象（在路由器对象中配置路由。）
 const router = new VueRouter({
     // 在这里配置所有的路由规则。
     routes : [
+        {
+            name : 'SongsInFolder',
+            path : '/SongsInFolder',
+            component : SongsInFolder,
+            props : true
+        },
+        {
+            name : 'Folders',
+            path : '/Folders',
+            component : Folders,
+            props : true
+        },
         {
             name : 'Search',
             path : '/Search',

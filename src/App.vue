@@ -14,6 +14,7 @@
          @keyup.ctrl.q="changeQueue()"
          @keyup.ctrl.z="returnHome()"
          @keyup.ctrl.s="toSettings()"
+         @keyup.ctrl.f="startSearch()"
          @click="closeContext()"
          @blur="closeContext"
     >
@@ -28,7 +29,11 @@
                 <!--                歌曲信息部分-->
                 <div class="songInfo">
                     <span v-if="this.$route.path === '/SongsInPlaylist'" class="songInfoText">{{"当前播放列表："+this.$store.state.selectedPlaylistName}}</span>
-                    <span v-if="this.$route.path !== '/SongsInPlaylist'" class="songInfoText">
+                    <span v-if="this.$route.path === '/SongsInFolder'" class="songInfoText">{{"当前文件夹："+this.$store.state.selectedFolderPath}}</span>
+                    <span v-if="this.$route.path !== '/SongsInPlaylist' && this.$route.path !== '/SongsInFolder' && this.$store.state.playNextSongs" class="songInfoText">
+                        {{"临时播放："+this.$store.getters.nowSong.title+" - "+this.$store.getters.nowSong.artist}}
+                    </span>
+                    <span v-if="this.$route.path !== '/SongsInPlaylist' && this.$route.path !== '/SongsInFolder'  && !this.$store.state.playNextSongs" class="songInfoText">
                         {{(this.$store.state.currentIndex+1)+" / "+(this.$store.state.queue.length)+" · "+this.$store.getters.nowSong.title+" - "+this.$store.getters.nowSong.artist}}
                     </span>
                 </div>
@@ -87,7 +92,7 @@
         <div  v-show="this.$store.state.miniMode" class="miniMode">
 <!--            背景-->
             <div class="background">
-                <img :src="this.$store.state.nowSongCover" alt="Background Image" class="background-image">
+                <img :src="this.$store.state.nowSongCover" alt="Background Image" style="filter: blur(30px)" class="background-image">
             </div>
 <!--            封面-->
             <div class="cover-container-mini">
@@ -462,6 +467,8 @@
     import Settings from './pages/Settings'
     import Library from './pages/Library'
     import Playlists from './pages/Playlists'
+    import Folders from './pages/Folders'
+    import SongsInFolder from './pages/SongsInFolder'
     import {mapGetters} from "vuex";
     import axios from 'axios';
 
@@ -511,7 +518,9 @@
             Playlists,
             Library,
             Settings,
-            Search
+            Search,
+            Folders,
+            SongsInFolder
         },
         computed: {
             playlists(){
@@ -529,6 +538,32 @@
             ...mapGetters(['nowSong']),
         },
         watch:{
+            '$store.state.songs':{
+                deep: true,
+                handler(newVal){
+                    if (this.$store.state.songs.songs.length !== 0) {
+                        const Folders = [];
+                        this.$store.state.songs.songs.forEach(song => {
+                            const folderPath = this.getFolderPath(song.path);
+                            const existingIndex = Folders.findIndex(folder => folder.path === folderPath);
+                            if (existingIndex !== -1) {
+                                Folders[existingIndex].songs.push(song);
+                            } else {
+                                const folderName = this.getFolderName(folderPath);
+                                const newFolder = {
+                                    path: folderPath,
+                                    name: folderName,
+                                    songs: [song]
+                                };
+                                Folders.push(newFolder);
+                            }
+                        });
+                        this.$store.state.folders = Folders
+                    }else{
+                        this.$store.state.folders = []
+                    }
+                }
+            },
             playlists:{
                 handler(newVal) {
                     if (this.playlistInitial) {
@@ -555,6 +590,12 @@
             }
         },
         methods : {
+            getFolderName(folderPath) {
+                return folderPath.substring(folderPath.lastIndexOf('\\') + 1);
+            },
+            getFolderPath(filePath) {
+                return filePath.substring(0, filePath.lastIndexOf('\\'));
+            },
             async getPlaylistsCovers() {
                 this.playlistInitial = false
                 for (const playlist of this.$store.state.playlists) {
@@ -641,6 +682,9 @@
                     });
                 }
             },
+            startSearch(){
+                this.$bus.$emit('startSearch')
+            },
             changeMute(){
                 this.$store.state.isMute = !this.$store.state.isMute
             },
@@ -690,7 +734,10 @@
                     showTlyric: this.$store.state.showTlyric,
                     check: this.$store.state.check,
                     blur: this.$store.state.blur,
-                    bright: this.$store.state.bright
+                    bright: this.$store.state.bright,
+                    showAlbums: this.$store.state.showAlbums,
+                    showArtists: this.$store.state.showArtists,
+                    showFolders: this.$store.state.showFolders
                 }
                 myAPI.closeWindow(savingState)
             },

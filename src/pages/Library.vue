@@ -22,7 +22,7 @@
                     <img src="../assets/play2.png" alt="Logo" class="choiceIco">
                     <span style="margin-left: 7px">播放</span>
                 </div>
-                <div class="choice" @click="setNextSongToPlay(filteredSongs, contextIndex);clearShuffledIndex()">
+                <div class="choice" @click="setNextSongToPlay(filteredSongs, contextIndex);">
                     <img src="../assets/nextSongs.png" alt="Logo" class="choiceIco">
                     <span style="margin-left: 7px">下一首播放</span>
                 </div>
@@ -300,7 +300,12 @@
         },
         methods :{
             setNextSongToPlay(song, index){
-                this.$store.state.nextSongs.unshift(song[index])
+                if (this.$store.state.playNextSongs) {
+                    this.$store.state.notChangeNextSong = true
+                    this.$store.state.nextSongs.splice(this.$store.state.nextSongsIndex + 1, 0, song[index]);
+                }else{
+                    this.$store.state.nextSongs.unshift(song[index])
+                }
             },
             closeSelectMode(){
                 if (this.$store.state.selectMode === true && this.$store.state.showContextMenu === false) {

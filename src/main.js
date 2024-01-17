@@ -32,6 +32,7 @@ new Vue({
         Vue.prototype.$bus = this
         window.myAPI.getSavingState().then(savingState => {
             if(savingState){
+                console.log(savingState.showFolders)
                     this.$store.commit('SET_VOLUME',savingState.volume)
                     this.$store.commit('SET_CURRENT_INDEX',savingState.currentIndex)
                     this.$store.commit('SET_NOW_MODE',savingState.nowMode)
@@ -47,9 +48,9 @@ new Vue({
                     this.$store.commit('SET_INFO_MODAL',savingState.infoModal)
                     this.$store.commit('SET_LYRICS_MODAL',savingState.lyricsModal)
                     this.$store.commit('SET_QUEUE_MODAL',savingState.queueModal)
+
                     this.$store.commit('SET_EXIT',savingState.exit)
                     this.$store.commit('SET_GLOBAL_SHORTCUT',savingState.globalShortcut)
-                    this.$store.commit('SET_DELETE_LOCAL_FILE',savingState.deleteLocalFile)
                     this.$store.commit('SET_SAVED_CURRENT_PLAYTIME',savingState.savedCurrentPlaytime)
                     this.$store.commit('SET_LYRIC_FONT',savingState.lyricFont)
                     this.$store.commit('SET_ONLINE_LRC',savingState.onlineLrc)
@@ -59,6 +60,9 @@ new Vue({
                     this.$store.commit('SET_CHECK',savingState.check)
                     this.$store.commit('SET_BLUR',savingState.blur)
                     this.$store.commit('SET_BRIGHT',savingState.bright)
+                    this.$store.commit('SET_SHOW_ALBUMS',savingState.showAlbums)
+                    this.$store.commit('SET_SHOW_ARTISTS',savingState.showArtists)
+                    this.$store.commit('SET_SHOW_FOLDERS',savingState.showFolders)
 
                 console.log("vue get savingState")
             }else{
@@ -67,7 +71,6 @@ new Vue({
         });
         window.myAPI.getAllSongs().then(songs => {
             this.$store.commit('SET_SONGS', songs);
-
         });
         window.myAPI.getAllPlaylists().then(playlists => {
             this.$store.commit('SET_PLAYLISTS', playlists);

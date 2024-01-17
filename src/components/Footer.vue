@@ -66,7 +66,7 @@
         </div>
 
 
-<!--        ------------------------------------------------------------------------------------------->
+        <!--        ------------------------------------------------------------------------------------------->
         <div class="right-controls">
             <!-- 歌词按钮 -->
             <div class="control-button lyric-button" @click="changeShowLyric" :class="{ 'active': showLyric }">
@@ -86,15 +86,15 @@
                 <div v-show="!this.$store.state.isMute && this.volume !== 0" class="volume-image"></div>
                 <div v-show="this.$store.state.isMute || this.volume === 0" class="noVolume-image"></div>
             </div>
-                <vue-slider
-                        v-model="$store.state.volume"
-                        :min="0"
-                        :max="100"
-                        :interval="1"
-                        :dot-size="12"
-                        :height="10"
-                        style="width:100px;margin-left: 5px"
-                ></vue-slider>
+            <vue-slider
+                    v-model="$store.state.volume"
+                    :min="0"
+                    :max="100"
+                    :interval="1"
+                    :dot-size="12"
+                    :height="10"
+                    style="width:100px;margin-left: 5px"
+            ></vue-slider>
             <div v-show="showVolumeValue" class="volume-value">
                 {{ `音量 :  ${volume}` }}
             </div>
@@ -116,7 +116,7 @@
                 </div>
             </div>
         </div>
-<!--       音频文件信息 -------------------------------------------------------------------------------->
+        <!--       音频文件信息 -------------------------------------------------------------------------------->
         <div class="info-dialog-container" v-if="showInfoDialog">
             <div class="overlay" >
                 <!--        展示信息框-->
@@ -241,10 +241,10 @@
         align-items: center;
         justify-content: space-between;
         width: 100%;
-        height: 90%;
     }
 
     .cover-container {
+        margin-top: 15px;
         width: 50%;
         height: 100%;
         display: flex;
@@ -263,11 +263,12 @@
         width: 50%;
         height: 100%;
         margin-left: 30px;
-        margin-top: 40px;
+        margin-top: 20px;
         overflow: hidden;
     }
 
     .info-label {
+        margin-bottom: 5px;
         font-weight: bold;
         margin-right: 10px;
     }
@@ -287,7 +288,9 @@
         width: 100%;
         height: 15px;
     }
-
+    .progress-bar-container:hover {
+        cursor: pointer;
+    }
     .time-labels {
         display: flex;
         justify-content: space-between;
@@ -563,7 +566,7 @@
         z-index: 1001;
     }
     .close-button:hover {
-       background-color: rgba(255, 255, 255, 0.4);
+        background-color: rgba(255, 255, 255, 0.4);
     }
     .close-button {
         width: 30px;
@@ -708,7 +711,7 @@
             this.$bus.$on('playPrevSong',this.playLast)
             this.$bus.$on('playNextSong',this.playNext)
             this.$bus.$on('showVolume',this.showVolume)
-            this.$bus.$on('showInfo',this.showMoreInfo)
+            this.$bus.$on('showInfo',this.showInfo)
             this.$bus.$on('showPlaylist',this.showPlaylist)
             this.$bus.$on('showLyric',this.changeShowLyric)
             this.$bus.$on('showQueue',this.changeShowQueue)
@@ -741,7 +744,7 @@
                 return this.$store.state.playlists
             },
             moreInfo(){
-              return this.$store.state.moreInfoOfNowSong
+                return this.$store.state.moreInfoOfNowSong
             },
             playedTime() {
                 if (this.nowSong) {
@@ -789,6 +792,9 @@
             ...mapState(['currentIndex'])
         },
         methods: {
+            changeInfo(){
+                myAPI.changeInfo(this.$store.getters.nowSong.path)
+            },
             closeDialogInfo(){
                 this.$store.state.songDialogInfo = this.$store.state.nowSongDialogInfo
                 this.showInfoDialog = false
@@ -846,12 +852,12 @@
             },
             updateProgressBarOnClick(event) {
 
-                    const progressBar = this.$refs.footerProgressBar;
-                    const rect = progressBar.getBoundingClientRect();
-                    const offsetX = event.clientX - rect.left;
-                    const progressBarWidth = progressBar.offsetWidth;
-                    const newProgress = (offsetX / progressBarWidth) * 100;
-                    this.$bus.$emit('changeProgress', newProgress);
+                const progressBar = this.$refs.footerProgressBar;
+                const rect = progressBar.getBoundingClientRect();
+                const offsetX = event.clientX - rect.left;
+                const progressBarWidth = progressBar.offsetWidth;
+                const newProgress = (offsetX / progressBarWidth) * 100;
+                this.$bus.$emit('changeProgress', newProgress);
             },
             updateProgressBarOnClickVolume(event) {
                 const progressBar = this.$refs.footerVolumeProgressBar;
@@ -885,7 +891,11 @@
                 }, 1000);
             },
             showInfo(){
-                this.showInfoDialog = !this.showInfoDialog
+                if (!this.showInfoDialog) {
+                    this.showMoreInfo(0,null)
+                }else{
+                    this.closeDialogInfo()
+                }
             },
             showPlaylist(){
                 this.showPlaylistModal = !this.showPlaylistModal
@@ -923,8 +933,8 @@
                         if (this.nextSongsIndex === 0) {
                             this.$store.state.playNextSongs = true
                         }
+                        this.$store.state.isPlaying = true
                     }else{
-                        console.log("临时队列结束")
                         if (this.nextSongs.length !== 0 && this.nextSongsIndex === this.nextSongs.length - 1) {
                             this.$store.state.nextSongsIndex = -1
                             this.$store.state.nextSongs = []
@@ -952,6 +962,7 @@
                         }else{
                             this.$store.state.nextSongsIndex -= 1
                         }
+                        this.$store.state.isPlaying = true
                     }else{
                         this.$store.dispatch('prevSong');
                     }
