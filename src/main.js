@@ -32,7 +32,6 @@ new Vue({
         Vue.prototype.$bus = this
         window.myAPI.getSavingState().then(savingState => {
             if(savingState){
-                console.log(savingState.showFolders)
                     this.$store.commit('SET_VOLUME',savingState.volume)
                     this.$store.commit('SET_CURRENT_INDEX',savingState.currentIndex)
                     this.$store.commit('SET_NOW_MODE',savingState.nowMode)

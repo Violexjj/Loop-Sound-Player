@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld('myAPI', {
     onRandom: (callback) => ipcRenderer.on('random', callback),
     onOne: (callback) => ipcRenderer.on('one', callback),
     onFinishScan: (callback) => ipcRenderer.on('finishScan', callback),
+    onFinishScanErrorMix: (callback) => ipcRenderer.on('finishScanErrorMix', callback),
     onCancelScan: (callback) => ipcRenderer.on('cancelScan', callback),
     onOpenSettings: (callback) => ipcRenderer.on('openSettings', callback),
 
@@ -176,6 +177,9 @@ contextBridge.exposeInMainWorld('myAPI', {
 
     addFiles:()=>{
         ipcRenderer.invoke('add-files')
+    },
+    dragFile:(filePaths)=>{
+        ipcRenderer.invoke('dragFile', filePaths)
     },
     miniMode:(miniMode)=>{
         ipcRenderer.invoke('miniMode',miniMode)

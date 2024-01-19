@@ -62,11 +62,11 @@
                 </div>
             </div>
 <!--        歌曲列表-->
-            <div class="song-table-body route-container" >
+            <div class="song-table-body route-container" ref="container">
                 <div
                         v-for="(song, index) in songsWithSelection"
                         :key="song.id"
-                        :class="['song-row', { 'selected-row': index === contextIndex }]"
+                        :class="['song-row', { 'selected-row': index === contextIndex || index === checkIndex}]"
                         @dblclick="changeQueueAndPlay(filteredSongs, index);clearShuffledIndex()"
                         @click="selectThisSong(index)"
                         @contextmenu.prevent="showContext(index,$event)"
@@ -206,7 +206,33 @@
 
     export default {
         name: 'SongsInPlaylist',
+        updated() {
+            const observer = new IntersectionObserver(
+                async (entries) => {
+                    for (const entry of entries) {
+                        if (entry.isIntersecting) {
+                            const img = entry.target.childNodes[0].childNodes[0]
+                            if (img && img.getAttribute('data-src')) {
+                                img.src = await myAPI.getSongCover(img.getAttribute('data-src'),2)
+                                observer.unobserve(entry.target);
+                            }
+                        }
+                    }
+                },
+                { rootMargin: '0px', threshold: 0.1 }
+            );
+
+            this.$nextTick(() => {
+                const songRows = this.$refs.songRows;
+                if (songRows && songRows.length) {
+                    songRows.forEach((row) => {
+                        observer.observe(row);
+                    });
+                }
+            });
+        },
         mounted() {
+            this.$bus.$on('openInLibrary',(index) => this.openInLibrary(index))
             this.$store.state.showContextMenu = false
             this.contextIndex = -1
             // 在导航切换进来时重新计算 filteredSongs
@@ -250,7 +276,8 @@
                 contextIndex:-1,
                 toHandleIndex:-1,
                 showDelete:false,
-                showDeleteFile:false
+                showDeleteFile:false,
+                checkIndex: -1
             }
         },
         beforeRouteLeave(to, from, next) {
@@ -299,6 +326,21 @@
             },
         },
         methods :{
+            openInLibrary(index){
+                console.log(index)
+                const songRows = this.$refs.songRows;
+                if (Array.isArray(songRows) && index >= 0 && index < songRows.length) {
+                    const container = this.$refs.container; // 你的滚动容器的 ref
+
+                    // 计算滚动条的位置，使得 song-row 定位到视窗中间
+                    const offsetTop = songRows[index].offsetTop;
+                    const containerHeight = container.clientHeight;
+                    const songRowHeight = songRows[index].clientHeight;
+
+                    container.scrollTop = offsetTop - (containerHeight - songRowHeight) / 2;
+                    this.checkIndex = index
+                }
+            },
             setNextSongToPlay(song, index){
                 if (this.$store.state.playNextSongs) {
                     this.$store.state.notChangeNextSong = true

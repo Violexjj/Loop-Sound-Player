@@ -55,6 +55,31 @@
                 return scrollbarWidth;
             },
         },
+        updated() {
+            const observer = new IntersectionObserver(
+                async (entries) => {
+                    for (const entry of entries) {
+                        if (entry.isIntersecting) {
+                            const img = entry.target.childNodes[0].childNodes[0]
+                            if (img && img.getAttribute('data-src')) {
+                                img.src = await myAPI.getSongCover(img.getAttribute('data-src'),2)
+                                observer.unobserve(entry.target);
+                            }
+                        }
+                    }
+                },
+                { rootMargin: '0px', threshold: 0.1 }
+            );
+
+            this.$nextTick(() => {
+                const songRows = this.$refs.songRows;
+                if (songRows && songRows.length) {
+                    songRows.forEach((row) => {
+                        observer.observe(row);
+                    });
+                }
+            });
+        },
         mounted() {
             // 在导航切换进来时重新计算 filteredSongs
             // this.$store.commit('SET_FILTER_TYPE','byAlbums')

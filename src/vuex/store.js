@@ -423,7 +423,7 @@ const mutations = {
 
 const state = {
     check: null,
-    nowVersion: "0.9.0",
+    nowVersion: "1.0.0",
     latestVersion: null,
     latestVersionInfo: "",
     errorMessage:"请开启自动检查更新",
@@ -476,10 +476,11 @@ const state = {
     exit : false,
     globalShortcut : false,
     deleteLocalFile : false,
-    savedCurrentProgress : 0,
+    savedCurrentPlaytime : 0,
     onlineLrc:false,
     lyricDirectory:"未设置",
     nowSongNetId: -1,
+    indexInLibrary: -1,
     showContextMenu:false,
     songDialogInfo:null,
     nowSongDialogInfo:null,

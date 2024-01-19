@@ -50,6 +50,9 @@
                     <div class="playlist-option" @click="setNextSongToPlay()">
                         {{ `下一首播放`}}
                     </div>
+                    <div class="playlist-option" @click="openInLibrary()">
+                        {{ `在音乐库中查看`}}
+                    </div>
                     <div class="playlist-option2">
                         {{ `添加至播放列表`}}
                     </div>
@@ -369,6 +372,21 @@
         },
         props: ['search'],
         methods : {
+            openInLibrary(){
+                const index = this.$store.state.songs.songs.findIndex(song => song.id === this.chosenSong.id)
+                if (index !== -1) {
+                    if (this.$route.path !== "/Library") {
+                        this.$router.push({
+                            name: "Library",
+                        });
+                    }
+                    setTimeout(()=>{
+                        this.$bus.$emit('openInLibrary',index)
+                    },1000)
+
+                }
+                this.showPlaylistModal =false
+            },
             setNextSongToPlay(){
                 if (this.$store.state.playNextSongs) {
                     this.$store.state.notChangeNextSong = true

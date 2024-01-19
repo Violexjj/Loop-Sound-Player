@@ -219,7 +219,7 @@
                                 :interval="1"
                                 :dot-size="12"
                                 :height="10"
-                                @click="console.log(this.$store.state.lyricFont)"
+                                :duration="0.2"
                         ></vue-slider>
                     </div>
                 </td>
@@ -240,6 +240,7 @@
                             :interval="1"
                             :dot-size="12"
                             :height="10"
+                            :duration="0.2"
                         ></vue-slider>
                     </div>
                 </td>
@@ -260,6 +261,7 @@
                                 :interval="1"
                                 :dot-size="12"
                                 :height="10"
+                                :duration="0.2"
                         ></vue-slider>
                     </div>
                 </td>
@@ -280,6 +282,7 @@
                                 :interval="1"
                                 :dot-size="12"
                                 :height="10"
+                                :duration="0.2"
                         ></vue-slider>
                     </div>
                 </td>
@@ -851,7 +854,7 @@
                             name: "Library",
                         });
                     }
-                },2000)
+                },350)
 
             }
         }

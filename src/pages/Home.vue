@@ -139,7 +139,6 @@
         },
         mounted(){
             this.$bus.$on('songOnTop',this.scrollToCurrentSong)
-
         },
         watch: {
             showQueue:{
@@ -525,7 +524,7 @@
         color: rgba(255, 255, 255, 0.4);
         font-weight: bold;
         letter-spacing: 1px;
-        transition: 0.2s;
+        transition: 0.25s;
         border-radius: 10px;
         scroll-behavior: smooth;
     }

@@ -53,15 +53,24 @@
         <!-- 进度条 -->
 
         <div class="progress-bar-container">
-            <vue-range-slider
+            <vue-slider
                     v-model="currentProgress"
                     :min="0"
                     :max="100"
-                    step="0.1"
-            ></vue-range-slider>
+                    :interval="0.1"
+                    :dot-size="20"
+                    :height="15"
+                    style="width: 100%;margin-top: 21px"
+                    class="slider"
+                    :duration="0.18"
+                    :lazy="true"
+                    :tooltip="'none'"
+            >
+
+            </vue-slider>
             <div class="time-labels">
-                <span class="played-time">{{ playedTime }}</span>
-                <span class="total-time">{{ nowSongDuration }}</span>
+                <span  class="played-time">{{ playedTime?playedTime:"00:00" }}</span>
+                <span class="total-time">{{ nowSongDuration?nowSongDuration:"00:00" }}</span>
             </div>
         </div>
 
@@ -93,6 +102,7 @@
                     :interval="1"
                     :dot-size="12"
                     :height="10"
+                    :duration="0.2"
                     style="width:100px;margin-left: 5px"
             ></vue-slider>
             <div v-show="showVolumeValue" class="volume-value">
@@ -286,16 +296,16 @@
         justify-content: space-between;
         align-items: center;
         width: 100%;
-        height: 15px;
+        height: 100%;
     }
-    .progress-bar-container:hover {
+    .slider:hover{
         cursor: pointer;
     }
     .time-labels {
+        padding-top: 6px;
         display: flex;
         justify-content: space-between;
         width: 100%;
-        margin-top: 6px;
         font-size: 12px;
         color: white;
     }
@@ -588,8 +598,6 @@
     import { mix3} from "@/mixin";
     import {mapMutations, mapGetters,mapState} from "vuex"
     import HowlerPlayer from './HowlerPlayer'
-    import VueRangeSlider from 'vue-range-slider'
-    import 'vue-range-slider/dist/vue-range-slider.css'
     import VueSlider from 'vue-slider-component';
     import 'vue-slider-component/theme/default.css'
 
@@ -695,7 +703,7 @@
                 this.$store.commit('CHANGE_MODE_AND_INDEX')
             })
         },
-        components : {HowlerPlayer,VueRangeSlider,VueSlider},
+        components : {HowlerPlayer,VueSlider},
         data() {
             return {
                 showPlaylistModal: false, // 控制弹出框显示状态
@@ -752,14 +760,17 @@
                     const playedDurationInMilliseconds = (this.currentProgress / 100) * totalDurationInMilliseconds;
                     this.$store.state.currentPlayTime = playedDurationInMilliseconds / 1000
                     return this.formatTime(playedDurationInMilliseconds);
+                }else{
+                    return false
                 }
-                return '00:00';
+
             },
             nowSongDuration() {
                 if (this.nowSong) {
                     return this.nowSong.duration.substring(0, 5);
+                }else{
+                    return false
                 }
-                return '00:00';
             },
             volume: {
                 get() {
@@ -848,7 +859,12 @@
             },
 
             padTime(time) {
-                return time.toString().padStart(2, '0');
+                if (isNaN(time.toString().padStart(2, '0'))) {
+                    return "00"
+                }else{
+                    return time.toString().padStart(2, '0');
+                }
+
             },
             updateProgressBarOnClick(event) {
 

@@ -18,13 +18,17 @@
          @click="closeContext()"
          @blur="closeContext"
     >
+        <!--        显示文件扫描情况-->
+        <div v-show="showReboot" class="showReboot">
+            {{info}}
+        </div>
         <div class="app" v-show="!this.$store.state.miniMode">
             <div class="logo-and-control draggable-area" id="draggable-area">
                 <!--                logo部分-->
                 <div class="logo">
                     <img src="./assets/logoImg.png" alt="Logo" class="logo-image"
                          :class="{ breathing: isPlaying }">
-                    <span class="playerName">Loop Sound Player</span>
+                    <span class="playerName">Sonorbit</span>
                 </div>
                 <!--                歌曲信息部分-->
                 <div class="songInfo">
@@ -137,6 +141,18 @@
     </div>
 </template>
 <style>
+    .showReboot {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 8px 16px;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        border-radius: 20px;
+        font-size: 16px;
+        z-index: 1000;
+    }
     .miniMode{
         margin-top: 9px;
         display: flex;
@@ -291,6 +307,7 @@
         border-radius: 15px;
         padding: 4px 8px;
         white-space: nowrap;
+        letter-spacing: 1px;
     }
     .songInfo {
         margin-left: 10px;
@@ -481,10 +498,33 @@
         data(){
             return{
                 showUpdate: false,
-                playlistInitial: true
+                playlistInitial: true,
+                info : "",
+                showReboot : false,
             }
         },
         created() {
+            myAPI.onFinishScan((_event) => {
+                this.finishScan(true)
+            })
+            myAPI.onFinishScanErrorMix((_event) => {
+                this.finishScan(false)
+            })
+            // 接收外部拖拽文件添加到音乐库
+            document.addEventListener('dragover', (event) => {
+                event.preventDefault();
+            });
+
+            document.addEventListener('drop', (event) => {
+                event.preventDefault();
+                this.info = "等待扫描中"
+                this.showReboot = true
+                const filePaths = []
+                Array.from(event.dataTransfer.files).forEach((file) => {
+                    filePaths.push(file.path);
+                });
+                myAPI.dragFile(filePaths)
+            });
 
             this.$store.commit('SHUFFLE_INDEX_LIST')
             myAPI.onSaveBeforeQuit((_event,arg) => {
@@ -590,6 +630,29 @@
             }
         },
         methods : {
+            finishScan(success){
+                if (success) {
+                    this.info = "扫描结束，音乐库已更新，即将跳转至音乐库"
+                    myAPI.getAllSongs().then(songs => {
+                        this.$store.commit('SET_SONGS', songs);
+                    });
+                    setTimeout(()=>{
+                        this.showReboot = false
+                        if (this.$route.path !== "/Library") {
+                            this.$router.push({
+                                name: "Library",
+                            });
+                        }
+                    },2000)
+                }else{
+                    this.info = "扫描失败，请不要同时扫描文件和文件夹"
+                    setTimeout(()=>{
+                        this.showReboot = false
+                    },2000)
+                }
+
+
+            },
             getFolderName(folderPath) {
                 return folderPath.substring(folderPath.lastIndexOf('\\') + 1);
             },
@@ -614,6 +677,7 @@
                 try {
                     const x = await axios.get(`https://api.github.com/repos/Violexjj/Loop-Sound-Player/releases/latest`)
                     this.$store.state.latestVersion = x.data.tag_name.slice(1)
+                    // this.$store.state.latestVersion = "0.9.1"
                     this.$store.state.latestVersionInfo = x.data.body
                     if (this.$store.state.latestVersion) {
                         if (this.$store.state.latestVersion !== this.$store.state.nowVersion) {
@@ -742,7 +806,12 @@
                 myAPI.closeWindow(savingState)
             },
             closeWindow(fromTray){
-                this.$store.state.savedCurrentPlaytime = this.$store.state.currentPlayTime
+                if (this.$store.state.playNextSongs) {
+                    this.$store.state.savedCurrentPlaytime = 0
+                }else{
+                    this.$store.state.savedCurrentPlaytime = this.$store.state.currentPlayTime
+                }
+
                 if (fromTray) {
                     this.saveAndClose()
                 }else{
