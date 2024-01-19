@@ -1,3 +1,4 @@
+
 //运行vue，执行 npm run serve
 // 打开界面，npm start
 // 打包vue为dist，npm run build
@@ -42,10 +43,10 @@ const createWindow = () => {
         win.setMinimumSize(642, 629);
 
     // 装载页面
-    //win.loadURL('http://10.163.137.110:8080');
+    win.loadURL('http://192.168.41.6:8080');
     //win.loadURL('https://music.163.com/');
     // win.loadFile('./index.html');
-    win.loadFile(path.join(__dirname, 'dist', 'index.html'));
+    //win.loadFile(path.join(__dirname, 'dist', 'index.html'));
 
     // 打开开发者工具
     // win.webContents.openDevTools();
@@ -88,7 +89,7 @@ const createWindow = () => {
         console.log("after close: ", rightWindowState)
         store.set('windowState', rightWindowState);
         //保存设置状态
-        const appDataPath = path.join(process.env.APPDATA, 'Loop Sound Player');
+        const appDataPath = path.join(process.env.APPDATA, 'Sonorbit');
         const savingStatePath = path.join(appDataPath, 'savingState.json');
         if (!fs.existsSync(appDataPath)) {
             fs.mkdirSync(appDataPath);
@@ -109,7 +110,7 @@ const createWindow = () => {
     const trayIcon = nativeImage.createFromPath(path.join(__dirname, 'dist','img','logo2.ico'));
     tray = new Tray(trayIcon);
     // 设置托盘右键菜单
-    tray.setToolTip('Loop Sound Player');
+    tray.setToolTip('Sonorbit');
     const contextMenu = Menu.buildFromTemplate([
         { label: '打开播放器', click: () => {
                 if (win) {
@@ -278,26 +279,32 @@ else {
 }
 
 // 修改元数据
-// ipcMain.handle('changeData', async (event, path) => {
-//     // console.log(path)
-//     // const fileBuffer = await fs.promises.readFile(path)
-//     const tag = require('flac-tagger')
-//     // const tags = tag.readFlacTags(fileBuffer)
-//     // console.log((await tags).tagMap.ARTIST)
-//     // const tagMap = {
-//     //     FlacTagMap:{
-//     //         title: 'hhh'
-//     //     }
-//     // }
-//     // await tag.writeFlacTags(tagMap, path)
-//     // 读取 FLAC 文件的内容
-//     const fileBuffer = await fs.promises.readFile(path);
-//
-//     // 读取 FLAC 文件的标签信息
-//     const tags = await tag.readFlacTags(fileBuffer);
-//     tags.tagMap.TITLE = "fds"
-//     await tag.writeFlacTags(tags, path)
-// });
+ipcMain.handle('changeInfo', async (event, path) => {
+    // console.log(path)
+    // const NodeID3 = require('node-id3')
+    // const tags = NodeID3.read(path)
+    // console.log(tags);
+    // tags.comment.text = "Sun"
+    // const success = NodeID3.write(tags, path)
+    // console.log(success)
+    // const fileBuffer = await fs.promises.readFile(path)
+    // const tag = require('flac-tagger')
+    // const tags = tag.readFlacTags(fileBuffer)
+    // console.log((await tags).tagMap.ARTIST)
+    // const tagMap = {
+    //     FlacTagMap:{
+    //         title: 'hhh'
+    //     }
+    // }
+    // await tag.writeFlacTags(tagMap, path)
+    // 读取 FLAC 文件的内容
+    const fileBuffer = await fs.promises.readFile(path);
+
+    // 读取 FLAC 文件的标签信息
+    // const tags = await tag.readFlacTags(fileBuffer);
+    // tags.tagMap.TITLE = "fds"
+    // await tag.writeFlacTags(tags, path)
+});
 
 // 迷你模式
 ipcMain.handle('miniMode', async (event, miniMode) => {
@@ -317,6 +324,14 @@ ipcMain.handle('miniMode', async (event, miniMode) => {
     } catch (error) {
         console.error('open miniMode failed:', error);
         throw error;
+    }
+});
+
+ipcMain.handle('openFolder', (event, folderPath) => {
+    try {
+        shell.showItemInFolder(folderPath);
+    } catch (error) {
+        console.error('Error opening and highlighting folder:', error);
     }
 });
 
@@ -382,7 +397,7 @@ ipcMain.handle('read-file', async (event, filePath,lyricDirectory,songId) => {
         }
 
         //网易云id
-        const netIdFilePath = path.join(process.env.APPDATA, 'Loop Sound Player', 'songNetId.json');
+        const netIdFilePath = path.join(process.env.APPDATA, 'Sonorbit', 'songNetId.json');
 
         if (!fs.existsSync(netIdFilePath)) {
             fs.writeFileSync(netIdFilePath, '[]', 'utf-8');
@@ -524,7 +539,7 @@ ipcMain.handle('readFileForMoreInfo', async (event, filePath,songId) => {
         }
 
         //网易云id
-        const netIdFilePath = path.join(process.env.APPDATA, 'Loop Sound Player', 'songNetId.json');
+        const netIdFilePath = path.join(process.env.APPDATA, 'Sonorbit', 'songNetId.json');
 
         if (!fs.existsSync(netIdFilePath)) {
             fs.writeFileSync(netIdFilePath, '[]', 'utf-8');
@@ -604,9 +619,9 @@ ipcMain.handle('changeLyricDirectory', async (event) => {
 //读取所有歌曲
 ipcMain.handle('getAllSongs', async (event) => {
     try {
-        //const filePath = path.join(process.env.APPDATA, 'Loop Sound Player\\songsInProduction.json');
-        const filePath = path.join(process.env.APPDATA, 'Loop Sound Player\\songsNoSameId.json');
-        //C:\Users\30595\AppData\Roaming\Loop Sound Player\songs.json
+        //const filePath = path.join(process.env.APPDATA, 'Sonorbit\\songsInProduction.json');
+        const filePath = path.join(process.env.APPDATA, 'Sonorbit\\songsNoSameId.json');
+        //C:\Users\30595\AppData\Roaming\Sonorbit\songs.json
 
         const folderPath = path.dirname(filePath);
         if (!fs.existsSync(folderPath)) {
@@ -633,7 +648,7 @@ ipcMain.handle('getAllSongs', async (event) => {
 //读取保存的状态
 ipcMain.handle('getSavingState', async (event) => {
     try {
-        const filePath = path.join(process.env.APPDATA, 'Loop Sound Player\\savingState.json');
+        const filePath = path.join(process.env.APPDATA, 'Sonorbit\\savingState.json');
         if (!fs.existsSync(filePath)) {
             fs.mkdirSync(path.dirname(filePath), { recursive: true });
             const rawDate  = "{\"savingState\":{\"queue\":[{\"id\":\"\",\"path\":\"\",\"cTime\":\"\",\"title\":\"\",\"artist\":\"\",\"album\":\"\",\"duration\":\"\",\"bitrate\":\"\",\"sampleRate\":\"\",\"bitsPerSample\":\"\",\"fileSize\":\"\"}]," +
@@ -650,6 +665,9 @@ ipcMain.handle('getSavingState', async (event) => {
                 "\"showTlyric\":true," +
                 "\"highlight\":true," +
                 "\"showFormat\":true," +
+                "\"showFolders\":true," +
+                "\"showAlbums\":true," +
+                "\"showArtists\":true," +
                 "\"queueModal\":true," +
                 "\"lyricsModal\":false," +
                 "\"infoModal\":false," +
@@ -659,7 +677,7 @@ ipcMain.handle('getSavingState', async (event) => {
                 "\"onlineLrc\":true," +
                 "\"savedCurrentPlaytime\":0," +
                 "\"lyricDirectory\":\"未设置\"," +
-                "\"biggerLyric\":5," +
+                "\"biggerLyric\":10," +
                 "\"blur\":40," +
                 "\"bright\":100," +
                 "\"lyricFont\":20}}"
@@ -677,8 +695,8 @@ ipcMain.handle('getSavingState', async (event) => {
 //读取所有播放列表
 ipcMain.handle('getAllPlaylists', async (event) => {
     try {
-        const filePath = path.join(process.env.APPDATA, 'Loop Sound Player\\playlists.json');
-        //C:\Users\30595\AppData\Roaming\Loop Sound Player\songs.json
+        const filePath = path.join(process.env.APPDATA, 'Sonorbit\\playlists.json');
+        //C:\Users\30595\AppData\Roaming\Sonorbit\songs.json
         if (!fs.existsSync(filePath)) {
             return []; // 返回空数组，因为文件不存在
         }
@@ -696,8 +714,8 @@ ipcMain.handle('getAllPlaylists', async (event) => {
 
 //添加新的列表
 ipcMain.handle('add-new-playlist-or-delete', async (event, newPlaylist, addOrDelete) => {
-    const filePath = path.join(process.env.APPDATA, 'Loop Sound Player\\playlists.json');
-    const coverDir = path.join(app.getPath('appData'), 'Loop Sound Player', 'cover');
+    const filePath = path.join(process.env.APPDATA, 'Sonorbit\\playlists.json');
+    const coverDir = path.join(app.getPath('appData'), 'Sonorbit', 'cover');
     const coverPath = path.join(coverDir, newPlaylist + '.jpg'); // 假设使用 jpg 格式的封面图片
 
     // 如果封面文件夹不存在，则创建一个名为 `cover` 的文件夹
@@ -731,8 +749,8 @@ ipcMain.handle('add-new-playlist-or-delete', async (event, newPlaylist, addOrDel
 
 //修改播放列表名称
 ipcMain.handle('rename', (event, {oldName,newName}) => {
-    const filePath = path.join(process.env.APPDATA, 'Loop Sound Player\\playlists.json');
-    const coverDir = path.join(app.getPath('appData'), 'Loop Sound Player', 'cover');
+    const filePath = path.join(process.env.APPDATA, 'Sonorbit\\playlists.json');
+    const coverDir = path.join(app.getPath('appData'), 'Sonorbit', 'cover');
     const oldCoverPath = path.join(coverDir, oldName + '.jpg'); // 假设使用 jpg 格式的封面图片
     const newCoverPath = path.join(coverDir, newName + '.jpg'); // 假设使用 jpg 格式的封面图片
 
@@ -763,7 +781,7 @@ ipcMain.handle('rename', (event, {oldName,newName}) => {
 //添加或者删除播放列表中的歌曲
 ipcMain.handle('addTo-or-deleteFrom-playlist', async (event, playlistName, toModifySongsId, addOrDelete) => {
     try {
-        const filePath = path.join(process.env.APPDATA, 'Loop Sound Player', 'playlists.json');
+        const filePath = path.join(process.env.APPDATA, 'Sonorbit', 'playlists.json');
 
         if (!fs.existsSync(filePath)) {
             console.error('playlists.json not found');
@@ -804,7 +822,7 @@ ipcMain.handle('addTo-or-deleteFrom-playlist', async (event, playlistName, toMod
 //从songs.json中删除歌曲
 ipcMain.handle('delete-from-library', async (event, toDeleteSongsId) => {
     try {
-        const libraryFilePath = path.join(app.getPath('appData'), 'Loop Sound Player', 'songsNoSameId.json');
+        const libraryFilePath = path.join(app.getPath('appData'), 'Sonorbit', 'songsNoSameId.json');
         const libraryData = fs.readFileSync(libraryFilePath, 'utf8');
         const libraryObject = JSON.parse(libraryData);
 
@@ -814,7 +832,7 @@ ipcMain.handle('delete-from-library', async (event, toDeleteSongsId) => {
         fs.writeFileSync(libraryFilePath, updatedLibraryData, 'utf8');
 
         // 删除播放列表中id
-        const playlistsFilePath = path.join(app.getPath('appData'), 'Loop Sound Player', 'playlists.json');
+        const playlistsFilePath = path.join(app.getPath('appData'), 'Sonorbit', 'playlists.json');
         if (fs.existsSync(playlistsFilePath)) {
             const playlistsData = fs.readFileSync(playlistsFilePath, 'utf8');
             const playlistsObject = JSON.parse(playlistsData);
@@ -868,7 +886,7 @@ ipcMain.handle('getSongCover', async (event, filePath,type) => {
 //获取播放列表的封面base64数据
 ipcMain.handle('getPlaylistCover', async (event, playlistName) => {
     try {
-        const coverDir = path.join(app.getPath('appData'), 'Loop Sound Player', 'cover');
+        const coverDir = path.join(app.getPath('appData'), 'Sonorbit', 'cover');
         const coverPath = path.join(coverDir, playlistName + '.jpg'); // 假设使用 jpg 格式的封面图片
 
         // 如果封面文件夹不存在，则创建一个名为 `cover` 的文件夹
@@ -893,7 +911,7 @@ ipcMain.handle('getPlaylistCover', async (event, playlistName) => {
 // 设置播放列表的封面
 ipcMain.handle('setPlaylistCover', async (event, playlistName) => {
     try {
-        const coverDir = path.join(app.getPath('appData'), 'Loop Sound Player', 'cover');
+        const coverDir = path.join(app.getPath('appData'), 'Sonorbit', 'cover');
         const coverPath = path.join(coverDir, playlistName + '.jpg'); // 假设使用 jpg 格式的封面图片
 
         // 如果封面文件夹不存在，则创建一个名为 `cover` 的文件夹
@@ -937,7 +955,7 @@ ipcMain.handle('setPlaylistCover', async (event, playlistName) => {
 ipcMain.handle('sort-songs', async (event,orderType, newArray,playlistName) => {
     try {
         if(!playlistName){
-            const filePath = path.join(app.getPath('appData'), 'Loop Sound Player', 'songsNoSameId.json');
+            const filePath = path.join(app.getPath('appData'), 'Sonorbit', 'songsNoSameId.json');
             const songsData = fs.readFileSync(filePath, 'utf8');
             const songsObject = JSON.parse(songsData);
             const songsCopy = [...songsObject.songs];
@@ -960,7 +978,7 @@ ipcMain.handle('sort-songs', async (event,orderType, newArray,playlistName) => {
             const updatedSongsData = JSON.stringify(songsObject, null, 2);
             fs.writeFileSync(filePath, updatedSongsData, 'utf8');
         }else{
-            const filePath = path.join(process.env.APPDATA, 'Loop Sound Player', 'playlists.json');
+            const filePath = path.join(process.env.APPDATA, 'Sonorbit', 'playlists.json');
             const playlistsData = fs.readFileSync(filePath, 'utf-8');
             const playlists = JSON.parse(playlistsData);
             const playlistIndex = playlists.findIndex(playlist => playlist.name === playlistName);
@@ -982,7 +1000,7 @@ ipcMain.handle('sort-songs', async (event,orderType, newArray,playlistName) => {
 //写入歌曲的网易云netId
 ipcMain.handle('setId', async (event,netId, songId) => {
     try {
-        const filePath = path.join(process.env.APPDATA, 'Loop Sound Player', 'songNetId.json');
+        const filePath = path.join(process.env.APPDATA, 'Sonorbit', 'songNetId.json');
 
         if (!fs.existsSync(filePath)) {
             fs.writeFileSync(filePath, '[]', 'utf-8');
@@ -1058,6 +1076,57 @@ ipcMain.handle('add-files', async (event) => {
     });
 });
 
+// 处理外部拖拽的文件或者文件夹
+    ipcMain.handle('dragFile', async (event, filePaths) => {
+        if (filePaths.length === 1) {
+            const filePath = filePaths[0];
+            try {
+                const stats = fs.statSync(filePath);
+                if (stats.isFile()) {
+                    // 单个文件
+                    handleMetadata('file', filePath).then(() => {
+                        win.webContents.send('finishScan');
+                    }).catch(error => {
+                        console.error('处理元数据时出错:', error);
+                    });
+                } else if (stats.isDirectory()) {
+                    // 单个文件夹
+                    handleMetadata('folder', filePath).then(() => {
+                        win.webContents.send('finishScan');
+                    }).catch(error => {
+                        console.error('处理元数据时出错:', error);
+                    });
+                }
+            } catch (error) {
+                console.error(`Error while processing ${filePath}: ${error.message}`);
+            }
+        } else if (filePaths.length > 1) {
+            const firstFileType = fs.statSync(filePaths[0]).isFile() ? 'file' : 'folder';
+
+            // 检查是否都是一样的类型
+            if (filePaths.every(filePath => (fs.statSync(filePath).isFile() ? 'file' : 'folder') === firstFileType)) {
+                // 都是文件
+                if (firstFileType === 'file') {
+                    handleMetadata('files', filePaths).then(() => {
+                        win.webContents.send('finishScan');
+                    }).catch(error => {
+                        console.error('处理元数据时出错:', error);
+                    });
+                }
+                // 都是文件夹
+                else if (firstFileType === 'folder') {
+                    handleMetadata('folders', filePaths).then(() => {
+                        win.webContents.send('finishScan');
+                    }).catch(error => {
+                        console.error('处理元数据时出错:', error);
+                    });
+                }
+            } else {
+                console.log('Not same type: Cannot mix files and folders.');
+                win.webContents.send('finishScanErrorMix');
+            }
+        }
+    });
 //支持的音频格式
 const isSupportedAudioFormat = (mimeType) => {
     const supportedMimeTypes = [
@@ -1071,7 +1140,7 @@ const isSupportedAudioFormat = (mimeType) => {
 //异步将所需的符合格式的音频文件扫描并添加到songs.json文件中
 const handleMetadata = async (type,  sourcePaths) => {
     try {
-        const appDataPath = path.join(process.env.APPDATA, 'Loop Sound Player');
+        const appDataPath = path.join(process.env.APPDATA, 'Sonorbit');
         if (!fs.existsSync(appDataPath)) {
             fs.mkdirSync(appDataPath);
         }
@@ -1084,7 +1153,7 @@ const handleMetadata = async (type,  sourcePaths) => {
 
             fs.writeFileSync(songsJsonPath, JSON.stringify(emptySongsArray, null, 2), 'utf-8');
         }
-        //C:\Users\30595\AppData\Roaming\Loop Sound Player\songsNoSameId
+        //C:\Users\30595\AppData\Roaming\Sonorbit\songsNoSameId
         const mm = await import('music-metadata');
         const existingData = await fs.promises.readFile(songsJsonPath, 'utf8');
         const existingMetadata = JSON.parse(existingData);
