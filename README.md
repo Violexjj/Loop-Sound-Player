@@ -25,5 +25,3 @@
 ## 视频展示
 
 b站地址：https://www.bilibili.com/video/BV1or4y1X7hc/
-
-（该视频是较早时候发布的，有很多新功能视频中没有，见谅。）
