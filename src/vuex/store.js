@@ -405,6 +405,11 @@ const mutations = {
             state.showFolders = value;
         }
     },
+    SET_OTHER_BLUR(state, value){
+        if (value !== undefined) {
+            state.otherBlur = value;
+        }
+    },
     SET_CHECK(state, value) {
         if (value !== undefined) {
             state.check = value;
@@ -423,7 +428,7 @@ const mutations = {
 
 const state = {
     check: null,
-    nowVersion: "1.0.0",
+    nowVersion: "1.0.2",
     latestVersion: null,
     latestVersionInfo: "",
     errorMessage:"请开启自动检查更新",
@@ -491,11 +496,14 @@ const state = {
     showTlyric: true,
     bright: 100,
     blur: 40,
+    otherBlur:false,
     folders:[],
     selectedFolderPath:'',
     showAlbums: true,
     showArtists: true,
-    showFolders: true
+    showFolders: true,
+    focusMode: false,
+    focusMode2: true
 }
 
 const getters = {

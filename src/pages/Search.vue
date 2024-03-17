@@ -17,10 +17,10 @@
             <div class="song-table " >
                 <div class="song-table-body" >
                     <div
-                            v-for="song in searchResults.searchedSongs" :key="song.name"
-                            class="song-row"
+                            v-for="(song,index) in searchResults.searchedSongs" :key="song.name"
+                            :class="['song-row', { 'selected-row': index === selectedSongIndex}]"
                             @dblclick="clearShuffledIndex();changeQueueAndPlay(song,0)"
-                            @contextmenu="showPlaylistModal = true;chooseSong(song)"
+                            @contextmenu="showPlaylistModal = true;chooseSong(song,index)"
                             ref="songRows"
                     >
                         <div class="cover-container">
@@ -37,7 +37,7 @@
 
             <div class="playlist-panel">
                 <!-- 关闭按钮 -->
-                <div class="modal-close" @click="showPlaylistModal = false">
+                <div class="modal-close" @click="closeModal()">
                     <div class="close-button ">
                         <img src="../assets/close.png" alt="close" class="close-image">
                     </div>
@@ -119,6 +119,10 @@
 
 
 <style scoped>
+    .selected-row {
+        background-color: rgba(255, 255, 255, 0.4);
+        border-radius: 10px;
+    }
     .cover-container{
         height: 40px;
         flex: 0.2;
@@ -152,9 +156,8 @@
     }
     .playlist-option:hover{
         cursor: pointer;
-        background-color: white; /* 鼠标悬停时的背景颜色 */
+        background-color: rgba(255, 255, 255, 0.2);
         border-radius: 10px;
-        color: black;
     }
     .close-image {
         width: 100%;
@@ -176,7 +179,7 @@
         color: white;
     }
     .close-button:hover {
-        background-color: rgba(255, 255, 255, 0.4);
+        background-color: rgba(255, 255, 255, 0.2);
     }
     .modal-close {
         position: absolute;
@@ -188,12 +191,13 @@
 
     }
     .playlist-panel {
-        background-color: rgba(0, 0, 0, 1);
+        background-color: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(20px);
         border-radius: 10px;
         padding: 10px;
         width: 80%;
         max-width: 400px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0);
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
         position: relative;
     }
     .modal {
@@ -202,7 +206,6 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.3); /* 半透明黑色背景 */
         display: flex;
         justify-content: center;
         align-items: center;
@@ -317,7 +320,8 @@
             return {
                 showPlaylistModal : false,
                 chosenSong : null,
-                observer: null
+                observer: null,
+                selectedSongIndex: null
             }
         },
         mounted() {
@@ -372,13 +376,17 @@
         },
         props: ['search'],
         methods : {
+            closeModal(){
+                this.selectedSongIndex = null
+                this.showPlaylistModal = false
+            },
             openInLibrary(){
                 const index = this.$store.state.songs.songs.findIndex(song => song.id === this.chosenSong.id)
                 if (index !== -1) {
                     if (this.$route.path !== "/Library") {
-                        this.$router.push({
-                            name: "Library",
-                        });
+                        setTimeout(()=>{
+                            this.$router.push({ name: 'Library' });
+                        },5)
                     }
                     setTimeout(()=>{
                         this.$bus.$emit('openInLibrary',index)
@@ -397,14 +405,22 @@
                 this.showPlaylistModal = false;
             },
             ...mapMutations(['ADD_TO_PLAYLIST']),
-            chooseSong(song){
+            chooseSong(song,index){
                 this.chosenSong = song
+                this.selectedSongIndex = index
             },
             addToPlaylist(playlistName){
                 const toAddSongsId = [];
                 toAddSongsId.push(this.chosenSong.id);
                 this.ADD_TO_PLAYLIST({ playlistName, songIds: toAddSongsId });
                 this.showPlaylistModal = false;
+                this.$store.state.filterType = "byPlaylist"
+                this.$store.state.selectedPlaylistName = playlistName
+                if (this.$route.path !== "/SongsInPlaylist") {
+                    setTimeout(()=>{
+                        this.$router.push({ name: 'SongsInPlaylist' });
+                    },5)
+                }
                 myAPI.addToOrDeleteFromPlaylist(playlistName,toAddSongsId,true)
             },
             getArtistSongsTitle(artistName) {
@@ -434,8 +450,11 @@
                 const index = 0
                 this.$store.commit('CHANGE_QUEUE_AND_PLAY', { songs, index });
                 if (this.$store.state.toHomeAfterChangeQueue) {
-                    this.$router.push({ name: 'Home' });
+                    setTimeout(()=>{
+                        this.$router.push({ name: 'Home' });
+                    },5)
                 }
+                this.showPlaylistModal = false
             }
         },
         computed: {

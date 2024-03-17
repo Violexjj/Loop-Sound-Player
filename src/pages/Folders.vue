@@ -149,6 +149,7 @@
     .playlist-box:hover{
         background-color:rgba(255, 255, 255, 0.2);
         cursor: pointer;
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
     }
     .modal-delete {
         position: fixed;
@@ -156,19 +157,19 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.3); /* 半透明黑色背景 */
         display: flex;
         justify-content: center;
         align-items: center;
         z-index: 1000; /* 确保在最上层 */
     }
     .playlist-panel-delete {
-        background-color: rgba(0, 0, 0, 0.9);
+        background-color: rgba(0, 0, 0, 0.3);
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
         border-radius: 10px;
         padding: 10px;
         width: 80%;
         max-width: 400px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0);
         position: relative;
     }
 
@@ -182,9 +183,8 @@
     }
     .playlist-option-delete:hover{
         cursor: pointer;
-        background-color: white; /* 鼠标悬停时的背景颜色 */
+        background-color: rgba(255, 255, 255, 0.2);
         border-radius: 10px;
-        color: black;
     }
 
     .modal-close-delete {
@@ -197,7 +197,7 @@
         z-index: 1001;
     }
     .close-button-delete:hover {
-        background-color: rgba(255, 255, 255, 0.4);
+        background-color: rgba(255, 255, 255, 0.2);
     }
     .close-button-delete {
         width: 30px;
@@ -239,7 +239,7 @@
     }
 
     .confirm-button:hover {
-        background-color: rgba(255, 255, 255, 0.4);
+        background-color: rgba(255, 255, 255, 0.2);
     }
     .modal {
         position: fixed;
@@ -247,41 +247,25 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.3); /* 半透明黑色背景 */
         display: flex;
         justify-content: center;
         align-items: center;
         z-index: 1000; /* 确保在最上层 */
     }
     .playlist-panel {
-        background-color: rgba(0, 0, 0, 0.7);
+        background-color: rgba(0, 0, 0, 0.3);
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
         border-radius: 10px;
         padding: 10px 10px 20px;
         width: 80%;
         max-width: 400px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0);
         position: relative;
     }
 
 
     .new-playlist-name {
         margin-top: 60px;
-    }
-    .input-container {
-        display: flex;
-        justify-content: center;
-        border: 2px solid #f0f0f0;
-        border-radius: 50px;
-    }
-
-    .transparent-input {
-        font-size: 15px;
-        background-color: transparent;
-        border: none;
-        outline: none;
-        padding: 15px;
-        width: 100%;
-        color: #f0f0f0;
     }
 
     .modal-close {
@@ -309,16 +293,9 @@
     }
 
     .close-button:hover {
-        background-color: rgba(255, 255, 255, 0.4);
+        background-color: rgba(255, 255, 255, 0.2);
     }
 
-    .close-image {
-        width: 100%;
-        height: 100%;
-        background-image: url('../assets/close.png');
-        background-size: contain; /* 保持原始比例 */
-        background-repeat: no-repeat;
-    }
 
 
 

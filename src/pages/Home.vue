@@ -1,18 +1,36 @@
 <template>
-    <div class="home-container route-container unselectable">
+    <div :class="{
+                          'home-container': true,
+                          'unselectable': true,
+                          'route-container-focus': focusMode && focusMode2,
+                          'route-container-focus2': focusMode && !focusMode2,
+                          'route-container-noFocus': !focusMode
+                        }">
         <transition name="slide-right-left">
             <div class="song-info" v-if="showInfo" :class="{ 'add-background-modal': infoModal }">
                 <div class="cover-container">
-                    <img v-if="this.$store.state.nowSongCover" :src="this.$store.state.nowSongCover" alt="cover" class="cover">
+                    <img v-if="this.$store.state.nowSongCover"
+                         :src="this.$store.state.nowSongCover" alt="cover" class="cover"
+                         title="左键半沉浸，右键全沉浸"
+                           @click="openFocusMode(1)"
+                         @contextmenu="openFocusMode(2)"
+                    >
                 </div>
 
                 <div class="threeInfo-container">
                     <b class="info title" v-if="nowSong">{{nowSong.title}}</b>
-                    <b class="info artist display" v-if="nowSong" @click="displayArtistDetail(nowSong.artist)">{{nowSong.artist}}</b>
-                    <b class="info album display" v-if="nowSong" @click="displayAlbumDetail(nowSong.album)">{{nowSong.album}}</b>
+                    <b :class="{
+                                      'info': true,
+                                      'artist': true,
+                                      'display': !focusMode,
+                                    }" v-if="nowSong" @click="displayArtistDetail(nowSong.artist)">{{nowSong.artist}}</b>
+                    <b :class="{
+                                      'info': true,
+                                      'album': true,
+                                      'display': !focusMode,
+                                    }" v-if="nowSong" @click="displayAlbumDetail(nowSong.album)">{{nowSong.album}}</b>
                     <b class="info format" v-if="this.$store.state.showFormat">{{Format}}</b>
                 </div>
-
             </div>
         </transition>
 
@@ -32,6 +50,7 @@
             'current-line': (index === currentLyricIndex),
             'highlight': (index === currentLyricIndex && highlight && line.text1 !== ''),
             'divide':(line.text1 === ''),
+            'gap':(index !== 0),
 
             'left-align': $store.state.lyricAlignmentMode === 0,
             'center-align': $store.state.lyricAlignmentMode === 1,
@@ -39,8 +58,8 @@
           },
         ]"
                     >
-                        <div :class="{'notAllowWrap':index !== currentLyricIndex}" ref="text">{{line.text1}}</div>
-                        <div :class="{'notAllowWrap':index !== currentLyricIndex}" style="margin-top: 5px" v-if="line.hasTranslation && line.text2!=='' && $store.state.showTlyric" ref="text">{{line.text2}}</div>
+                        <div :class="{'notAllowWrap':index !== currentLyricIndex, 'otherBlur':index !== currentLyricIndex&& otherBlur}" ref="text">{{line.text1}}</div>
+                        <div :class="{'notAllowWrap':index !== currentLyricIndex, 'otherBlur':index !== currentLyricIndex&& otherBlur}" style="margin-top: 5px" v-if="line.hasTranslation && line.text2!=='' && $store.state.showTlyric" ref="text">{{line.text2}}</div>
                     </div>
                 </div>
             </div>
@@ -58,7 +77,7 @@
                         class="table-row" @dblclick="playSelectedSong(index);clearShuffledIndex()"
                         :class="{ 'current-song': index === currentSongIndex }">
                         <td class="table-cell-num">{{ index + 1 }}</td>
-                        <td class="table-cell">
+                        <td class="table-cell" :title="song.title + ' - ' + song.artist">
                             {{ truncateText(song.title + " - " + song.artist),10}}
                         </td>
                     </tr>
@@ -85,11 +104,17 @@
                 songCover : null,
                 nowSongTime:0,
                 smoothSpeed:50,
-                initial: true
+                initial: true,
             };
         },
 
         computed: {
+            focusMode2(){
+                return this.$store.state.focusMode2
+            },
+            focusMode(){
+                return this.$store.state.focusMode
+            },
             showQueue(){
                 return this.$store.state.showQueue;
             },
@@ -123,8 +148,8 @@
             highlight(){
                 return this.$store.state.highlight
             },
-            divide(){
-                return this.$store.state.divide
+            otherBlur(){
+                return this.$store.state.otherBlur
             },
             currentSongIndex(){
                 return this.$store.state.currentIndex
@@ -231,6 +256,15 @@
             },
         },
         methods:{
+            openFocusMode(flag){
+                if (flag === 1) {
+                    this.$store.state.focusMode2 = true
+                    this.$store.state.focusMode = !this.$store.state.focusMode;
+                }else{
+                    this.$store.state.focusMode2 = false
+                    this.$store.state.focusMode = !this.$store.state.focusMode;
+                }
+            },
             changeScrollbarColor(isHovering) {
                 const scrollbars = document.getElementsByClassName('play-queue');
                 if (isHovering) {
@@ -254,6 +288,9 @@
                 },10)
             },
             async displayArtistDetail(artistName){
+                if (this.focusMode) {
+                    return
+                }
                 const filteredArtistSong = this.$store.state.songs.songs.filter(song => song.artist === artistName);
                 // 创建包含 name 和 songs 属性的对象
                 const artistDetail = {
@@ -277,6 +314,9 @@
             },
 
             async displayAlbumDetail(albumName){
+                if (this.focusMode) {
+                    return
+                }
                 const filteredAlbumSong = this.$store.state.songs.songs.filter(song => song.album === albumName);
                 // 创建包含 name 和 songs 属性的对象
                 const albumDetail = {
@@ -497,23 +537,38 @@
     }
     .home-container {
         display: flex;
-        gap: 13px;
+        gap: 15px;
     }
-    .route-container {
-        height: calc(97vh - 213px); /* 100px 是顶部导航栏和底部控制栏的总高度 */
+    .route-container-focus {
+        height: calc(97.5vh - 130px); /* 100px 是顶部导航栏和底部控制栏的总高度 */
+        overflow: hidden;
+    }
+    .route-container-focus2 {
+        height: calc(97.5vh - 35px); /* 100px 是顶部导航栏和底部控制栏的总高度 */
+        overflow: hidden;
+    }
+    .route-container-noFocus {
+        height: calc(97.5vh - 220px); /* 100px 是顶部导航栏和底部控制栏的总高度 */
         overflow: hidden;
     }
     .lyrics {
         flex: 4;
         padding: 5px;
         border-radius: 10px;
-        overflow: hidden;
+        overflow-x: hidden;
     }
-    .lyrics-container {
+    .lyrics::-webkit-scrollbar {
+        width: 0; /* 使滚动条不可见 */
+    }
+    .lyrics-container-focus {
         margin-top: 5px;
         padding: 2px;
-        overflow-y: auto;
-        height: calc(97.5vh - 237px); /* 设置合适的高度 */
+        height: calc(97.5vh - 150px); /* 设置合适的高度 */
+    }
+    .lyrics-container-noFocus {
+        margin-top: 5px;
+        padding: 2px;
+        height: calc(97.5vh - 240px); /* 设置合适的高度 */
     }
     .lyrics-container::-webkit-scrollbar {
         width: 0; /* 使滚动条不可见 */
@@ -524,7 +579,7 @@
         color: rgba(255, 255, 255, 0.4);
         font-weight: bold;
         letter-spacing: 1px;
-        transition: 0.25s;
+        transition: 0.2s;
         border-radius: 10px;
         scroll-behavior: smooth;
     }
@@ -551,6 +606,10 @@
         padding-top: 10px;
     }
 
+    .otherBlur{
+        filter: blur(3px);
+    }
+
     .notAllowWrap{
         white-space: nowrap;
         text-overflow: ellipsis;
@@ -564,6 +623,10 @@
         height: 30px;
     }
 
+    .gap{
+        margin-top: 10px;
+    }
+
 
     /*=================================================================================*/
     /*=================================================================================*/
@@ -572,7 +635,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        flex: 3;
+        flex: 4;
         padding: 5px;
         position: sticky;
         top: 0;
@@ -591,19 +654,23 @@
         justify-content: center;
         align-items: center;
         width: 100%;
-        height: 66.66%;
+        height: 70%;
         border-radius: 18px;
         overflow: hidden;
         margin-bottom: 10px;
-        margin-top: 15px;
+        margin-top: 0px;
+        user-select: none;
+        user-drag: none;
     }
 
     .cover {
-        transition: ease-in-out 0.3s;
+        transition: 0.25s;
         max-width: 95%;
         max-height: 95%;
         object-fit: contain;
         border-radius: 18px;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
     }
 
     .threeInfo-container {
@@ -611,7 +678,7 @@
         flex-direction: column;
         justify-content: space-around;
         align-items: center;
-        height: 33.33%;
+        height: 30%;
         width: 100%;
     }
 

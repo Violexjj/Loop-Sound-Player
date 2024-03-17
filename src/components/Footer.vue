@@ -17,21 +17,21 @@
             </div>
             <div class="center-buttons">
                 <!-- 信息按钮 -->
-                <div class="control-button" @click="showMoreInfo(0,null)">
+                <div class="control-button" @click="showMoreInfo(0,null)" title="歌曲信息">
                     <div class="info-image" ></div>
                 </div>
                 <!-- 播放模式按钮 -->
                 <div class="control-button" @click="changePlayMode">
-                    <div class="rotate-image" v-show="playMode === 0"></div>
-                    <div class="random-image" v-show="playMode === 1"></div>
-                    <div class="onesong-image" v-show="playMode === 2"></div>
+                    <div class="rotate-image" v-show="playMode === 0" title="队列循环"></div>
+                    <div class="random-image" v-show="playMode === 1" title="无序循环"></div>
+                    <div class="onesong-image" v-show="playMode === 2" title="单曲循环"></div>
                 </div>
                 <!-- 上一曲按钮 -->
-                <div class="control-button" @click="playLast(); triggerEvent1()">
+                <div class="control-button" @click="playLast(); triggerEvent1()" title="上一首">
                     <div class="prev-image"></div>
                 </div>
                 <!-- 暂停播放按钮 -->
-                <div class="control-button large" @click="togglePlay">
+                <div class="control-button large" @click="togglePlay" title="暂停/播放">
                     <div
                             v-show="!this.$store.state.isPlaying"
                             class="pause-play-image"
@@ -42,7 +42,7 @@
                     ></div>
                 </div>
                 <!-- 下一曲按钮 -->
-                <div class="control-button" @click="playNext(); triggerEvent1()">
+                <div class="control-button" @click="playNext(); triggerEvent1()" title="下一首">
                     <div class="next-image"></div>
                 </div>
             </div>
@@ -60,7 +60,7 @@
                     :interval="0.1"
                     :dot-size="20"
                     :height="15"
-                    style="width: 100%;margin-top: 21px"
+                    style="width: 100%;margin-top: 25px"
                     class="slider"
                     :duration="0.18"
                     :lazy="true"
@@ -69,8 +69,8 @@
 
             </vue-slider>
             <div class="time-labels">
-                <span  class="played-time">{{ playedTime?playedTime:"00:00" }}</span>
-                <span class="total-time">{{ nowSongDuration?nowSongDuration:"00:00" }}</span>
+                <span  class="played-time-footer">{{ playedTime?playedTime:"00:00" }}</span>
+                <span class="total-time-footer">{{ nowSongDuration?nowSongDuration:"00:00" }}</span>
             </div>
         </div>
 
@@ -78,21 +78,21 @@
         <!--        ------------------------------------------------------------------------------------------->
         <div class="right-controls">
             <!-- 歌词按钮 -->
-            <div class="control-button lyric-button" @click="changeShowLyric" :class="{ 'active': showLyric }">
+            <div class="control-button lyric-button" @click="changeShowLyric" :class="{ 'active': showLyric }" title="显示/隐藏歌词">
                 <div class="lyrics-image"></div>
             </div>
             <!-- 队列按钮 -->
-            <div class="control-button queue-button" @click="changeShowQueue()" :class="{ 'active': showQueue }">
+            <div class="control-button queue-button" @click="changeShowQueue()" :class="{ 'active': showQueue }" title="显示/隐藏队列">
                 <div class="queue-image"></div>
             </div>
             <!-- 播放列表按钮 -->
-            <div class="control-button" @click="showPlaylistModal = true">
+            <div class="control-button" @click="showPlaylistModal = true" title="切换播放列表">
                 <div class="playlist-image"></div>
             </div>
 
             <!-- 音量按钮 -->
             <div class="control-button" @click="changeMute" @wheel="adjustVolumeWithWheel">
-                <div v-show="!this.$store.state.isMute && this.volume !== 0" class="volume-image"></div>
+                <div v-show="!this.$store.state.isMute && this.volume !== 0"  class="volume-image"></div>
                 <div v-show="this.$store.state.isMute || this.volume === 0" class="noVolume-image"></div>
             </div>
             <vue-slider
@@ -103,7 +103,7 @@
                     :dot-size="12"
                     :height="10"
                     :duration="0.2"
-                    style="width:100px;margin-left: 5px"
+                    style="width:100px;margin-left: 7.5px;margin-right: 5px"
             ></vue-slider>
             <div v-show="showVolumeValue" class="volume-value">
                 {{ `音量 :  ${volume}` }}
@@ -194,11 +194,11 @@
                                 </tr>
                                 <tr>
                                     <td><div class="info-label">流派：</div></td>
-                                    <td><div class="info-value">{{ this.songInfo.moreInfo.genre }}</div></td>
+                                    <td><div class="info-value">{{ this.songInfo.moreInfo.genre[0] }}</div></td>
                                 </tr>
                                 <tr>
                                     <td><div class="info-label">注释：</div></td>
-                                    <td><div class="info-value">{{ this.songInfo.moreInfo.comment }}</div></td>
+                                    <td><div class="info-value" :title=this.songInfo.moreInfo.comment[0]>{{ this.songInfo.moreInfo.comment[0] }}</div></td>
                                 </tr>
                             </table>
                         </div>
@@ -227,7 +227,6 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.3);
         z-index: 1;
     }
     .info-dialog {
@@ -237,7 +236,9 @@
         transform: translate(-50%, -50%);
         width: 60%;
         height: 55%;
-        background-color: rgba(0, 0, 0, 0.8);
+        background-color: rgba(0, 0, 0, 0.3);
+        box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
         border-radius: 20px;
         padding: 20px;
         display: flex;
@@ -306,16 +307,16 @@
         display: flex;
         justify-content: space-between;
         width: 100%;
-        font-size: 12px;
+        font-size: 13px;
         color: white;
     }
 
-    .played-time {
+    .played-time-footer {
         padding-left: 10px;
         letter-spacing: 1px;
     }
 
-    .total-time {
+    .total-time-footer {
         padding-right: 8px;
         letter-spacing: 1px;
     }
@@ -329,7 +330,8 @@
         padding: 0 16px;
         padding-top: 8px;
         padding-bottom: 10px;
-        background-color: rgba(0, 0, 0, 0.8);
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
         color: white;
         border-radius: 20px;
         font-size: 16px;
@@ -337,7 +339,6 @@
     }
 
     .right-controls {
-        margin-left: 10px;
         display: flex;
         align-items: center;
     }
@@ -392,6 +393,7 @@
         }
     }
     .image-container {
+        margin-left: 5px;
         width: 55px;
         height: 55px;
         border-radius: 100px;
@@ -423,7 +425,6 @@
     }
 
     .center-buttons {
-        margin-right: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -535,20 +536,19 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.3); /* 半透明黑色背景 */
         display: flex;
         justify-content: center;
         align-items: center;
         z-index: 1000; /* 确保在最上层 */
     }
     .playlist-panel {
-        background-color: rgba(0, 0, 0, 0.9);
+        background-color: rgba(0, 0, 0, 0.3);
         border-radius: 10px;
         padding: 10px;
         width: 80%;
         max-width: 400px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0);
         position: relative;
+        backdrop-filter: blur(20px);
     }
 
     .playlist-options {
@@ -561,8 +561,7 @@
     }
     .playlist-option:hover{
         cursor: pointer;
-        background-color: white; /* 鼠标悬停时的背景颜色 */
-        color: black;
+        background-color: rgba(255, 255, 255, 0.2);
         border-radius: 10px;
     }
 
@@ -576,7 +575,7 @@
         z-index: 1001;
     }
     .close-button:hover {
-        background-color: rgba(255, 255, 255, 0.4);
+        background-color: rgba(255, 255, 255, 0.2);
     }
     .close-button {
         width: 30px;
@@ -677,7 +676,11 @@
                 }else{
                     this.$store.state.volume = this.$store.state.volume -3
                 }
-                this.$bus.$emit('showVolume')
+                if (this.$store.state.focusMode) {
+                    this.$bus.$emit('showVolumeFocus')
+                }else{
+                    this.$bus.$emit('showVolume')
+                }
             })
             myAPI.onUpVolumeG((_event) => {
                 if (!this.globalShortcut) {
@@ -688,7 +691,11 @@
                 }else{
                     this.$store.state.volume = this.$store.state.volume + 3
                 }
-                this.$bus.$emit('showVolume')
+                if (this.$store.state.focusMode) {
+                    this.$bus.$emit('showVolumeFocus')
+                }else{
+                    this.$bus.$emit('showVolume')
+                }
             })
             myAPI.onChangeMuteG((_event) => {
                 if (!this.globalShortcut) {

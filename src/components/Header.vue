@@ -81,11 +81,11 @@
         height: 15px;
     }
     .search-button {
-        width: 8%;
+        width: 5%;
         border: 2px solid #f0f0f0;
         padding: 10px;
         margin: 1px 2px;
-        margin-right: 10px;
+        margin-right: 5px;
         color: #f0f0f0;
         text-align: center;
         cursor: pointer;

@@ -15,15 +15,13 @@
          @keyup.ctrl.z="returnHome()"
          @keyup.ctrl.s="toSettings()"
          @keyup.ctrl.f="startSearch()"
+         @keyup.ctrl.enter="outFocus()"
          @click="closeContext()"
          @blur="closeContext"
     >
-        <!--        显示文件扫描情况-->
-        <div v-show="showReboot" class="showReboot">
-            {{info}}
-        </div>
+
         <div class="app" v-show="!this.$store.state.miniMode">
-            <div class="logo-and-control draggable-area" id="draggable-area">
+            <div v-if="!focusMode" class="logo-and-control draggable-area" id="draggable-area">
                 <!--                logo部分-->
                 <div class="logo">
                     <img src="./assets/logoImg.png" alt="Logo" class="logo-image"
@@ -46,19 +44,19 @@
                 <!--   占位                 -->
                     <div class="control-buttons-nodrag" style="margin-left: auto;"></div>
 <!--                    迷你模式-->
-                    <div class="control-button minimize minimize-button" @click="miniMode">
+                    <div class="control-button minimize minimize-button" @click="miniMode" title="迷你模式">
                         <img src="./assets/mini.png" alt="Minimize">
                     </div>
 <!--                    最小化-->
-                    <div class="control-button minimize minimize-button" @click="minimizeWindow">
+                    <div class="control-button minimize minimize-button" @click="minimizeWindow" title="最小化">
                         <img src="./assets/minimize.png" alt="Minimize">
                     </div>
 <!--                    最大化-->
-                    <div class="control-button maximize maximize-button" @click="maximizeWindow">
+                    <div class="control-button maximize maximize-button" @contextmenu="maximizeWindow(2)" @click="maximizeWindow(1)" title="左键最大化，右键全屏">
                         <img src="./assets/maximize.png" alt="Maximize">
                     </div>
 <!--                    关闭-->
-                    <div class="control-button close close-button" @click="closeWindow(false)">
+                    <div class="control-button close close-button" @click="closeWindow(false)" title="关闭">
                         <img src="./assets/closeWindow.png" alt="Close">
                     </div>
 
@@ -72,12 +70,17 @@
             </div>
 
 
-            <header class="header">
+            <header v-if="!focusMode" class="header">
                 <Header></Header>
             </header>
 
-            <main :class="'main-with-background route-container'">
-                <div id="showBlackAndRoute">
+            <main :class="{
+                                      'main-with-background': true,
+                                      'route-container': true,
+                                      'focusModeMain': focusMode,
+                                      'noFocusModeMain': !focusMode
+                                    }">
+                <div class="showBlackAndRoute">
                     <transition name="slide-up" mode="out-in">
                         <!-- 使用 v-if 条件渲染默认展示 Home 组件 -->
                         <router-view v-if="$route.name === 'Home' || $route.name === undefined" :key="$route.path"></router-view>
@@ -85,9 +88,74 @@
                         <router-view v-else></router-view>
                     </transition>
                 </div>
+                <div v-if="focusMode && focusMode2" class="buttons-container">
+                    <div class="container" >
+                        <!-- 歌词按钮 -->
+                        <div class="control-button-2 lyric-button" @click="changeShowLyric" :class="{ 'active': showLyric }">
+                            <div class="lyrics-image"></div>
+                        </div>
+                        <!-- 队列按钮 -->
+                        <div class="control-button-2 queue-button" @click="changeShowQueue()" :class="{ 'active': showQueue }">
+                            <div class="queue-image"></div>
+                        </div>
+                        <!-- 上一曲按钮 -->
+                        <div class="control-button-2" @click="playLast(); triggerEvent1()">
+                            <div class="prev-image-2"></div>
+                        </div>
+                        <!-- 暂停播放按钮 -->
+                        <div class="control-button-2 large" @click="togglePlay">
+                            <div
+                                    v-show="!this.$store.state.isPlaying"
+                                    class="pause-play-image-2"
+                            ></div>
+                            <div
+                                    v-show="this.$store.state.isPlaying"
+                                    class="pause-play-image2-2"
+                            ></div>
+                        </div>
+                        <!-- 下一曲按钮 -->
+                        <div class="control-button-2" @click="playNext(); triggerEvent1()">
+                            <div class="next-image-2"></div>
+                        </div>
+                        <!-- 播放模式按钮 -->
+                        <div class="control-button-2" @click="changePlayMode">
+                            <div class="rotate-image" v-show="playMode === 0"></div>
+                            <div class="random-image" v-show="playMode === 1"></div>
+                            <div class="onesong-image" v-show="playMode === 2"></div>
+                        </div>
+                        <!-- 音量按钮 -->
+                        <div class="control-button-2" @click="changeMute" @wheel="adjustVolumeWithWheel">
+                            <div v-show="!this.$store.state.isMute && this.volume !== 0" class="volume-image"></div>
+                            <div v-show="this.$store.state.isMute || this.volume === 0" class="noVolume-image"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="$store.state.focusMode && focusMode2" class="slider-time">
+                    <span  class="played-time">{{ playedTime?playedTime:"00:00" }}</span>
+                    <vue-slider
+                            v-model="currentProgress"
+                            :min="0"
+                            :max="100"
+                            :interval="0.1"
+                            :dot-size="20"
+                            :height="15"
+                            style="min-width: 450px;width: 90%;transition: 0.5s"
+                            class="slider"
+                            :duration="0.18"
+                            :lazy="true"
+                            :tooltip="'none'"
+                    ></vue-slider>
+                    <span class="played-time">{{ nowSongDuration?nowSongDuration:"00:00" }}</span>
+
+                </div>
+
             </main>
 
-            <footer class="footer">
+            <!--沉浸模式的拖拽区域-->
+            <div class="focus-drag" v-if="focusMode"></div>
+
+            <footer v-show="!focusMode" class="footer">
                 <Footer></Footer>
             </footer>
         </div>
@@ -138,16 +206,172 @@
         <div v-show="showUpdate" class="showIsExist">
             {{ `有新版本可用，请前往设置查看更新信息。` }}
         </div>
+        <!--        显示文件扫描情况-->
+        <div v-show="showReboot" class="showReboot">
+            {{info}}
+        </div>
+        <div v-show="showVolumeValue" class="volume-value">
+            {{ `音量 :  ${volume}` }}
+        </div>
     </div>
 </template>
 <style>
+    .played-time{
+        font-size: 13px;
+        letter-spacing: 1px;
+    }
+    .slider-time{
+        margin-top: 10px;
+        gap: 15px;
+        width: 90%;
+        margin-left: 5%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 20px;
+    }
+    .lyrics-image {
+        width: 60%;
+        height: 60%;
+        background-image: url('./assets/lrc.png');
+        background-size: contain;
+        background-repeat: no-repeat;
+    }
+    .lyric-button.active{
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+    .queue-button.active {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+    .queue-image{
+        width: 80%;
+        height: 80%;
+        background-image: url('./assets/queue.png');
+        background-size: contain; /* 保持原始比例，并适应容器 */
+        background-repeat: no-repeat;
+    }
+    .volume-image {
+        width: 60%;
+        height: 60%;
+        background-image: url('./assets/volume.png');
+        background-size: contain; /* 保持原始比例，并适应容器 */
+        background-repeat: no-repeat;
+    }
+    .noVolume-image {
+        width: 60%;
+        height: 60%;
+        background-image: url('./assets/noVolume.png');
+        background-size: contain; /* 保持原始比例，并适应容器 */
+        background-repeat: no-repeat;
+    }
+    .volume-value {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 0 16px;
+        padding-top: 8px;
+        padding-bottom: 10px;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        border-radius: 20px;
+        font-size: 16px;
+        z-index: 1000;
+    }
+    .random-image {
+        width: 70%;
+        height: 70%;
+        background-image: url('./assets/random.png');
+        background-size: contain; /* 保持原始比例，并适应容器 */
+        background-repeat: no-repeat;
+    }
+    .rotate-image {
+        width: 100%;
+        height: 100%;
+        background-image: url('./assets/rotate.png');
+        background-size: contain; /* 保持原始比例，并适应容器 */
+        background-repeat: no-repeat;
+    }
+    .onesong-image {
+        width: 80%;
+        height: 80%;
+        background-image: url('./assets/onesong.png');
+        background-size: contain; /* 保持原始比例，并适应容器 */
+        background-repeat: no-repeat;
+    }
+    .slider:hover{
+        cursor: pointer;
+    }
+    .buttons-container{
+        margin-top: 15px;
+        justify-content: center;
+        display: flex;
+    }
+    .container{
+
+        align-items: center;
+        justify-content: center;
+        display: flex;
+        gap: 10px
+    }
+
+    .pause-play-image-2 {
+        width: 80%;
+        height: 80%;
+        background-image: url('./assets/play.png');
+        background-size: contain; /* 保持原始比例，并适应容器 */
+        background-repeat: no-repeat;
+    }
+    .pause-play-image2-2 {
+        width: 80%;
+        height: 80%;
+        background-image: url('./assets/pause.png');
+        background-size: contain; /* 保持原始比例，并适应容器 */
+        background-repeat: no-repeat;
+    }
+    .next-image-2 {
+        width: 60%;
+        height: 60%;
+        background-image: url('./assets/next.png');
+        background-size: contain; /* 保持原始比例，并适应容器 */
+        background-repeat: no-repeat;
+    }
+    .prev-image-2 {
+        width: 60%;
+        height: 60%;
+        background-image: url('./assets/prev.png');
+        background-size: contain; /* 保持原始比例，并适应容器 */
+        background-repeat: no-repeat;
+    }
+    .control-button-2 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background-color: rgba(0, 0, 0, 0.3);
+        color: white;
+        border-radius: 50%;
+        cursor: pointer;
+        margin: 0 4px;
+        transition: background-color 0.2s ease; /* 添加过渡效果 */
+    }
+    .large {
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+    }
+    .control-button-2:hover{
+        background-color: rgba(255, 255, 255, 0.1);
+    }
     .showReboot {
         position: fixed;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
         padding: 8px 16px;
-        background-color: rgba(0, 0, 0, 0.8);
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
         color: white;
         border-radius: 20px;
         font-size: 16px;
@@ -272,7 +496,8 @@
         left: 50%;
         transform: translate(-50%, -50%);
         padding: 8px 16px;
-        background-color: rgba(0, 0, 0, 0.8);
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
         color: white;
         border-radius: 20px;
         font-size: 16px;
@@ -282,6 +507,15 @@
         -webkit-app-region: drag;
         width: 100%; /* 设置宽度 */
         height: 30px; /* 设置高度 */
+    }
+    .focus-drag{
+        width: 100%;
+        height: 27px;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        background-color: rgba(0, 0, 0, 0);
+        -webkit-app-region: drag;
     }
     .logo-and-control {
         display: flex;
@@ -376,6 +610,8 @@
 
 
     .background {
+        user-drag: none;
+        user-select: none;
         position: fixed;
         top: 0;
         left: 0;
@@ -383,7 +619,7 @@
         height: 100%;
         z-index: -1;
         overflow: hidden; /* 确保图片不溢出容器 */
-        background-color: rgba(0, 0, 0, 0.5); /* 设置背景颜色，可以根据需要调整 */
+        background-color: rgba(0, 0, 0, 0.5); /* 半透明黑色 */
     }
 
     .background-image {
@@ -412,17 +648,22 @@
         padding: 5px; /* 调整内边距以使内容与圆角保持一致 */
     }
 
-    main {
+    .noFocusModeMain {
         flex: 1 1 auto;
         margin-top: 10px;
         margin-bottom: 10px;
+    }
+
+    .focusModeMain{
+        flex: 1 1 auto;
+        margin-top: 5px;
     }
 
     /* 在这里设置 footer 的样式 */
     .footer {
         background-color: rgba(0, 0, 0, 0.15); /* 半透明灰色背景 */
         border-radius: 100px; /* 圆角 */
-        padding: 10px; /* 调整内边距以使内容与圆角保持一致 */
+        padding: 7px; /* 调整内边距以使内容与圆角保持一致 */
     }
 
     /* 设置全局字体颜色 */
@@ -441,7 +682,7 @@
         background-color: rgba(0, 0, 0, 0.2); /* 半透明黑色背景 */
         border-radius: 15px; /* 圆角 */
         padding: 15px; /* 调整内边距以使内容与圆角保持一致 */
-        overflow: hidden; /* 禁止滚动 */
+        overflow: auto; /* 禁止滚动 */
     }
     .route-container {
         height: calc(97vh - 210px); /* 100px 是顶部导航栏和底部控制栏的总高度 */
@@ -488,6 +729,8 @@
     import SongsInFolder from './pages/SongsInFolder'
     import {mapGetters} from "vuex";
     import axios from 'axios';
+    import VueSlider from 'vue-slider-component';
+    import 'vue-slider-component/theme/default.css'
 
     export default {
         name: "App",
@@ -495,15 +738,27 @@
         beforeDestroy() {
             this.$bus.$off()
         },
+        mounted() {
+            this.$bus.$on('showVolumeFocus',this.emitShowVolume)
+        },
         data(){
             return{
                 showUpdate: false,
                 playlistInitial: true,
                 info : "",
                 showReboot : false,
+                isNextButtonDisabled: false,
+                isPrevButtonDisabled: false,
+                showVolumeValue: false,
             }
         },
         created() {
+            myAPI.onErrorFile((_event) => {
+                this.info = "扫描失败，请检查文件"
+                setTimeout(()=>{
+                    this.showReboot = false
+                },2000)
+            })
             myAPI.onFinishScan((_event) => {
                 this.finishScan(true)
             })
@@ -548,6 +803,7 @@
             })
         },
         components: {
+            VueSlider,
             Header,
             Footer,
             Home,
@@ -563,6 +819,61 @@
             SongsInFolder
         },
         computed: {
+            focusMode2(){
+                return this.$store.state.focusMode2
+            },
+            playedTime() {
+                if (this.nowSong) {
+                    const totalDurationInMilliseconds = this.getDurationInMilliseconds(this.nowSong.duration);
+                    const playedDurationInMilliseconds = (this.currentProgress / 100) * totalDurationInMilliseconds;
+                    this.$store.state.currentPlayTime = playedDurationInMilliseconds / 1000
+                    return this.formatTime(playedDurationInMilliseconds);
+                }else{
+                    return false
+                }
+
+            },
+            nowSongDuration() {
+                if (this.nowSong) {
+                    return this.nowSong.duration.substring(0, 5);
+                }else{
+                    return false
+                }
+            },
+            showLyric(){
+                return this.$store.state.showLyrics;
+            },
+            showQueue() {
+                return this.$store.state.showQueue;
+            },
+            volume: {
+                get() {
+                    return this.$store.state.volume;
+                },
+                set(newVolume) {
+                    this.$store.state.volume = newVolume
+                }
+            },
+            playMode(){
+                return this.$store.state.nowMode
+            },
+            nextSongs(){
+                return this.$store.state.nextSongs
+            },
+            nextSongsIndex(){
+                return this.$store.state.nextSongsIndex
+            },
+            currentProgress:{
+                get() {
+                    return this.$store.state.currentProgress;
+                },
+                set(value) {
+                    this.$bus.$emit('changeProgress', value);
+                },
+            },
+            focusMode(){
+                return this.$store.state.focusMode
+            },
             playlists(){
                 return this.$store.state.playlists
             },
@@ -627,9 +938,127 @@
                         this.getLatestVersion();
                     }
                 },
-            }
+            },
         },
         methods : {
+
+            padTime(time) {
+                if (isNaN(time.toString().padStart(2, '0'))) {
+                    return "00"
+                }else{
+                    return time.toString().padStart(2, '0');
+                }
+
+            },
+            getDurationInMilliseconds(durationString) {
+                const parts = durationString.split(':');
+                const minutes = parseInt(parts[0]);
+                const seconds = parseInt(parts[1]);
+                const millisecond = parseInt(parts[2]);
+                return minutes * 60000 + seconds *1000+millisecond;
+            },
+
+            formatTime(milliseconds) {
+                const minutes = Math.floor(milliseconds / 60000);
+                const seconds = Math.floor((milliseconds % 60000) / 1000);
+                return `${this.padTime(minutes)}:${this.padTime(seconds)}`;
+            },
+
+            outFocus(){
+                if (this.focusMode) {
+                    this.$store.state.focusMode = false
+                }else{
+                    setTimeout(()=>{
+                        if (this.$route.path !== "/") {
+                            this.$router.push({
+                                name: "Home",
+                            });
+                        }
+                        this.$store.state.focusMode = true
+                    },5)
+                }
+            },
+            changeShowLyric(){
+                const showQueue = this.$store.state.showQueue
+                this.$store.state.showInfo = !this.$store.state.showInfo
+                this.$store.state.showLyrics = !this.$store.state.showLyrics
+                if (showQueue) {
+                    this.$store.state.showQueue = !this.$store.state.showQueue
+                }
+                setTimeout(()=>{
+                    this.$store.state.showInfo = !this.$store.state.showInfo
+                    if (showQueue) {
+                        this.$store.state.showQueue = !this.$store.state.showQueue
+                    }
+                },500)
+            },
+            changeShowQueue(){
+                const showLyric = this.$store.state.showLyrics
+                this.$store.state.showInfo = !this.$store.state.showInfo
+                if (showLyric) {
+                    this.$store.state.showLyrics = !this.$store.state.showLyrics
+                }
+                this.$store.state.showQueue = !this.$store.state.showQueue
+                setTimeout(()=>{
+                    this.$store.state.showInfo = !this.$store.state.showInfo
+                    if (showLyric) {
+                        this.$store.state.showLyrics = !this.$store.state.showLyrics
+                    }
+                },500)
+            },
+            changePlayMode() {
+                this.$store.commit('CHANGE_MODE_AND_INDEX')
+            },
+            togglePlay() {
+                this.$store.dispatch('togglePlay');
+            },
+            playNext() {
+                if (!this.isNextButtonDisabled) {
+                    this.isNextButtonDisabled = true;
+                    if (this.nextSongs.length !== 0 && this.nextSongsIndex < this.nextSongs.length-1) {
+                        this.$store.state.nextSongsIndex += 1
+                        if (this.nextSongsIndex === 0) {
+                            this.$store.state.playNextSongs = true
+                        }
+                        this.$store.state.isPlaying = true
+                    }else{
+                        if (this.nextSongs.length !== 0 && this.nextSongsIndex === this.nextSongs.length - 1) {
+                            this.$store.state.nextSongsIndex = -1
+                            this.$store.state.nextSongs = []
+                            this.$store.state.playNextSongs = false
+                        }
+                        this.$store.dispatch('nextSong');
+                    }
+                    setTimeout(() => {
+                        this.isNextButtonDisabled = false;
+                    }, 500);
+                }
+
+            },
+            triggerEvent1() {
+                this.$bus.$emit('songOnTop')
+            },
+            playLast() {
+                if (!this.isPrevButtonDisabled) {
+                    this.isPrevButtonDisabled = true;
+
+                    if (this.nextSongs.length !== 0 && this.nextSongsIndex >= 0) {
+                        if (this.$store.state.nextSongsIndex - 1 < 0) {
+                            this.$store.state.playNextSongs =false
+                            this.$store.state.nextSongsIndex = -1
+                        }else{
+                            this.$store.state.nextSongsIndex -= 1
+                        }
+                        this.$store.state.isPlaying = true
+                    }else{
+                        this.$store.dispatch('prevSong');
+                    }
+
+                    setTimeout(() => {
+                        this.isPrevButtonDisabled = false;
+                    }, 500);
+                }
+            },
             finishScan(success){
                 if (success) {
                     this.info = "扫描结束，音乐库已更新，即将跳转至音乐库"
@@ -724,7 +1153,15 @@
                 }
             },
             emitShowVolume(){
-                this.$bus.$emit('showVolume')
+                if (this.focusMode) {
+                    this.showVolumeValue = true;
+                    clearTimeout(this.volumeValueTimeout);
+                    this.volumeValueTimeout = setTimeout(() => {
+                        this.showVolumeValue = false;
+                    }, 1000);
+                }else{
+                    this.$bus.$emit('showVolume')
+                }
             },
             emitShowInfo(){
                 this.$bus.$emit('showInfo')
@@ -751,6 +1188,23 @@
             },
             changeMute(){
                 this.$store.state.isMute = !this.$store.state.isMute
+            },
+            adjustVolumeWithWheel(event) {
+                event.preventDefault(); // 阻止滚轮默认行为
+
+                const delta = -Math.sign(event.deltaY); // 获取滚轮滚动方向，1 表示上滚，-1 表示下滚
+                const step = 3; // 调整音量的步长
+
+                let newVolume = this.volume + delta * step;
+                newVolume = Math.max(0, Math.min(100, newVolume)); // 确保音量在合法范围内
+
+                this.$store.commit('SET_VOLUME', newVolume);
+                this.showVolumeValue = true;
+
+                clearTimeout(this.volumeValueTimeout);
+                this.volumeValueTimeout = setTimeout(() => {
+                    this.showVolumeValue = false;
+                }, 1000); // 1秒后隐藏
             },
             changeMode(){
                 this.$store.commit('CHANGE_MODE_AND_INDEX')
@@ -801,32 +1255,38 @@
                     bright: this.$store.state.bright,
                     showAlbums: this.$store.state.showAlbums,
                     showArtists: this.$store.state.showArtists,
-                    showFolders: this.$store.state.showFolders
+                    showFolders: this.$store.state.showFolders,
+                    otherBlur: this.$store.state.otherBlur
                 }
                 myAPI.closeWindow(savingState)
             },
             closeWindow(fromTray){
-                if (this.$store.state.playNextSongs) {
-                    this.$store.state.savedCurrentPlaytime = 0
+                if (this.$store.state.focusMode) {
+                    this.$store.state.focusMode = false
                 }else{
-                    this.$store.state.savedCurrentPlaytime = this.$store.state.currentPlayTime
-                }
+                    if (this.$store.state.playNextSongs) {
+                        this.$store.state.savedCurrentPlaytime = 0
+                    }else{
+                        this.$store.state.savedCurrentPlaytime = this.$store.state.currentPlayTime
+                    }
 
-                if (fromTray) {
-                    this.saveAndClose()
-                }else{
-                    if (!this.$store.state.exit) {
+                    if (fromTray) {
                         this.saveAndClose()
                     }else{
-                        myAPI.hideWindow()
+                        if (!this.$store.state.exit) {
+                            this.saveAndClose()
+                        }else{
+                            myAPI.hideWindow()
+                        }
                     }
                 }
+
             },
             minimizeWindow(){
                 myAPI.minimize()
             },
-            maximizeWindow(){
-                myAPI.maximize()
+            maximizeWindow(flag){
+                myAPI.maximize(flag)
             },
             miniMode(){
                 if (!this.$store.state.miniMode) {

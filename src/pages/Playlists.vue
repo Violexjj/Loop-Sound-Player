@@ -136,14 +136,15 @@
         mixins:[textTruncateMixin],
         methods : {
             async setCover() {
-                const coverData = await myAPI.setPlaylistCover(this.toChangePlaylistName)
-                const playlistIndex = this.$store.state.playlistsCovers.findIndex(playlist => playlist.name === this.toChangePlaylistName);
-                if (playlistIndex !== -1) {
-                    // 如果找到了指定名称的 playlist 对象，则更新其 cover 属性
-                    this.$store.state.playlistsCovers[playlistIndex].cover = coverData;
-                }
                 this.showRenameAndDelete = false
-
+                const coverData = await myAPI.setPlaylistCover(this.toChangePlaylistName)
+                if (coverData) {
+                    const playlistIndex = this.$store.state.playlistsCovers.findIndex(playlist => playlist.name === this.toChangePlaylistName);
+                    if (playlistIndex !== -1) {
+                        // 如果找到了指定名称的 playlist 对象，则更新其 cover 属性
+                        this.$store.state.playlistsCovers[playlistIndex].cover = coverData;
+                    }
+                }
             },
             displayContext(playlistName){
                 this.showRenameAndDelete = true
@@ -258,6 +259,7 @@
     }
     .playlist-box:hover{
         background-color:rgba(255, 255, 255, 0.2);
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
         cursor: pointer;
     }
     .modal-delete {
@@ -266,19 +268,19 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.3); /* 半透明黑色背景 */
         display: flex;
         justify-content: center;
         align-items: center;
         z-index: 1000; /* 确保在最上层 */
     }
     .playlist-panel-delete {
-        background-color: rgba(0, 0, 0, 0.9);
+        background-color: rgba(0, 0, 0, 0.3);
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
         border-radius: 10px;
         padding: 10px;
         width: 80%;
         max-width: 400px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0);
         position: relative;
     }
 
@@ -292,9 +294,8 @@
     }
     .playlist-option-delete:hover{
         cursor: pointer;
-        background-color: white; /* 鼠标悬停时的背景颜色 */
+        background-color: rgba(255, 255, 255, 0.2);
         border-radius: 10px;
-        color: black;
     }
 
     .modal-close-delete {
@@ -307,7 +308,7 @@
         z-index: 1001;
     }
     .close-button-delete:hover {
-        background-color: rgba(255, 255, 255, 0.4);
+        background-color: rgba(255, 255, 255, 0.2);
     }
     .close-button-delete {
         width: 30px;
@@ -349,7 +350,7 @@
     }
 
     .confirm-button:hover {
-        background-color: rgba(255, 255, 255, 0.4);
+        background-color: rgba(255, 255, 255, 0.2);
     }
     .modal {
         position: fixed;
@@ -357,19 +358,19 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.3); /* 半透明黑色背景 */
         display: flex;
         justify-content: center;
         align-items: center;
         z-index: 1000; /* 确保在最上层 */
     }
     .playlist-panel {
-        background-color: rgba(0, 0, 0, 0.7);
+        background-color: rgba(0, 0, 0, 0.3);
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
         border-radius: 10px;
         padding: 10px 10px 20px;
         width: 80%;
         max-width: 400px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0);
         position: relative;
     }
 
@@ -391,6 +392,9 @@
         outline: none;
         padding: 15px;
         width: 100%;
+        color: #f0f0f0;
+    }
+    .transparent-input::placeholder {
         color: #f0f0f0;
     }
 
@@ -419,7 +423,7 @@
     }
 
     .close-button:hover {
-        background-color: rgba(255, 255, 255, 0.4);
+        background-color: rgba(255, 255, 255, 0.2);
     }
 
     .close-image {

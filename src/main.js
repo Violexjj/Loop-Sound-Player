@@ -62,12 +62,16 @@ new Vue({
                     this.$store.commit('SET_SHOW_ALBUMS',savingState.showAlbums)
                     this.$store.commit('SET_SHOW_ARTISTS',savingState.showArtists)
                     this.$store.commit('SET_SHOW_FOLDERS',savingState.showFolders)
-
+                    this.$store.commit('SET_OTHER_BLUR',savingState.otherBlur)
                 console.log("vue get savingState")
+                if (this.$store.state.queue[0].id === "") {
+                    window.myAPI.closeWelcome()
+                }
             }else{
                 console.log("vue get savingState fail")
             }
         });
+
         window.myAPI.getAllSongs().then(songs => {
             this.$store.commit('SET_SONGS', songs);
         });

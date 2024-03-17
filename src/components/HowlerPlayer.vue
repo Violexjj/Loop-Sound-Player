@@ -8,7 +8,6 @@
     import { Howl } from 'howler';
     import { mapState, mapGetters } from 'vuex';
     import axios from 'axios'
-    // import{lyric} from 'NeteaseCloudMusicApi'
 
     export default {
         name: 'HowlerPlayer',
@@ -109,15 +108,17 @@
                     const durationInSeconds = this.getDurationInSeconds();
 
                     if (event.key === 'ArrowLeft') {
-                        // 快退一秒
-                        const newTime = Math.max(currentTime - 3, 0);
-                        this.howlerInstance.seek(newTime);
-                        this.$store.commit('SET_CURRENT_PROGRESS', (newTime / durationInSeconds) * 100);
+                        if (!event.ctrlKey) {
+                            const newTime = Math.max(currentTime - 3, 0);
+                            this.howlerInstance.seek(newTime);
+                            this.$store.commit('SET_CURRENT_PROGRESS', (newTime / durationInSeconds) * 100);
+                        }
                     } else if (event.key === 'ArrowRight') {
-                        // 快进一秒
-                        const newTime = Math.min(currentTime + 3, durationInSeconds);
-                        this.howlerInstance.seek(newTime);
-                        this.$store.commit('SET_CURRENT_PROGRESS', (newTime / durationInSeconds) * 100);
+                        if (!event.ctrlKey) {
+                            const newTime = Math.min(currentTime + 3, durationInSeconds);
+                            this.howlerInstance.seek(newTime);
+                            this.$store.commit('SET_CURRENT_PROGRESS', (newTime / durationInSeconds) * 100);
+                        }
                     }
                 }
             },
@@ -177,25 +178,25 @@
             async getNetLyricByNetId(){
                 console.log("当前播放歌曲ID是"+this.$store.state.nowSongNetId)
                 try {
-                        const lyricResult = await axios.get("https://autumnfish.cn/lyric?id="+this.$store.state.nowSongNetId,{timeout: 3000})
-                        if (lyricResult.data.code === 200 && lyricResult.data.lrc!==undefined) {
-                            console.log("找到了在线歌词（autumnfish.cn）")
-                            this.oLyric = lyricResult.data.lrc.lyric
-                            if (lyricResult.data.tlyric) {
-                                this.tLyric = lyricResult.data.tlyric.lyric
+                        const lyricResult = await myAPI.searchLyric(this.$store.state.nowSongNetId)
+                        if (lyricResult.body.code === 200 && lyricResult.body.lrc!==undefined && lyricResult.body.lrc.lyric!=='') {
+                            console.log("找到了在线歌词")
+                            this.oLyric = lyricResult.body.lrc.lyric
+                            if (lyricResult.body.tlyric) {
+                                this.tLyric = lyricResult.body.tlyric.lyric
                             }
                             this.mergeLyric()
                         }else{
                             //    网易云这首歌没歌词
-                            this.$store.state.lyricOfNowSong = "[00:00.00]该歌曲网易云无歌词"
+                            this.$store.state.lyricOfNowSong = "[00:00.00]根据精确匹配的 ID，该歌曲网易云无歌词"
                         }
                 }catch (error){
                     //    访问别人的网站失败
-                    console.log("访问 https://autumnfish.cn 失败");
+                    console.log("访问网易云歌词失败");
                     //    翻墙搜索自己的网站
                     try{
                             const lyricResult = await axios.get("https://net-lyrics.vercel.app/lyric?id="+this.$store.state.nowSongNetId,{timeout:5000})
-                            if (lyricResult.data.code === 200 && lyricResult.data.lrc!==undefined) {
+                        if (lyricResult.data.code === 200 && lyricResult.data.lrc!==undefined) {
                                 console.log("找到了在线歌词（net-lyrics.vercel.app）")
                                 this.oLyric = lyricResult.data.lrc.lyric
                                 if (lyricResult.data.tlyric) {
@@ -216,15 +217,19 @@
             //下面方法根据标题艺术家获取在线歌词
             async getNetLyric(){
                 try {
-                    const searchResult = await axios.get("https://autumnfish.cn/cloudsearch?keywords="+this.keywords,{timeout:3000})
-                    if (searchResult.data.code === 200&&searchResult.data.result.songCount>0) {
-                        const searchSongId = searchResult.data.result.songs[0].id
-                        const lyricResult = await axios.get("https://autumnfish.cn/lyric?id="+searchSongId)
-                        if (lyricResult.data.code === 200 && lyricResult.data.lrc!==undefined) {
-                            console.log("找到了在线歌词（autumnfish.cn）")
-                            this.oLyric = lyricResult.data.lrc.lyric
-                            if (lyricResult.data.tlyric) {
-                                this.tLyric = lyricResult.data.tlyric.lyric
+                    // const searchResult = await axios.get("https://autumnfish.cn/cloudsearch?keywords="+this.keywords,{timeout:3000})
+                    const searchResult = await myAPI.searchSong(this.keywords)
+                    // console.log(searchResult);
+                    if (searchResult.body.code === 200&&searchResult.body.result.songCount>0) {
+                        const searchSongId = searchResult.body.result.songs[0].id
+                        // const lyricResult = await axios.get("https://autumnfish.cn/lyric?id="+searchSongId)
+                        const lyricResult = await myAPI.searchLyric(searchSongId)
+                        // console.log(lyricResult)
+                        if (lyricResult.body.code === 200 && lyricResult.body.lrc!==undefined && lyricResult.body.lrc.lyric!=='') {
+                            console.log("找到了在线歌词")
+                            this.oLyric = lyricResult.body.lrc.lyric
+                            if (lyricResult.body.tlyric) {
+                                this.tLyric = lyricResult.body.tlyric.lyric
                             }
                             this.mergeLyric()
                         }else{
@@ -233,11 +238,11 @@
                         }
                     }else{
                     //    通过别人的网站搜索结果是空的
-                        this.$store.state.lyricOfNowSong = "[00:00.00]没有找到在线歌词"
+                        this.$store.state.lyricOfNowSong = "[00:00.00]查找歌曲错误，可能网易云无此歌曲；或者请添加精确匹配"
                     }
                 }catch (error){
                     //    访问别人的网站失败
-                    console.log("访问 https://autumnfish.cn 失败");
+                    console.log("访问网易云歌词失败，可能网络有问题");
                     //    翻墙搜索自己的网站
                     try{
                         const searchResult = await axios.get("https://net-lyrics.vercel.app/cloudsearch?keywords="+this.keywords,{timeout:5000})
@@ -326,6 +331,11 @@
                     this.howlerInstance = null
                 }
                 const songAudioAndInfos = await myAPI.readFile(path,this.$store.state.lyricDirectory,songId)
+                if (songAudioAndInfos === "[00:00.00]加载歌曲文件错误") {
+                    this.$store.state.lyricOfNowSong = songAudioAndInfos
+                    myAPI.closeWelcome()
+                    return
+                }
                 if (songAudioAndInfos.length === 0) {
                     return
                 }
@@ -341,36 +351,46 @@
                             if (songAudioAndInfos[2].lyrics[0].includes("没有找到本地歌词")) {
                                 console.log("没有找到本地歌词")
                                 if (this.$store.state.onlineLrc) {
-                                    if (this.$store.state.nowSongNetId === -1) {
-                                        await this.getNetLyric()
+                                    if (this.nowSong.title === "未知标题[ERROR]") {
+                                        this.$store.state.lyricOfNowSong = "[00:00.00]未知标题，无法在线搜索歌词"
                                     }else{
-                                        await this.getNetLyricByNetId()
+                                        if (this.$store.state.nowSongNetId === -1) {
+                                            await this.getNetLyric()
+                                        }else{
+                                            await this.getNetLyricByNetId()
+                                        }
                                     }
                                 }else{
-                                    this.$store.state.lyricOfNowSong = "[00:00.00]没有找到本地歌词"
+                                    this.$store.state.lyricOfNowSong = "[00:00.00]无本地歌词，请开启在线搜索歌词功能"
                                 }
                             }else{
                                 this.$store.state.lyricOfNowSong= songAudioAndInfos[2].lyrics[0]
                                 console.log("找到了本地歌词")
                             }
-                }else{
+                }
+                else{
                             //mp3文件
                             if (songAudioAndInfos[2].lyrics.includes("没有找到本地歌词")) {
                                 console.log("没有找到本地歌词")
                                 if (this.$store.state.onlineLrc) {
-                                    if (this.$store.state.nowSongNetId === -1) {
-                                        await this.getNetLyric()
+                                    if (this.nowSong.title === "未知标题[ERROR]") {
+                                        this.$store.state.lyricOfNowSong = "[00:00.00]未知标题，无法在线搜索歌词"
                                     }else{
-                                        await this.getNetLyricByNetId()
+                                        if (this.$store.state.nowSongNetId === -1) {
+                                            await this.getNetLyric()
+                                        }else{
+                                            await this.getNetLyricByNetId()
+                                        }
                                     }
                                 }else{
-                                    this.$store.state.lyricOfNowSong = "[00:00.00]没有找到本地歌词"
+                                    this.$store.state.lyricOfNowSong = "[00:00.00]无本地歌词，请开启在线搜索歌词功能"
                                 }
                             }else{
                                 this.$store.state.lyricOfNowSong= songAudioAndInfos[2].lyrics
                                 console.log("找到了本地歌词")
                             }
                 }
+                myAPI.closeWelcome()
 
                 setTimeout(()=>{
                     this.$store.state.songDialogInfo= {
@@ -461,7 +481,8 @@
         padding: 0 16px;
         padding-top: 8px;
         padding-bottom: 10px;
-        background-color: rgba(0, 0, 0, 0.8);
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
         color: white;
         border-radius: 20px;
         font-size: 16px;

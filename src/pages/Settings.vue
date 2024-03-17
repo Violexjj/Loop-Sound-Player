@@ -136,6 +136,17 @@
             </tr>
             <tr style="height: 60px;">
                 <td>
+                    <b style="font-size: 20px">其余歌词背景模糊：</b>
+                </td>
+                <td>
+                    <div class="custom-switch" @click="setOtherBlur">
+                        <input type="checkbox" v-model="otherBlur" />
+                        <label ></label>
+                    </div>
+                </td>
+            </tr>
+            <tr style="height: 60px;">
+                <td>
                     <b style="font-size: 20px">显示翻译：</b>
                 </td>
                 <td>
@@ -194,7 +205,7 @@
             </tr>
             <tr style="height: 60px;" >
                 <td>
-                    <b style="font-size: 20px">导航栏显示：</b>
+                    <b style="font-size: 20px">导航栏板块：</b>
                 </td>
                 <td>
                     <div class="custom-button align" :class="{'activee':(this.$store.state.showAlbums === true)}" @click="changeShowHeader(0)"><b>{{"专辑"}}</b></div>
@@ -298,13 +309,17 @@
         <hr style="border-top: 3px solid #ccc;margin-right: 30px">
         <h1 class="title">属性说明</h1><br>
         <span><b>• 本播放器仅为实践小项目，如若出现问题（页面爆红、白屏、无法播放）请联系我，QQ：3059557534。</b></span><br><br>
+        <span><b>• 技术栈为 Vue2 + Electron。</b></span><br><br>
         <span><b>• 仅支持 FLAC、MP3、WAV 格式的音频文件。</b></span><br><br>
-        <span><b>• WAV 格式所有播放器默认都是缺少很多信息的，可以去操作说明第 1 点的目录里的“songsNoSameId.json”文件手动编辑信息。</b></span><br><br>
+        <span><b>• WAV 格式所有播放器默认都是缺少很多信息的，可以去操作说明第 4 点的文件夹里的“songsNoSameId.json”文件手动编辑信息。</b></span><br><br>
         <span><b>• 目前由于性能问题，时间过长的歌曲（超过 1 小时）大概率会卡死，歌曲时长计算也会出错，请谅解。</b></span><br><br>
         <hr style="border-top: 3px solid #ccc;margin-right: 30px">
 
         <h1 class="title">操作说明</h1><br>
-        <span><b>• 如果要手动更改歌曲信息、播放列表信息等，请在 C:\Users\（本机用户）\AppData\Roaming\Loop Sound Player 文件夹下修改文件内容，但不要修改文件名。</b></span><br><br>
+        <span><b>• 支持外部拖拽单个或多个文件、文件夹添加音乐库，但不要同时拖拽文件和文件夹。</b></span><br><br>
+        <span><b>• 最大化按钮左键是最大化，右键是全屏。</b></span><br><br>
+        <span><b>• 左键点击主页封面进入半沉浸模式，右键点击进入全沉浸模式。</b></span><br><br>
+        <span><b>• 如果要手动更改歌曲信息、播放列表信息等，请在 C:\Users\（本机用户）\AppData\Roaming\Sonorbit 文件夹下修改文件内容，但不要修改文件名。</b></span><br><br>
         <span><b>• 不要快速连续地切换暂停播放，否则会和淡入淡出冲入，造成总是从头播放歌曲。如果出现了，切换一次歌曲即可。</b></span><br><br>
         <span><b>• 从音乐库删除会一并删除播放列表中对应歌曲。</b></span><br><br>
         <span><b>• 调节音量可以用音量条，还可在音量按钮处滚动鼠标，或者使用↑↓快捷键以及全局快捷键，每次滚动调节音量数为3。</b></span><br><br>
@@ -319,13 +334,11 @@
         <h1 class="title">歌词说明</h1><br>
         <span><b>• 建议先设置歌词文件夹！</b></span><br><br>
         <span><b>• 歌词匹配优先级别：内嵌歌词 > 自定义的歌词文件夹 > 歌曲所在文件夹 > 在线搜索歌词。</b></span><br><br>
-        <span><b>• 如果没有找到本地歌词，可以进行在线搜索，如果弹出需要"魔法"，懂的都懂。</b></span><br><br>
-        <span><b>• 如果开了魔法还遇到弹窗，应该是网络问题，多切到那首歌几次即可成功。</b></span><br><br>
-        <span><b>• 在线搜索默认使用歌曲“标题+艺术家”的格式搜索，如果匹配不满意，可以在音乐库和播放列表进行精确匹配。</b></span><br><br>
+        <span><b>• 在线搜索歌词使用歌曲“标题+艺术家”的格式搜索，如果匹配不满意，可以在音乐库、播放列表和文件夹板块进行精确匹配。</b></span><br><br>
         <span><b>• 精确匹配需要输入歌曲ID，获取方法就是找到网易云对应的歌曲，复制链接，找到“song?”后面的id，输入对应的数字即可。</b></span><br><br>
+        <span><b>• 原则上，精确匹配是（ID正确）是一定能找到歌词的，除非网易云真的没有那首歌或者歌词。</b></span><br><br>
         <span><b>• 在线搜索到歌词之后，会将lrc文件保存到自定义的文件夹，如果未设置会保存到歌曲同文件夹下。</b></span><br><br>
-        <span><b>• 精确匹配后会自动删除原来下载的歌词，以便更新。</b></span><br><br>
-        <span><b>• 原则上，开了魔法和精确匹配是（ID正确）一定能找到歌词的，除非网易云真的没有歌词。</b></span><br><br>
+        <span><b>• 如果遇到弹窗，需要魔法，懂的都懂。</b></span><br><br>
         <hr style="border-top: 3px solid #ccc;margin-right: 30px">
 
         <div class="shortcuts-container">
@@ -409,6 +422,10 @@
                         <td class="table-cell-num">Ctrl + P</td>
                         <td class="table-cell-num">显示或隐藏主页播放列表</td>
                     </tr>
+                    <tr>
+                        <td class="table-cell-num">Ctrl + Enter</td>
+                        <td class="table-cell-num">进入或退出沉浸模式</td>
+                    </tr>
                     </tbody>
                 </table>
             </div>
@@ -473,7 +490,7 @@
         background-repeat: no-repeat;
     }
     .close-button:hover {
-        background-color: rgba(255, 255, 255, 0.4);
+        background-color: rgba(255, 255, 255, 0.2);
     }
     .close-button {
         width: 30px;
@@ -498,12 +515,13 @@
 
     }
     .playlist-panel {
-        background-color: rgba(0, 0, 0, 1);
+        background-color: rgba(0, 0, 0, 0.3);
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
         border-radius: 10px;
         padding: 10px;
         width: 80%;
         max-width: 450px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0);
         position: relative;
     }
     .modal {
@@ -512,7 +530,6 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.3); /* 半透明黑色背景 */
         display: flex;
         justify-content: center;
         align-items: center;
@@ -545,6 +562,7 @@
         background-color: rgba(255, 255, 255, 0.2);;
         border-radius: 34px;
         cursor: pointer;
+        transition: 0.3s;
     }
 
     .custom-switch label:after {
@@ -556,7 +574,7 @@
         background-color: white;
         top: 4px;
         left: 4px;
-        transition: 0.2s;
+        transition: 0.3s;
     }
 
     .custom-switch input:checked + label {
@@ -583,7 +601,8 @@
         left: 50%;
         transform: translate(-50%, -50%);
         padding: 8px 16px;
-        background-color: rgba(0, 0, 0, 0.8);
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
         color: white;
         border-radius: 20px;
         font-size: 16px;
@@ -682,6 +701,12 @@
         name: "Settings",
         components : {VueSlider},
         created() {
+            myAPI.onErrorFile((_event) => {
+                this.info = "扫描失败，请检查文件"
+                setTimeout(()=>{
+                    this.showReboot = false
+                },2000)
+            })
             myAPI.onFinishScan((_event) => {
                 this.finishScan()
             })
@@ -702,6 +727,9 @@
             }
         },
         computed:{
+            focusMode2(){
+                return this.$store.state.focusMode2
+            },
             fontSize:{
                 get(){
                     return this.$store.state.lyricFont -15
@@ -730,7 +758,7 @@
             hasTranslation(){
               return this.$store.getters.nowSong.hasTranslation
             },
-            ...mapState(['showTlyric','lyricDirectory','onlineLrc','deleteLocalFile','globalShortcut','exit','toHomeAfterChangeQueue', 'autoHideLrc','highlight','showFormat','queueModal','lyricsModal','infoModal']),
+            ...mapState(['showTlyric','lyricDirectory','onlineLrc','deleteLocalFile','globalShortcut','exit','toHomeAfterChangeQueue', 'autoHideLrc','highlight','otherBlur','showFormat','queueModal','lyricsModal','infoModal']),
             lyricAlignmentMode(){
                 return this.$store.state.lyricAlignmentMode
             }
@@ -772,6 +800,9 @@
             setToHomeAfterChangeQueue(){
                 this.$store.state.toHomeAfterChangeQueue = !this.$store.state.toHomeAfterChangeQueue
             },
+            setFocusMode(){
+                this.$store.state.focusMode2 = !this.$store.state.focusMode2
+            },
             setAutoHideLrc(){
                 this.$store.state.autoHideLrc = !this.$store.state.autoHideLrc
             },
@@ -805,6 +836,9 @@
             },
             setHighlight(){
                 this.$store.state.highlight = !this.$store.state.highlight
+            },
+            setOtherBlur(){
+                this.$store.state.otherBlur = !this.$store.state.otherBlur
             },
             changeLyricAlignmentMode(no){
                 this.CHANGE_LYRIC_ALIGNMENT_MODE(no)

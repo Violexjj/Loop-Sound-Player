@@ -4,6 +4,9 @@
 // 打包vue为dist，npm run build
 // 打包electron，cnpm run dist
 
+
+
+
 const path = require('path');
 const { shell, app, BrowserWindow, ipcMain,nativeImage,dialog, Tray,Menu, globalShortcut,screen} = require('electron');
 const fs = require('fs');
@@ -19,6 +22,7 @@ let tray = null
 
 const store = new Store();
 let win = null;
+let showWelcome = null
 let windowState = null;
 
 // 基本配置
@@ -40,12 +44,22 @@ const createWindow = () => {
             preload: path.resolve(__dirname, './preload.js')
         }
     });
-        win.setMinimumSize(642, 629);
+    win.setMinimumSize(650, 650);
 
+    showWelcome = new BrowserWindow({
+        width: 500,
+        height: 200,
+        transparent: true,
+        frame: false,
+        show: false,
+        icon: path.join(__dirname, 'dist','img','logo.ico'),
+    });
+
+    showWelcome.loadFile(path.join(__dirname, 'dist', 'Welcome.html'));
     // 装载页面
-    win.loadURL('http://192.168.41.6:8080');
+    win.loadURL('http://localhost:8080');
     //win.loadURL('https://music.163.com/');
-    // win.loadFile('./index.html');
+    //  win.loadFile('./index.html');
     //win.loadFile(path.join(__dirname, 'dist', 'index.html'));
 
     // 打开开发者工具
@@ -53,7 +67,8 @@ const createWindow = () => {
 
     // 加载好页面内容再打开界面
     win.on("ready-to-show", () => {
-            win.show();
+        showWelcome.show();
+        // win.show()
     });
 
     win.on('close', (event) => {
@@ -69,12 +84,21 @@ const createWindow = () => {
     ipcMain.handle('hide-window', () => {
         win.hide();
     });
-    ipcMain.handle('maximize-window', () => {
-        if (win.isMaximized()) {
-            win.restore();
-        }else{
-            win.maximize();
+    ipcMain.handle('maximize-window', async (event, flag) => {
+        if (flag === 1) {
+            if (win.isMaximized()) {
+                win.restore();
+            } else {
+                win.maximize();
+            }
+        } else {
+            if (win.isFullScreen()) {
+                win.setFullScreen(false)
+            } else {
+                win.setFullScreen(true)
+            }
         }
+
     });
     ipcMain.handle('close-window', (event,savingState) => {
         // 在窗口关闭时获取当前窗口状态并保存到 electron-store
@@ -105,7 +129,14 @@ const createWindow = () => {
         app.isQuitting = true;
         app.quit()
     });
-
+    ipcMain.handle('closeWelcome', ()=>{
+        if (!showWelcome.isDestroyed()) {
+            setTimeout(()=>{
+                showWelcome.close()
+                win.show();
+            },1000)
+        }
+    })
     //设置托盘
     const trayIcon = nativeImage.createFromPath(path.join(__dirname, 'dist','img','logo2.ico'));
     tray = new Tray(trayIcon);
@@ -277,7 +308,7 @@ else {
         globalShortcut.unregisterAll();
     });
 }
-
+//------------------------------------------------------------------------
 // 修改元数据
 ipcMain.handle('changeInfo', async (event, path) => {
     // console.log(path)
@@ -298,7 +329,7 @@ ipcMain.handle('changeInfo', async (event, path) => {
     // }
     // await tag.writeFlacTags(tagMap, path)
     // 读取 FLAC 文件的内容
-    const fileBuffer = await fs.promises.readFile(path);
+    // const fileBuffer = await fs.promises.readFile(path);
 
     // 读取 FLAC 文件的标签信息
     // const tags = await tag.readFlacTags(fileBuffer);
@@ -309,8 +340,16 @@ ipcMain.handle('changeInfo', async (event, path) => {
 // 迷你模式
 ipcMain.handle('miniMode', async (event, miniMode) => {
     try {
+
+        if (win.isFullScreen()) {
+            win.setFullScreen(false);
+        }
+
         const { width, height } = screen.getPrimaryDisplay().workAreaSize;
         if (miniMode) {
+            if (win.isMaximized()) {
+                win.unmaximize()
+            }
             win.setAlwaysOnTop(true)
             win.setMinimumSize(270, 70);
             win.setSize(270, 70, false)
@@ -319,7 +358,7 @@ ipcMain.handle('miniMode', async (event, miniMode) => {
             win.setAlwaysOnTop(false)
             win.setSize(windowState.width, windowState.height,false)
             win.setPosition(Math.floor((width-windowState.width)/2),Math.floor((height-windowState.height)/2))
-            win.setMinimumSize(632, 629);
+            win.setMinimumSize(650, 650);
         }
     } catch (error) {
         console.error('open miniMode failed:', error);
@@ -368,6 +407,19 @@ ipcMain.handle('openFile', (event, filePath, lyricDirectory) => {
 
 //读取音频、更多信息和歌词
 ipcMain.handle('read-file', async (event, filePath,lyricDirectory,songId) => {
+    // const NodeID3 = require('node-id3')
+    // var tags = NodeID3.read(filePath);
+    // console.log(tags)
+    // tags.trackNumber = '1'
+    // tags.year = '2017'
+    // tags.genre = "Pure"
+    // tags.comment = {
+    //     language: "eng",
+    //     text: "纯音乐"
+    // }
+    // const success  = NodeID3.update(tags,filePath);
+    // console.log(success)
+
     try {
         const mm = await import('music-metadata');
         if (filePath === null || filePath === "") {
@@ -566,6 +618,30 @@ ipcMain.handle('readFileForMoreInfo', async (event, filePath,songId) => {
     }
 });
 
+// 查询在线歌曲
+ipcMain.handle('searchSong', async (event,keyword) => {
+    try {
+        const {cloudsearch} = require('NeteaseCloudMusicApi');
+        const result = await cloudsearch({keywords: keyword})
+        return result
+    } catch (error) {
+        console.error('Error reading file in main process:', error);
+        throw error;
+    }
+});
+
+// 查询在线歌词
+ipcMain.handle('searchLyric', async (event,songId) => {
+    try {
+        const {lyric} = require('NeteaseCloudMusicApi');
+        const result = await lyric({id: songId})
+        return result
+    } catch (error) {
+        console.error('Error reading file in main process:', error);
+        throw error;
+    }
+});
+
 //写入在线歌词
 ipcMain.handle('writeOnlineLrc', async (event,onlineLrc, songPath,lyricDirectory) => {
     const songDirectory = path.dirname(songPath);
@@ -664,6 +740,7 @@ ipcMain.handle('getSavingState', async (event) => {
                 "\"lyricAlignmentMode\":1," +
                 "\"showTlyric\":true," +
                 "\"highlight\":true," +
+                "\"otherBlur\":true," +
                 "\"showFormat\":true," +
                 "\"showFolders\":true," +
                 "\"showAlbums\":true," +
@@ -868,6 +945,7 @@ ipcMain.handle('deleteLocalFile', async (event, toDeleteLocalFile) => {
 
 //获取歌曲封面base64数据
 ipcMain.handle('getSongCover', async (event, filePath,type) => {
+
     try {
         const mm = await import('music-metadata');
         const metadata = await mm.parseFile(filePath);
@@ -1037,12 +1115,14 @@ ipcMain.handle('add-folders', async (event) => {
                 handleMetadata('folder', result.filePaths[0]).then(() => {
                     win.webContents.send('finishScan');
                 }).catch(error => {
+                    win.webContents.send('errorFile')
                     console.error('处理元数据时出错:', error);
                 });
             } else {
                 handleMetadata('folders', result.filePaths).then(() => {
                     win.webContents.send('finishScan');
                 }).catch(error => {
+                    win.webContents.send('errorFile')
                     console.error('处理元数据时出错:', error);
                 });
             }
@@ -1061,12 +1141,14 @@ ipcMain.handle('add-files', async (event) => {
                 handleMetadata('file', result.filePaths[0]).then(() => {
                     win.webContents.send('finishScan');
                 }).catch(error => {
+                    win.webContents.send('errorFile')
                     console.error('处理元数据时出错:', error);
                 });
             } else {
                 handleMetadata('files', result.filePaths).then(() => {
                     win.webContents.send('finishScan');
                 }).catch(error => {
+                    win.webContents.send('errorFile')
                     console.error('处理元数据时出错:', error);
                 });
             }
@@ -1087,6 +1169,7 @@ ipcMain.handle('add-files', async (event) => {
                     handleMetadata('file', filePath).then(() => {
                         win.webContents.send('finishScan');
                     }).catch(error => {
+                        win.webContents.send('errorFile')
                         console.error('处理元数据时出错:', error);
                     });
                 } else if (stats.isDirectory()) {
@@ -1095,9 +1178,11 @@ ipcMain.handle('add-files', async (event) => {
                         win.webContents.send('finishScan');
                     }).catch(error => {
                         console.error('处理元数据时出错:', error);
+                        win.webContents.send('errorFile')
                     });
                 }
             } catch (error) {
+                win.webContents.send('errorFile')
                 console.error(`Error while processing ${filePath}: ${error.message}`);
             }
         } else if (filePaths.length > 1) {
@@ -1110,6 +1195,7 @@ ipcMain.handle('add-files', async (event) => {
                     handleMetadata('files', filePaths).then(() => {
                         win.webContents.send('finishScan');
                     }).catch(error => {
+                        win.webContents.send('errorFile')
                         console.error('处理元数据时出错:', error);
                     });
                 }
@@ -1118,6 +1204,7 @@ ipcMain.handle('add-files', async (event) => {
                     handleMetadata('folders', filePaths).then(() => {
                         win.webContents.send('finishScan');
                     }).catch(error => {
+                        win.webContents.send('errorFile')
                         console.error('处理元数据时出错:', error);
                     });
                 }
@@ -1163,15 +1250,16 @@ const handleMetadata = async (type,  sourcePaths) => {
                 if (stats.isFile()) {
                     const mimeType = mime.lookup(filePath);
                     if (isSupportedAudioFormat(mimeType)) {
+                        const fileName = path.basename(filePath, path.extname(filePath));
                         const metadata = await mm.parseFile(filePath);
                         // console.log(metadata)
                         const cTime = stats.birthtime;
                         const fileSize = (stats.size / 1048576).toFixed(2) + "MB"
                         const cleanedMetadata = {
                             common: {
-                                title: (metadata.common.title || '未知标题ERROR').trim(),
-                                artist: (metadata.common.artist || '').trim(),
-                                album: (metadata.common.album || '').trim()
+                                title: (metadata.common.title || '未知标题[ERROR]').trim(),
+                                artist: (metadata.common.artist || '未知艺术家[ERROR]').trim(),
+                                album: (metadata.common.album || '未知专辑[ERROR]').trim()
                             },
                             format: {
                                 duration: metadata.format.duration || 0,
@@ -1205,10 +1293,11 @@ const handleMetadata = async (type,  sourcePaths) => {
                         const formattedBitrate = formatBitrate(cleanedMetadata.format.bitrate)
                         const formattedSampleRate = formatSampleRate(cleanedMetadata.format.sampleRate)
                         const formattedBitsPerSample = cleanedMetadata.format.bitsPerSample ? (cleanedMetadata.format.bitsPerSample+"bit") : "无"
+                        const songId  = (cleanedMetadata.common.title === '未知标题[ERROR]' && cleanedMetadata.common.artist === '未知艺术家[ERROR]') ? fileName + '[ERROR]' : cleanedMetadata.common.title + cleanedMetadata.common.artist;
 
                         //创建并添加歌曲信息
                         const newEntry = {
-                            id: cleanedMetadata.common.title+cleanedMetadata.common.artist,
+                            id: songId,
                             path: filePath,
                             cTime: cTime,
                             title: cleanedMetadata.common.title,
@@ -1222,7 +1311,7 @@ const handleMetadata = async (type,  sourcePaths) => {
                         };
                         const existingSongIndex = existingMetadata.songs.findIndex(song => song.id === newEntry.id);
                         if (existingSongIndex !== -1) {
-                            if (newEntry.title !== "未知标题ERROR") {
+                            if (newEntry.title !== "未知标题[ERROR]" && newEntry.artist !== "未知艺术家[ERROR]") {
                                 existingMetadata.songs[existingSongIndex] = newEntry;
                             }else{
                                 existingMetadata.songs.unshift(newEntry);

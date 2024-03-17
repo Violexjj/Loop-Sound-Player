@@ -574,12 +574,13 @@
                     this.ADD_TO_PLAYLIST({ playlistName, songIds: toAddSongsId });
                     this.showPlaylistModal = false;
                     this.exitSelectMode(false)
-                    this.SET_FILTER_TYPE('byPlaylist')
+
                     this.SET_SELECTED_PLAYLIST_NAME(playlistName)
                     if (this.$route.path !== "/SongsInPlaylist") {
-                        this.$router.push({
-                            name: "SongsInPlaylist",
-                        });
+                        setTimeout(()=>{
+                            this.$router.push({ name: 'SongsInPlaylist' });
+                            this.SET_FILTER_TYPE('byPlaylist')
+                        },5)
                     }
                     myAPI.addToOrDeleteFromPlaylist(playlistName,toAddSongsId,true)
                 }else{
@@ -588,12 +589,13 @@
                     toAddSongsId.push(song.id);
                     this.ADD_TO_PLAYLIST({ playlistName, songIds: toAddSongsId });
                     this.showPlaylistModal = false;
-                    this.SET_FILTER_TYPE('byPlaylist')
+
                     this.SET_SELECTED_PLAYLIST_NAME(playlistName)
                     if (this.$route.path !== "/SongsInPlaylist") {
-                        this.$router.push({
-                            name: "SongsInPlaylist",
-                        });
+                        setTimeout(()=>{
+                            this.$router.push({ name: 'SongsInPlaylist' });
+                            this.SET_FILTER_TYPE('byPlaylist')
+                        },5)
                     }
                     myAPI.addToOrDeleteFromPlaylist(playlistName,toAddSongsId,true)
                 }
@@ -727,22 +729,20 @@
     }
     .choice:hover{
         cursor: pointer;
-        background-color: white;
-        color: black;
-    }
-    .choice:hover .choiceIco {
-        filter: invert(100%);
+        background-color: rgba(255, 255, 255, 0.2);
     }
     .context-menu {
         width: 175px;
         height: 350px;
         line-height: 35px;
         position: fixed;
-        background-color: rgba(0, 0, 0, 0.8);
+        background-color: rgba(0, 0, 0, 0.3);
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
         border-radius: 10px;
         padding: 6px 5px;
         z-index: 9999;
         white-space: nowrap;
+        backdrop-filter: blur(20px)
     }
     .close-image-2 {
         width: 100%;
@@ -763,8 +763,7 @@
     }
 
     .confirm-button:hover {
-        background-color: white;
-        color: black;
+        background-color: rgba(255, 255, 255, 0.2);
     }
     .confirmButton {
         display: flex;
@@ -778,6 +777,9 @@
         outline: none;
         padding: 15px;
         width: 100%;
+        color: #f0f0f0;
+    }
+    .transparent-input::placeholder {
         color: #f0f0f0;
     }
     .input-container {
@@ -803,7 +805,7 @@
         width: 0; /* 使滚动条不可见 */
     }
     .route-container{
-        max-height: calc(97vh - 250px); /* 260px 是顶部导航栏和底部控制栏的总高度 */
+        max-height: calc(97vh - 250px);
         overflow-y: scroll;
     }
     .song-table {
@@ -889,7 +891,7 @@
 
 
     .song-table-body::-webkit-scrollbar {
-        width: 18px;
+        width: 18px;/* 设置宽度 */
         background-color: rgba(0, 0, 0, 0); /* 设置为半透明的背景颜色 */
         border-radius: 10px;
     }
@@ -916,20 +918,19 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.3); /* 半透明黑色背景 */
         display: flex;
         justify-content: center;
         align-items: center;
         z-index: 1000; /* 确保在最上层 */
     }
     .playlist-panel {
-        background-color: rgba(0, 0, 0, 1);
+        background-color: rgba(0, 0, 0, 0.3);
         border-radius: 10px;
         padding: 10px;
         width: 80%;
         max-width: 400px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0);
         position: relative;
+        backdrop-filter: blur(20px);
     }
 
 
@@ -943,7 +944,7 @@
 
     }
     .close-button:hover {
-        background-color: rgba(255, 255, 255, 0.4);
+        background-color: rgba(255, 255, 255, 0.2);
     }
     .close-button {
         width: 30px;
@@ -976,9 +977,8 @@
     }
     .playlist-option:hover{
         cursor: pointer;
-        background-color: white; /* 鼠标悬停时的背景颜色 */
+        background-color: rgba(255, 255, 255, 0.2);
         border-radius: 10px;
-        color: black;
     }
     /* 选择小框的样式 */
 
@@ -989,7 +989,7 @@
         bottom: 120px;
         left: 15%;
         width: 70%;
-        background-color: rgba(0, 0, 0, 0.9);
+        background-color: rgba(0, 0, 0, 0.6);
         display: flex;
         justify-content: space-between;
         padding: 10px;
@@ -1001,7 +1001,6 @@
         gap: 1px; /* 调整选项之间的间隔 */
         width: 100%; /* 让内部选项占满宽度 */
         max-width: 100%; /* 可以根据需要进行调整 */
-        background-color: rgba(0, 0, 0, 0.1);
     }
     .context-menu-options:hover {
         border-radius: 30px;
@@ -1014,14 +1013,12 @@
         color: #fff;
         cursor: pointer;
         padding: 10px;
-        background-color: rgba(0, 0, 0, 0.6);
         border-radius: 30px;
         font-weight: bold;
         letter-spacing: 1px;
     }
     .context-menu-option:hover {
-        background-color: white;
+        background-color: rgba(255, 255, 255, 0.2);
         border-radius: 30px;
-        color: black;
     }
 </style>

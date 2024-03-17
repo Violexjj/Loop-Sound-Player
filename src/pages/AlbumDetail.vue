@@ -1,25 +1,22 @@
 <template>
-    <div class="album-detail-container route-container unselectable">
-        <div class="left-content">
-            <div class="albumsDetailHeader">
-                <div class="header-content">
-                    <h1 class="centered">{{ truncateText(album.name, 140) }}</h1>
-                </div>
-            </div>
-            <div class="cover-container centered2">
-                <div class="cover">
-                    <img :src="this.$store.state.nowAlbumCover" alt="cover" class="albumImg">
-                </div>
-            </div>
-        </div>
+    <div class="route-container unselectable">
+        <h1 style="margin-left: 15px" class="centered">{{album.name}}</h1>
 
-        <div class="songs-list">
-            <ul>
-                <li class="songOfAlbum" v-for="(song, index) in album.songs" :key="song.id"
-                    @dblclick="changeQueueAndPlay(album.songs, index);clearShuffledIndex()">
-                    {{ truncateText((song.title + " - " + song.artist), 500) }}
-                </li>
-            </ul>
+        <div class="album-detail-container">
+                <div class="cover-container">
+                    <div class="cover">
+                        <img :src="this.$store.state.nowAlbumCover" alt="cover" class="albumImg">
+                    </div>
+                </div>
+
+            <div class="songs-list">
+                <ul>
+                    <li class="songOfAlbum" v-for="(song, index) in album.songs" :key="song.id"
+                        @dblclick="changeQueueAndPlay(album.songs, index);clearShuffledIndex()">
+                        {{ song.title + " - " + song.artist}}
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
 </template>
@@ -45,9 +42,9 @@
     .songOfAlbum {
         cursor: pointer;
         transition: background-color 0.1s ease; /* 添加过渡效果 */
-        padding: 10px;
+        padding: 15px;
         padding-left: 20px;
-        border-radius: 30px;
+        border-radius: 10px;
     }
     .songs-list::-webkit-scrollbar {
         width: 15px;
@@ -66,38 +63,27 @@
         background-color: rgba(255, 255, 255, 0); /* 设置轨道的颜色 */
     }
     .route-container{
-        max-height: calc(97vh - 280px); /* 100px 是顶部导航栏和底部控制栏的总高度 */
         overflow: hidden;
     }
     .songOfAlbum:hover {
         background-color: rgba(255, 255, 255, 0.2); /* 鼠标悬停时的背景颜色 */
-        border-radius: 30px;
+        border-radius: 10px;
     }
 
     .album-detail-container {
+        height: calc(97vh - 280px);
         display: flex;
         flex-direction: row;
     }
 
-    .left-content {
-        flex: 0.5;
-        display: flex;
-        flex-direction: column;
-        padding-left: 50px;
-        gap: 20px;
-        align-items: center;
-    }
-
-    .header-content {
-        display: flex;
-        flex-direction: column;
-    }
-
     .cover-container {
+        margin-left: 12px;
+        margin-top: 40px;
         max-width: 300px;
         max-height: 300px;
         border-radius: 20px;
         overflow: hidden;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
     }
 
     .cover {
@@ -113,26 +99,15 @@
         object-fit: contain;
         border-radius: 20px;
     }
-
-    .albumsDetailHeader {
-        flex: 0 0 auto;
-        margin-top: 30px;
-    }
-
     .songs-list {
         flex: 1;
         padding: 10px;
         overflow-y: auto;
-        overflow-x: auto; /* 添加滚动条 */
+        overflow-x: auto;
         margin-left: 50px;
-        margin-top: 50px;
     }
 
     .centered {
         margin: 10px;
-    }
-
-    .centered2 {
-        margin: 30px;
     }
 </style>

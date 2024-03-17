@@ -1,47 +1,33 @@
 <template>
-    <div class="artist-detail-container route-container unselectable">
-        <div class="left-content">
-            <div class="artistDetailHeader">
-                <div class="header-content">
-                    <h1 class="centered">{{ truncateText(artist.name, 140) }}</h1>
+    <div class=" route-container unselectable">
+        <h1 style="margin-left: 15px" class="centered">{{artist.name}}</h1>
+
+        <div class="artist-detail-container">
+                <div class="cover-container ">
+                    <div class="cover">
+                        <img :src="this.$store.state.nowArtistCover" alt="cover" class="artistImg">
+                    </div>
                 </div>
-            </div>
-            <div class="cover-container centered2">
-                <div class="cover">
-                    <img :src="this.$store.state.nowArtistCover" alt="cover" class="artistImg">
-                </div>
+
+            <div class="songs-list">
+                <ul>
+                    <li class="songOfArtist" v-for="(song, index) in artist.songs" :key="song.id"
+                        @dblclick="changeQueueAndPlay(artist.songs, index);clearShuffledIndex()">
+                        {{song.title + " - " + song.artist}}
+                    </li>
+                </ul>
             </div>
         </div>
 
-        <div class="songs-list ">
-            <ul>
-                <li class="songOfArtist" v-for="(song, index) in artist.songs" :key="song.id"
-                    @dblclick="changeQueueAndPlay(artist.songs, index);clearShuffledIndex()">
-                    {{ truncateText((song.title + " - " + song.artist), 500) }}
-                </li>
-            </ul>
-        </div>
     </div>
 </template>
-
-<script>
-    import { mapState } from 'vuex';
-    import { mix1, mix5, textTruncateMixin ,clearShuffledIndex} from '../mixin'
-
-    export default {
-        name: 'ArtistDetail',
-        mixins: [mix1, mix5, textTruncateMixin,clearShuffledIndex],
-        props: ['artist']
-    };
-</script>
-
 <style scoped>
     .songOfArtist {
         cursor: pointer;
         transition: background-color 0.1s ease;
-        padding: 10px;
+        padding: 15px;
         padding-left: 20px;
-        border-radius: 30px;
+        border-radius: 10px;
     }
     .songs-list::-webkit-scrollbar {
         width: 15px;
@@ -60,37 +46,27 @@
         background-color: rgba(255, 255, 255, 0); /* 设置轨道的颜色 */
     }
     .route-container{
-        max-height: calc(97vh - 280px); /* 100px 是顶部导航栏和底部控制栏的总高度 */
-        overflow: hidden;
+        overflow-y: hidden
     }
     .songOfArtist:hover {
         background-color: rgba(255, 255, 255, 0.2);
-        border-radius: 30px;
+        border-radius: 10px;
     }
 
     .artist-detail-container {
+        height: calc(97vh - 280px);
         display: flex;
         flex-direction: row;
     }
 
-    .left-content {
-        flex:0.5;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding-left: 50px;
-        gap: 20px;
-    }
-    .header-content {
-        display: flex;
-        flex-direction: column;
-    }
-
     .cover-container {
+        margin-left: 12px;
+        margin-top: 40px;
         max-width: 300px;
         max-height: 300px;
         border-radius: 20px;
         overflow: hidden;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
     }
     .cover {
         width: 100%;
@@ -105,16 +81,10 @@
         border-radius: 20px;
     }
 
-    .artistDetailHeader {
-        flex: 0 0 auto;
-        margin-top: 30px;
-    }
-
     .songs-list {
         flex: 1;
         padding: 10px;
         margin-left: 50px;
-        margin-top: 50px;
         overflow-y: auto; /* 添加滚动条 */
         overflow-x: auto; /* 添加滚动条 */
     }
@@ -122,8 +92,16 @@
     .centered {
         margin: 10px;
     }
-
-    .centered2 {
-        margin: 30px;
-    }
 </style>
+<script>
+    import { mapState } from 'vuex';
+    import { mix1, mix5, textTruncateMixin ,clearShuffledIndex} from '../mixin'
+
+    export default {
+        name: 'ArtistDetail',
+        mixins: [mix1, mix5, textTruncateMixin,clearShuffledIndex],
+        props: ['artist']
+    };
+</script>
+
+
