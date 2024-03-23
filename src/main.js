@@ -63,7 +63,11 @@ new Vue({
                     this.$store.commit('SET_SHOW_ARTISTS',savingState.showArtists)
                     this.$store.commit('SET_SHOW_FOLDERS',savingState.showFolders)
                     this.$store.commit('SET_OTHER_BLUR',savingState.otherBlur)
-                console.log("vue get savingState")
+                    this.$store.commit('SET_SHORTCUTS',savingState.shortcuts)
+                    this.$store.commit('SET_DLYRIC_COLOR',savingState.dLyricColor)
+                    this.$store.commit('SET_USE_PURE_COLOR',savingState.usePureColor)
+                    this.$store.commit('SET_DLYRIC_COLOR_PURE',savingState.dLyricColorPure)
+                    console.log("vue get savingState")
                 if (this.$store.state.queue[0].id === "") {
                     window.myAPI.closeWelcome()
                 }

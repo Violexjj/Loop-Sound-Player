@@ -410,6 +410,31 @@ const mutations = {
             state.otherBlur = value;
         }
     },
+    SET_SHORTCUTS(state, value){
+        if (value !== undefined) {
+            state.shortcuts = value;
+        }
+        window.myAPI.initializeShortcuts(state.shortcuts)
+    },
+
+    SET_DLYRIC_COLOR(state, value){
+        if (value !== undefined) {
+            state.dLyricColor = value;
+        }
+    },
+
+    SET_DLYRIC_COLOR_PURE(state, value){
+        if (value !== undefined) {
+            state.dLyricColorPure = value;
+        }
+    },
+
+    SET_USE_PURE_COLOR(state, value){
+        if (value !== undefined) {
+            state.usePureColor = value;
+        }
+    },
+
     SET_CHECK(state, value) {
         if (value !== undefined) {
             state.check = value;
@@ -428,7 +453,7 @@ const mutations = {
 
 const state = {
     check: null,
-    nowVersion: "1.0.2",
+    nowVersion: "1.0.3",
     latestVersion: null,
     latestVersionInfo: "",
     errorMessage:"请开启自动检查更新",
@@ -470,7 +495,7 @@ const state = {
     toHomeAfterChangeQueue : true,
     autoHideLrc : true,
     lyricAlignmentType : ["left","center","right"],
-    lyricAlignmentMode : 1,
+    lyricAlignmentMode : 0,
     highlight : false,
     showInfo : true,
     showFormat : true,
@@ -503,7 +528,49 @@ const state = {
     showArtists: true,
     showFolders: true,
     focusMode: false,
-    focusMode2: true
+    focusMode2: true,
+    deckTopLyric: false,
+    dLyricColor: ["#FFA6B7","#1E2AD2"],
+    dLyricColorPure: "#03A9F4",
+    usePureColor: true,
+    dLyricText:{},
+    shortcuts: {
+        "local": {
+            "lExit": "Escape",
+            "lToggle": "Space",
+            "lLast": "Ctrl+Left",
+            "lNext": "Ctrl+Right",
+            "lBack3": "Left",
+            "lForward3": "Right",
+            "lUpVolume": "Up",
+            "lDownVolume": "Down",
+            "lFullScreen": "F11",
+            "lMiniSize": "Ctrl+M",
+            "lToHome": "Ctrl+Z",
+            "lSettings": "Ctrl+S",
+            "lLoopMode": "Ctrl+O",
+            "lMute": "Ctrl+N",
+            "lSearch": "Ctrl+F",
+            "lQueue": "Ctrl+Q",
+            "lLyric": "Ctrl+L",
+            "lInfo": "Ctrl+I",
+            "lPlaylists": "Ctrl+P",
+            "lDesktopLyric": "Ctrl+D",
+            "lFocusMode": "Ctrl+Enter"
+        },
+        "global": {
+            "gOpen": "Alt+F10",
+            "gToggle": "Alt+F9",
+            "gLast": "Alt+F11",
+            "gNext": "Alt+F12",
+            "gUpVolume": "Alt+F7",
+            "gDownVolume": "Alt+F6",
+            "gLoopMode": "Alt+F5",
+            "gMute": "Alt+F8",
+            "gDesktopLyric": "Alt+F1",
+            "gExit": "Alt+E"
+        }
+    }
 }
 
 const getters = {

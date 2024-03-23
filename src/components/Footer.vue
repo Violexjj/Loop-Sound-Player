@@ -64,6 +64,7 @@
                     class="slider"
                     :duration="0.18"
                     :lazy="true"
+                    contained="true"
                     :tooltip="'none'"
             >
 
@@ -77,6 +78,10 @@
 
         <!--        ------------------------------------------------------------------------------------------->
         <div class="right-controls">
+            <!-- 桌面歌词按钮 -->
+            <div class="control-button lyric-button" @click="changeDeskTopLyric()" :class="{ 'active': deskTopLyric }" title="显示/隐藏桌面歌词">
+                <div class="dLyric-image"></div>
+            </div>
             <!-- 歌词按钮 -->
             <div class="control-button lyric-button" @click="changeShowLyric" :class="{ 'active': showLyric }" title="显示/隐藏歌词">
                 <div class="lyrics-image"></div>
@@ -89,22 +94,33 @@
             <div class="control-button" @click="showPlaylistModal = true" title="切换播放列表">
                 <div class="playlist-image"></div>
             </div>
+            <div class="volume-container"
+                 @mouseover="showVolumeSlider = true"
+                 @mouseleave="handleMouseLeave">
+                <!-- 音量按钮 -->
+                <div title="鼠标滚轮调节" class="control-button" @mouseenter="handleMouseEnter" @click="changeMute" @wheel="adjustVolumeWithWheel">
+                    <div v-show="!this.$store.state.isMute && this.volume !== 0"  class="volume-image"></div>
+                    <div v-show="this.$store.state.isMute || this.volume === 0" class="noVolume-image"></div>
+                </div>
+                <!-- 音量条 -->
+                <div @mouseenter="handleMouseEnter">
+                    <vue-slider
+                            v-if="showVolumeSlider"
+                            v-model="$store.state.volume"
+                            :min="0"
+                            :max="100"
+                            :interval="1"
+                            :dot-size="15"
+                            :height="100"
+                            :width="10"
+                            :duration="0.2"
+                            direction="btt"
+                            contained="true"
+                            class="volume-slider"
+                    ></vue-slider>
+                </div>
 
-            <!-- 音量按钮 -->
-            <div class="control-button" @click="changeMute" @wheel="adjustVolumeWithWheel">
-                <div v-show="!this.$store.state.isMute && this.volume !== 0"  class="volume-image"></div>
-                <div v-show="this.$store.state.isMute || this.volume === 0" class="noVolume-image"></div>
             </div>
-            <vue-slider
-                    v-model="$store.state.volume"
-                    :min="0"
-                    :max="100"
-                    :interval="1"
-                    :dot-size="12"
-                    :height="10"
-                    :duration="0.2"
-                    style="width:100px;margin-left: 7.5px;margin-right: 5px"
-            ></vue-slider>
             <div v-show="showVolumeValue" class="volume-value">
                 {{ `音量 :  ${volume}` }}
             </div>
@@ -211,7 +227,17 @@
 </template>
 
 <style scoped>
+    .volume-container {
+        position: relative;
+    }
 
+    .volume-slider {
+        position: absolute;
+        top: -150px; /* 相对音量按钮的位置 */
+        left: 50%; /* 居中 */
+        transform: translateX(-50%); /* 水平居中 */
+        z-index: 999; /* 显示在最上层 */
+    }
     .info-dialog-container {
         position: fixed;
         top: 0;
@@ -352,7 +378,13 @@
     }
 
 
-
+    .dLyric-image{
+        width: 60%;
+        height: 60%;
+        background-image: url('../assets/dLyric.png');
+        background-size: contain;
+        background-repeat: no-repeat;
+    }
     .lyrics-image {
         width: 60%;
         height: 60%;
@@ -606,7 +638,9 @@
         name: "Footer",
         mixins: [mix3],
         created() {
-            // 监听来自主进程的暂停/播放请求
+            myAPI.onChangeShowDLyric((_event) => {
+                this.changeDeskTopLyric()
+            })
             myAPI.onPlayLast((_event) => {
                 this.playLast()
                 this.$bus.$emit('songOnTop')
@@ -719,6 +753,8 @@
                 isNextButtonDisabled: false,
                 isPrevButtonDisabled: false,
                 showInfoDialog : false,
+                timer: null,
+                showVolumeSlider: false
             };
         },
         mounted() {
@@ -738,8 +774,50 @@
                     this.$store.state.currentProgress = 0
                 },
             },
+            '$store.state.usePureColor': {
+                immediate: true,
+                handler(newValue) {
+                    if (newValue) {
+                        myAPI.sendColor(this.$store.state.dLyricColorPure, 2)
+                    }else{
+                        myAPI.sendColor(this.$store.state.dLyricColor, 1)
+                    }
+                },
+            },
+            '$store.state.dLyricColor': {
+                handler(newValue) {
+                    if (!this.$store.state.usePureColor) {
+                        myAPI.sendColor(newValue, 1)
+                    }
+                },
+            },
+            '$store.state.dLyricColorPure': {
+                handler(newValue) {
+                    if (this.$store.state.usePureColor) {
+                        myAPI.sendColor(newValue, 2)
+                    }
+                },
+            },
+            currentProgressBy100: {
+                immediate: true,
+                handler(newValue) {
+                    myAPI.sendProgress(newValue/100)
+                },
+            },
+            '$store.state.dLyricText': {
+                immediate: true,
+                handler(newValue) {
+                    myAPI.sendLyric(newValue.text1, newValue.text2)
+                },
+            },
         },
         computed : {
+            currentProgressBy100(){
+                return Math.floor(this.$store.state.currentProgress)
+            },
+            deskTopLyric(){
+                return this.$store.state.deckTopLyric
+            },
             netId(){
                 return this.$store.state.songDialogInfo.netId === (-1) ? "未绑定":this.$store.state.songDialogInfo.netId
             },
@@ -810,6 +888,15 @@
             ...mapState(['currentIndex'])
         },
         methods: {
+            handleMouseEnter() {
+                clearTimeout(this.timer); // 取消隐藏计时器
+                this.showVolumeSlider = true; // 立即显示音量条
+            },
+            handleMouseLeave() {
+                this.timer = setTimeout(() => {
+                    this.showVolumeSlider = false; // 延迟一段时间后隐藏音量条
+                }, 1000);
+            },
             changeInfo(){
                 myAPI.changeInfo(this.$store.getters.nowSong.path)
             },
@@ -822,6 +909,19 @@
             },
             changeMute(){
                 this.$store.state.isMute = !this.$store.state.isMute
+            },
+            changeDeskTopLyric(){
+                this.$store.state.deckTopLyric = !this.$store.state.deckTopLyric
+                if (this.$store.state.deckTopLyric) {
+                    if (this.$route.path !== "/") {
+                        this.$router.push({
+                            name: "Home",
+                        });
+                    }
+                    myAPI.openDeckTopLyric(true, this.$store.state.isPlaying)
+                }else{
+                    myAPI.openDeckTopLyric(false, this.$store.state.isPlaying)
+                }
             },
             changeShowLyric(){
                 const showQueue = this.$store.state.showQueue

@@ -28,23 +28,23 @@
                 isInitializing: true,
                 oLyric: "",
                 tLyric:"",
-                needMagic:false
+                needMagic:false,
+                paused: true
             };
         },
         created() {
+                myAPI.onForwardBack((_event,arg) => {
+                    if (arg) {
+                        this.handleFowardAndBack(true)
+                    }else{
+                        this.handleFowardAndBack(false)
+                    }
+                })
                 this.isInitializing = true,
                 this.$bus.$on('changeProgress', newProgress => {
                 // 在这里更新howlerPlayer组件的播放进度
                 this.changeProgress(newProgress);
             });
-        },
-        mounted() {
-            // 监听键盘事件
-            window.addEventListener('keydown', this.handleKeyDown);
-        },
-        beforeDestroy() {
-            // 移除键盘事件监听器，以防止内存泄漏
-            window.removeEventListener('keydown', this.handleKeyDown);
         },
         watch: {
             nowSong: {
@@ -61,19 +61,29 @@
             },
             isPlaying: {
                 handler(isPlaying) {
+                    myAPI.sendToggle(Math.floor(this.$store.state.currentProgress)/100,isPlaying)
+                    myAPI.openDeckTopLyric(null, this.$store.state.isPlaying)
                     if(this.howlerInstance){
                         if (isPlaying) {
                             if (this.nowSong.path === this.$store.getters.nowSong.path) {
-                                this.howlerInstance.play();
-                                this.howlerInstance.once('play', () => {
+                                if (this.paused) {
+                                    this.howlerInstance.play();
+                                    this.paused =false
+                                    this.howlerInstance.once('play', () => {
+                                        this.howlerInstance.fade(0, this.volume/100,500)
+                                    });
+                                }else{
                                     this.howlerInstance.fade(0, this.volume/100,500)
-                                });
+                                }
                             }
                         } else {
                             if (this.nowSong.path === this.$store.getters.nowSong.path) {
                                 this.howlerInstance.fade(this.volume / 100, 0, 500);
                                 this.howlerInstance.once('fade', () => {
-                                    this.howlerInstance.pause();
+                                    if (!this.isPlaying) {
+                                        this.howlerInstance.pause();
+                                        this.paused = true
+                                    }
                                 });
                             }
 
@@ -102,23 +112,19 @@
                 this.needMagic = true
                 setTimeout(()=>{this.needMagic = false},5000)
             },
-            handleKeyDown(event) {
+            handleFowardAndBack(flag) {
                 if (this.howlerInstance && this.isPlaying) {
                     const currentTime = this.howlerInstance.seek();
                     const durationInSeconds = this.getDurationInSeconds();
 
-                    if (event.key === 'ArrowLeft') {
-                        if (!event.ctrlKey) {
+                    if (!flag) {
                             const newTime = Math.max(currentTime - 3, 0);
                             this.howlerInstance.seek(newTime);
                             this.$store.commit('SET_CURRENT_PROGRESS', (newTime / durationInSeconds) * 100);
-                        }
-                    } else if (event.key === 'ArrowRight') {
-                        if (!event.ctrlKey) {
+                    } else {
                             const newTime = Math.min(currentTime + 3, durationInSeconds);
                             this.howlerInstance.seek(newTime);
                             this.$store.commit('SET_CURRENT_PROGRESS', (newTime / durationInSeconds) * 100);
-                        }
                     }
                 }
             },

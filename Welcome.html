@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to Sonorbit</title>
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            padding: 20px;
+            border: 10px solid rgba(0, 0, 0, 0.4);
+            border-radius: 30px;
+            background-color: rgba(0, 0, 0, 0.3);
+            text-align: center;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            opacity: 0;
+            animation: fadeIn 1.5s forwards;
+        }
+        .logo, .title {
+            opacity: 0; /* 初始设置为透明 */
+            animation: fadeIn 1.5s forwards; /* 使用fadeIn动画，时长1秒，结束后保持状态 */
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+        .logo {
+            width: 90px;
+            height: 90px;
+            background-image: url('img/logo.png');
+            background-size: cover;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .title {
+            font-weight: bold;
+            letter-spacing: 1px;
+            font-size: 50px;
+            display: inline-block;
+            color: #f0f0f0;
+            user-select: none
+        }
+    </style>
+
+</head>
+<body>
+<div class="container">
+    <div class="logo"></div>
+    <div class="title">Sonorbit</div>
+</div>
+</body>
+</html>

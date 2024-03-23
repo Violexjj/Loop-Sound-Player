@@ -82,7 +82,7 @@
     }
     .search-button {
         width: 5%;
-        border: 2px solid #f0f0f0;
+        border: 2px solid rgba(255,255,255,0.7);
         padding: 10px;
         margin: 1px 2px;
         margin-right: 5px;

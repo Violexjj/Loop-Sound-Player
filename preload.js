@@ -2,7 +2,26 @@
 const {contextBridge, ipcRenderer} = require('electron')
 
 
+window.addEventListener('DOMContentLoaded', () => {
+    const lock = document.getElementById('lockButton')
+    const unlock = document.getElementById('unlockButton')
 
+    if (lock) {
+        lock.addEventListener('mouseenter', () => {
+            setTimeout(()=>{
+                ipcRenderer.send('set-ignore-mouse-events')
+            },1000)
+        })
+    }
+
+    if (unlock) {
+        unlock.addEventListener('mouseenter', () => {
+            setTimeout(()=>{
+                ipcRenderer.send('set-ignore-mouse-events')
+            },1000)
+        })
+    }
+})
 
 contextBridge.exposeInMainWorld('myAPI', {
 
@@ -19,21 +38,46 @@ contextBridge.exposeInMainWorld('myAPI', {
     onChangeMute: (callback) => ipcRenderer.on('changeMute', callback),
     onChangeMuteG: (callback) => ipcRenderer.on('changeMuteG', callback),
     onChangeModeG: (callback) => ipcRenderer.on('changeModeG', callback),
+    onChangeShowDLyric: (callback) => ipcRenderer.on('changeShowDLyric', callback),
 
     onSaveBeforeQuit: (callback,arg) => ipcRenderer.on('saveBeforeQuit', callback, arg),
+    onForwardBack: (callback,arg) => ipcRenderer.on('forwardBack', callback, arg),
     onCloseFromBottom: (callback) => ipcRenderer.on('closeFromBottom', callback),
     onLoop: (callback) => ipcRenderer.on('loop', callback),
     onRandom: (callback) => ipcRenderer.on('random', callback),
     onOne: (callback) => ipcRenderer.on('one', callback),
     onFinishScan: (callback) => ipcRenderer.on('finishScan', callback),
     onFinishScanErrorMix: (callback) => ipcRenderer.on('finishScanErrorMix', callback),
+    onErrorFile: (callback) => ipcRenderer.on('errorFile', callback),
     onCancelScan: (callback) => ipcRenderer.on('cancelScan', callback),
     onOpenSettings: (callback) => ipcRenderer.on('openSettings', callback),
+    onShowInfo: (callback) => ipcRenderer.on('showInfo', callback),
+    onShowPlaylists: (callback) => ipcRenderer.on('showPlaylists', callback),
+    onShowLyric: (callback) => ipcRenderer.on('showLyric', callback),
+    onReturnHome: (callback) => ipcRenderer.on('returnHome', callback),
+    onShowQueue: (callback) => ipcRenderer.on('showQueue', callback),
+    onSearch: (callback) => ipcRenderer.on('search', callback),
+    onFocusMode: (callback) => ipcRenderer.on('focusMode', callback),
+
+    onLyricFromWin: (callback,arg1, arg2) => ipcRenderer.on('lyricFromWin', callback, arg1, arg2),
+    onLockButton: (callback,arg) => ipcRenderer.on('lockButton', callback, arg),
+    onCloseDeskTopLyric: (callback) => ipcRenderer.on('closeDeskTopLyric', callback),
+    onSendIsPlaying: (callback,arg) => ipcRenderer.on('sendIsPlaying', callback, arg),
+    onChangeColor: (callback,arg1,arg2) => ipcRenderer.on('changeColor', callback, arg1, arg2),
 
 
     rename:({oldName,newName})=>{
         ipcRenderer.invoke('rename',{oldName,newName})
     },
+
+    sendProgress:(progress)=>{
+        ipcRenderer.invoke('sendProgress',progress)
+    },
+
+    sendToggle:(progress, isPlaying)=>{
+        ipcRenderer.invoke('sendToggle', progress, isPlaying)
+    },
+
     openFile:(filePath,directory)=>{
         ipcRenderer.invoke('openFile',filePath,directory)
     },
@@ -46,12 +90,29 @@ contextBridge.exposeInMainWorld('myAPI', {
             return response;
         } catch (error) {
             console.error('Error reading file:', error);
-            throw error;
+            return "[00:00.00]加载歌曲文件错误"
+        }
+    },
+    searchSong: async (keyword) => {
+        try {
+            const response = await ipcRenderer.invoke('searchSong', keyword);
+            return response;
+        } catch (error) {
+            return "未知错误"
+        }
+    },
+    searchLyric: async (songId) => {
+        try {
+            const response = await ipcRenderer.invoke('searchLyric',songId);
+            return response;
+        } catch (error) {
+            return "未知错误"
         }
     },
     readFileForMoreInfo: async (filePath,songId) => {
         try {
             const response = await ipcRenderer.invoke('readFileForMoreInfo', filePath,songId);
+
             return response;
         } catch (error) {
             console.error('Error reading file:', error);
@@ -61,11 +122,14 @@ contextBridge.exposeInMainWorld('myAPI', {
     changeInfo:(filePath)=>{
         ipcRenderer.invoke('changeInfo',filePath)
     },
+    closeWelcome:()=>{
+        ipcRenderer.invoke('closeWelcome')
+    },
     minimize:()=>{
         ipcRenderer.invoke('minimize-window')
     },
-    maximize:()=>{
-        ipcRenderer.invoke('maximize-window')
+    maximize:(flag)=>{
+        ipcRenderer.invoke('maximize-window',flag)
     },
     closeWindow:(savingState)=>{
         ipcRenderer.invoke('close-window',savingState)
@@ -115,7 +179,6 @@ contextBridge.exposeInMainWorld('myAPI', {
             throw error;
         }
     },
-
     getSongCover: async (filePath,type) => {
         try {
             const response = await ipcRenderer.invoke('getSongCover',filePath,type);
@@ -153,6 +216,31 @@ contextBridge.exposeInMainWorld('myAPI', {
         ipcRenderer.invoke('setId',netId, songId)
     },
 
+    sendColor:(color, type) =>{
+        ipcRenderer.invoke('sendColor',color, type)
+    },
+
+    deskTopLyricButtons:(buttonNo) =>{
+        ipcRenderer.invoke('deskTopLyricButtons',buttonNo)
+    },
+
+    sendLyric:(text1, text2) =>{
+        ipcRenderer.invoke('sendLyric', text1, text2)
+    },
+
+
+    openDeckTopLyric:(flag, isPlaying) =>{
+        ipcRenderer.invoke('openDeckTopLyric',flag, isPlaying)
+    },
+
+    changeShortcuts:(type, whichKey, oldVal, newVal) =>{
+        ipcRenderer.invoke('changeShortcuts',type, whichKey, oldVal, newVal)
+    },
+
+    initializeShortcuts:(shortcuts) =>{
+        ipcRenderer.invoke('initializeShortcuts',shortcuts)
+    },
+
     delOnlineLrc:(songPath, lrcDirectory)=>{
         ipcRenderer.invoke('delOnlineLrc',songPath, lrcDirectory)
     },
@@ -183,5 +271,9 @@ contextBridge.exposeInMainWorld('myAPI', {
     },
     miniMode:(miniMode)=>{
         ipcRenderer.invoke('miniMode',miniMode)
+    },
+
+    enableDrag:()=>{
+        ipcRenderer.invoke('enableDrag')
     }
 });

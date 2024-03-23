@@ -1,21 +1,6 @@
 <template>
     <div class="unselectable winHidden" tabindex="0"
-         @keyup.esc="closeWindow(false)"
-         @keyup.space="emitToggle()"
-         @keyup.ctrl.left="emitPrev();setSongOnTop()"
-         @keyup.ctrl.right="emitNext();setSongOnTop()"
-         @keydown.up="upVolume();emitShowVolume()"
-         @keydown.down="downVolume();emitShowVolume()"
-         @keyup.ctrl.i="emitShowInfo()"
-         @keyup.ctrl.p="emitShowPlaylist()"
-         @keyup.ctrl.n="changeMute()"
-         @keyup.ctrl.o="changeMode()"
-         @keyup.ctrl.l="changeLyric()"
-         @keyup.ctrl.q="changeQueue()"
-         @keyup.ctrl.z="returnHome()"
-         @keyup.ctrl.s="toSettings()"
-         @keyup.ctrl.f="startSearch()"
-         @keyup.ctrl.enter="outFocus()"
+
          @click="closeContext()"
          @blur="closeContext"
     >
@@ -41,21 +26,21 @@
                 </div>
                 <!--                控制按钮部分-->
                 <div class="control-buttons">
-                <!--   占位                 -->
+                    <!--   占位                 -->
                     <div class="control-buttons-nodrag" style="margin-left: auto;"></div>
-<!--                    迷你模式-->
+                    <!--                    迷你模式-->
                     <div class="control-button minimize minimize-button" @click="miniMode" title="迷你模式">
                         <img src="./assets/mini.png" alt="Minimize">
                     </div>
-<!--                    最小化-->
+                    <!--                    最小化-->
                     <div class="control-button minimize minimize-button" @click="minimizeWindow" title="最小化">
                         <img src="./assets/minimize.png" alt="Minimize">
                     </div>
-<!--                    最大化-->
+                    <!--                    最大化-->
                     <div class="control-button maximize maximize-button" @contextmenu="maximizeWindow(2)" @click="maximizeWindow(1)" title="左键最大化，右键全屏">
                         <img src="./assets/maximize.png" alt="Maximize">
                     </div>
-<!--                    关闭-->
+                    <!--                    关闭-->
                     <div class="control-button close close-button" @click="closeWindow(false)" title="关闭">
                         <img src="./assets/closeWindow.png" alt="Close">
                     </div>
@@ -160,17 +145,17 @@
             </footer>
         </div>
 
-<!--        迷你模式-->
+        <!--        迷你模式-->
         <div  v-show="this.$store.state.miniMode" class="miniMode">
-<!--            背景-->
+            <!--            背景-->
             <div class="background">
                 <img :src="this.$store.state.nowSongCover" alt="Background Image" style="filter: blur(30px)" class="background-image">
             </div>
-<!--            封面-->
+            <!--            封面-->
             <div class="cover-container-mini">
                 <img v-if="this.$store.state.nowSongCover" :src="this.$store.state.nowSongCover" alt="cover" class="cover-mini">
             </div>
-<!--按钮-->
+            <!--按钮-->
             <div class="buttonArea">
                 <!-- 上一曲按钮 -->
                 <div class="control-buttonMini noDrag" @click="emitPrev();setSongOnTop()">
@@ -753,6 +738,30 @@
             }
         },
         created() {
+            myAPI.onCloseDeskTopLyric((_event) => {
+                this.$store.state.deckTopLyric =false
+            })
+            myAPI.onFocusMode((_event) => {
+                this.outFocus()
+            })
+            myAPI.onSearch((_event) => {
+                this.startSearch()
+            })
+            myAPI.onShowQueue((_event) => {
+                this.changeShowQueue()
+            })
+            myAPI.onReturnHome((_event) => {
+                this.returnHome()
+            })
+            myAPI.onShowLyric((_event) => {
+                this.changeLyric()
+            })
+            myAPI.onShowPlaylists((_event) => {
+                this.emitShowPlaylist()
+            })
+            myAPI.onShowInfo((_event) => {
+                this.emitShowInfo()
+            })
             myAPI.onErrorFile((_event) => {
                 this.info = "扫描失败，请检查文件"
                 setTimeout(()=>{
@@ -1099,8 +1108,8 @@
                         cover: cover,
                     };
                     // 将 playlistCover 对象放入 Vuex 的 playlistsCovers 数组中
-                        this.$store.state.playlistsCovers.push(playlistCover);
-                    }
+                    this.$store.state.playlistsCovers.push(playlistCover);
+                }
             },
             async getLatestVersion() {
                 try {
@@ -1256,7 +1265,11 @@
                     showAlbums: this.$store.state.showAlbums,
                     showArtists: this.$store.state.showArtists,
                     showFolders: this.$store.state.showFolders,
-                    otherBlur: this.$store.state.otherBlur
+                    otherBlur: this.$store.state.otherBlur,
+                    shortcuts: this.$store.state.shortcuts,
+                    dLyricColor: this.$store.state.dLyricColor,
+                    usePureColor: this.$store.state.usePureColor,
+                    dLyricColorPure: this.$store.state.dLyricColorPure
                 }
                 myAPI.closeWindow(savingState)
             },

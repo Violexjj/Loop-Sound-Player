@@ -1,11 +1,7 @@
-
 //运行vue，执行 npm run serve
 // 打开界面，npm start
 // 打包vue为dist，npm run build
 // 打包electron，cnpm run dist
-
-
-
 
 const path = require('path');
 const { shell, app, BrowserWindow, ipcMain,nativeImage,dialog, Tray,Menu, globalShortcut,screen} = require('electron');
@@ -14,16 +10,17 @@ const mime = require('mime-types');
 const jsmediatags = require('jsmediatags');
 const Store = require('electron-store');
 const sharp = require('sharp');
-
-
-
+const localShortcut = require('electron-localshortcut');
 
 let tray = null
-
 const store = new Store();
+
 let win = null;
 let showWelcome = null
+let deskTopLyric = null
+
 let windowState = null;
+let deskTopLyricState = null;
 
 // 基本配置
 const createWindow = () => {
@@ -34,6 +31,14 @@ const createWindow = () => {
         x: 30, // 默认 x 位置
         y: 30, // 默认 y 位置
     });
+    deskTopLyricState = store.get('deskTopLyricState', {
+        width: 4000,  // 默认宽度
+        height: 190, // 默认高度
+        x: 0, // 默认 x 位置
+        y: 0, // 默认 y 位置
+    });
+
+    // 播放器主界面
     win = new BrowserWindow({
         width: windowState.width,
         height: windowState.height,
@@ -46,6 +51,15 @@ const createWindow = () => {
     });
     win.setMinimumSize(650, 650);
 
+    // win.loadURL('http://localhost:8080');
+    //win.loadURL('https://music.163.com/');
+    //  win.loadFile('./color-Test.html');
+    win.loadFile(path.join(__dirname, 'dist', 'index.html'));
+
+    // 打开开发者工具
+    // win.webContents.openDevTools();
+
+    // 开屏动画
     showWelcome = new BrowserWindow({
         width: 500,
         height: 200,
@@ -54,16 +68,26 @@ const createWindow = () => {
         show: false,
         icon: path.join(__dirname, 'dist','img','logo.ico'),
     });
-
     showWelcome.loadFile(path.join(__dirname, 'dist', 'Welcome.html'));
-    // 装载页面
-    win.loadURL('http://localhost:8080');
-    //win.loadURL('https://music.163.com/');
-    //  win.loadFile('./index.html');
-    //win.loadFile(path.join(__dirname, 'dist', 'index.html'));
 
-    // 打开开发者工具
-    // win.webContents.openDevTools();
+    // 桌面歌词
+    deskTopLyric = new BrowserWindow({
+        width: deskTopLyricState.width,
+        height: deskTopLyricState.height,
+        x: deskTopLyricState.x,
+        y: deskTopLyricState.y,
+        alwaysOnTop: true,
+        show: false,
+        frame: false,
+        transparent: true,
+        icon: path.join(__dirname, 'dist','img','logo.ico'),
+        webPreferences: {
+            preload: path.resolve(__dirname, './preload.js')
+        }
+    });
+    deskTopLyric.loadFile(path.join(__dirname, 'dist', 'DeskTopLyric.html'));
+    deskTopLyric.setSkipTaskbar(true)
+    deskTopLyric.setMinimumSize(352, 116);
 
     // 加载好页面内容再打开界面
     win.on("ready-to-show", () => {
@@ -103,6 +127,8 @@ const createWindow = () => {
     ipcMain.handle('close-window', (event,savingState) => {
         // 在窗口关闭时获取当前窗口状态并保存到 electron-store
         const currentWindowState = win.getBounds();
+        const currentDeskTopLyricState = deskTopLyric.getBounds();
+
         console.log("before close: ", currentWindowState)
         const rightWindowState = {
             width: Math.abs(windowState.width-currentWindowState.width)> 5?currentWindowState.width:windowState.width,
@@ -110,9 +136,19 @@ const createWindow = () => {
             x: Math.abs(windowState.x-currentWindowState.x)> 5?currentWindowState.x:windowState.x,
             y: Math.abs(windowState.y-currentWindowState.y)> 5?currentWindowState.y:windowState.y,
         }
+
+        const rightDeskTopLyricState = {
+            width: Math.abs(deskTopLyricState.width-currentDeskTopLyricState.width)> 5?currentDeskTopLyricState.width:deskTopLyricState.width,
+            height: Math.abs(deskTopLyricState.height-currentDeskTopLyricState.height)> 5?currentDeskTopLyricState.height:deskTopLyricState.height,
+            x: Math.abs(deskTopLyricState.x-currentDeskTopLyricState.x)> 5?currentDeskTopLyricState.x:deskTopLyricState.x,
+            y: Math.abs(deskTopLyricState.y-currentDeskTopLyricState.y)> 5?currentDeskTopLyricState.y:deskTopLyricState.y,
+        }
+
         console.log("after close: ", rightWindowState)
         store.set('windowState', rightWindowState);
-        //保存设置状态
+        store.set('deskTopLyricState', rightDeskTopLyricState);
+
+        //保存播放器设置状态
         const appDataPath = path.join(process.env.APPDATA, 'Sonorbit');
         const savingStatePath = path.join(appDataPath, 'savingState.json');
         if (!fs.existsSync(appDataPath)) {
@@ -137,6 +173,7 @@ const createWindow = () => {
             },1000)
         }
     })
+
     //设置托盘
     const trayIcon = nativeImage.createFromPath(path.join(__dirname, 'dist','img','logo2.ico'));
     tray = new Tray(trayIcon);
@@ -224,57 +261,14 @@ const createWindow = () => {
             }
         }
     });
-
-    //--------------------------------------------------------------------------
-    //设置快捷键
-    globalShortcut.register('Alt+E', () => {
-        win.webContents.send('saveBeforeQuit',2);
-    });
-    globalShortcut.register('Alt+F9', () => {
-        win.webContents.send('toggleG');
-    });
-    globalShortcut.register('Alt+F11', () => {
-        win.webContents.send('playLastG');
-    });
-    globalShortcut.register('Alt+F12', () => {
-        win.webContents.send('playNextG');
-    });
-    globalShortcut.register('Alt+F6', () => {
-        win.webContents.send('downVolumeG');
-    });
-    globalShortcut.register('Alt+F7', () => {
-        win.webContents.send('upVolumeG');
-    });
-    globalShortcut.register('Alt+F8', () => {
-        win.webContents.send('changeMuteG');
-    });
-    globalShortcut.register('Alt+F5', () => {
-        win.webContents.send('changeModeG');
-    });
-    globalShortcut.register('Alt+F10', () => {
-        if (win) {
-            if (win.isMinimized()) {
-                // 如果窗口被最小化了，将其还原
-                win.restore();
-            } else {
-                // 如果窗口没有最小化，将其显示在前面
-                win.show();
-            }
-        }
-    });
-
-
 }
 
+// 查找单例以及应用的关闭
 const singleInstanceLock = app.requestSingleInstanceLock();
 if (!singleInstanceLock) {
-    // 如果无法获得单实例锁，说明已经有一个应用实例在运行，直接退出当前应用
     app.quit();
-}
-else {
-    // 如果获得了单实例锁，就继续创建主窗口
+}else {
     app.on('second-instance', () => {
-        // 当尝试打开第二个实例时，激活第一个实例的窗口
         if (win) {
             if (win.isMinimized()) {
                 win.restore();
@@ -300,6 +294,7 @@ else {
             if (tray) {
                 tray.destroy();
             }
+            localShortcut.unregisterAll(win)
             app.quit()
         }
     });
@@ -308,8 +303,116 @@ else {
         globalShortcut.unregisterAll();
     });
 }
-//------------------------------------------------------------------------
-// 修改元数据
+
+// 下面所有部分，是主进程与渲染进程的通信------------------------------------------------------------------------
+
+// 更改桌面歌词颜色
+ipcMain.handle('sendColor', async (event,color, type) => {
+    try {
+        deskTopLyric.webContents.send('changeColor', color, type);
+    } catch (error) {
+        console.error('Error sending color:', error);
+        throw error;
+    }
+});
+
+// 接收桌面歌词按钮的请求，对播放器进行控制
+ipcMain.handle('deskTopLyricButtons', async (event,buttonNo) => {
+    try {
+        if (buttonNo === 1) {
+            if (win) {
+                if (win.isMinimized()) {
+                    // 如果窗口被最小化了，将其还原
+                    win.restore();
+                } else {
+                    // 如果窗口没有最小化，将其显示在前面
+                    win.show();
+                }
+            }
+        }else if(buttonNo === 2){
+            win.webContents.send('openSettings');
+            if (win) {
+                if (win.isMinimized()) {
+                    // 如果窗口被最小化了，将其还原
+                    win.restore();
+                } else {
+                    // 如果窗口没有最小化，将其显示在前面
+                    win.show();
+                }
+            }
+        }else if(buttonNo === 3){
+            win.webContents.send('playLast');
+        }else if(buttonNo === 4){
+            win.webContents.send('toggle');
+        }else if(buttonNo === 5){
+            win.webContents.send('playNext');
+        }else if(buttonNo === 6){
+            win.webContents.send('closeDeskTopLyric');
+            if (deskTopLyric) {
+                deskTopLyric.hide()
+            }
+        }
+    } catch (error) {
+        console.error('Error clicking desktopLyricButtons:', error);
+        throw error;
+    }
+});
+
+// 接收 主界面 发送的歌词，并传给桌面歌词
+ipcMain.handle('sendLyric', async (event,text1, text2) => {
+    try {
+        deskTopLyric.webContents.send('lyricFromWin', text1, text2);
+    } catch (error) {
+        console.error('Error send lyric to desktopLyric:', error);
+        throw error;
+    }
+});
+
+let firstOpenDesktopLyric = true
+function sendIsPlaying(isPlaying){
+    deskTopLyric.webContents.send('sendIsPlaying',isPlaying);
+}
+// 打开或关闭桌面歌词
+ipcMain.handle('openDeckTopLyric', async (event,flag, isPlaying) => {
+    try {
+        sendIsPlaying(isPlaying)
+        if (flag === true) {
+            if (deskTopLyric) {
+                if (firstOpenDesktopLyric) {
+                    deskTopLyric.webContents.send('windowResize', deskTopLyricState.width, deskTopLyricState.height);
+                    deskTopLyric.show()
+                    firstOpenDesktopLyric = false
+                }else{
+                    deskTopLyric.show()
+                }
+            }
+        }else if(flag === false){
+            if (deskTopLyric) {
+                deskTopLyric.hide()
+            }
+        }
+    } catch (error) {
+        console.error('Error opening or closing desktopLyric:', error);
+        throw error;
+    }
+});
+
+let lockButton = false
+// 桌面歌词的锁
+ipcMain.on('set-ignore-mouse-events', (event) => {
+    const deskTopLyric = BrowserWindow.fromWebContents(event.sender)
+    if (lockButton === false) {
+        deskTopLyric.setIgnoreMouseEvents(true, { forward: true })
+        deskTopLyric.webContents.send('lockButton', true );
+        lockButton = true
+    }else{
+        deskTopLyric.setIgnoreMouseEvents(false)
+        deskTopLyric.webContents.send('lockButton', false );
+        lockButton = false
+    }
+})
+
+// 修改元数据（测试中）
 ipcMain.handle('changeInfo', async (event, path) => {
     // console.log(path)
     // const NodeID3 = require('node-id3')
@@ -419,6 +522,16 @@ ipcMain.handle('read-file', async (event, filePath,lyricDirectory,songId) => {
     // }
     // const success  = NodeID3.update(tags,filePath);
     // console.log(success)
+    //
+    // const flac = require("flac-metadata");
+    //
+    // const reader = fs.createReadStream(filePath);
+    // const processor = new flac.Processor({ parseMetaDataBlocks: true });
+    // processor.on("postprocess", function(mdb) {
+    //     console.log(mdb.toString());
+    // });
+    //
+    // reader.pipe(processor);
 
     try {
         const mm = await import('music-metadata');
@@ -737,10 +850,10 @@ ipcMain.handle('getSavingState', async (event) => {
                 "\"toHomeAfterChangeQueue\":true," +
                 "\"autoHideLrc\":true," +
                 "\"showQueue\":true," +
-                "\"lyricAlignmentMode\":1," +
+                "\"lyricAlignmentMode\":0," +
                 "\"showTlyric\":true," +
                 "\"highlight\":true," +
-                "\"otherBlur\":true," +
+                "\"otherBlur\":false," +
                 "\"showFormat\":true," +
                 "\"showFolders\":true," +
                 "\"showAlbums\":true," +
@@ -751,11 +864,51 @@ ipcMain.handle('getSavingState', async (event) => {
                 "\"exit\":false," +
                 "\"globalShortcut\":false," +
                 "\"deleteLocalFile\":false," +
+                "\"usePureColor\":true," +
                 "\"onlineLrc\":true," +
                 "\"savedCurrentPlaytime\":0," +
                 "\"lyricDirectory\":\"未设置\"," +
+                "\"dLyricColorPure\": \"#03A9F4\","+
+                "\"dLyricColor\": [\"#FFA6B7\",\"#1E2AD2\"]," +
                 "\"biggerLyric\":10," +
                 "\"blur\":40," +
+                "\"shortcuts\":{\n" +
+                "        \"local\":{\n" +
+                "            \"lExit\":\"Escape\",\n" +
+                "            \"lToggle\":\"Space\",\n" +
+                "            \"lLast\":\"Ctrl+Left\",\n" +
+                "            \"lNext\":\"Ctrl+Right\",\n" +
+                "            \"lBack3\":\"Left\",\n" +
+                "            \"lForward3\":\"Right\",\n" +
+                "            \"lUpVolume\":\"Up\",\n" +
+                "            \"lDownVolume\":\"Down\",\n" +
+                "            \"lFullScreen\":\"F11\",\n" +
+                "            \"lMiniSize\":\"Ctrl+M\",\n" +
+                "            \"lToHome\":\"Ctrl+Z\",\n" +
+                "            \"lSettings\":\"Ctrl+S\",\n" +
+                "            \"lLoopMode\":\"Ctrl+O\",\n" +
+                "            \"lMute\":\"Ctrl+N\",\n" +
+                "            \"lSearch\":\"Ctrl+F\",\n" +
+                "            \"lQueue\":\"Ctrl+Q\",\n" +
+                "            \"lLyric\":\"Ctrl+L\",\n" +
+                "            \"lInfo\":\"Ctrl+I\",\n" +
+                "            \"lPlaylists\":\"Ctrl+P\",\n" +
+                "            \"lDesktopLyric\":\"Ctrl+D\",\n" +
+                "            \"lFocusMode\":\"Ctrl+Enter\"\n" +
+                "        },\n" +
+                "        \"global\":{\n" +
+                "            \"gOpen\":\"Alt+F10\",\n" +
+                "            \"gToggle\":\"Alt+F9\",\n" +
+                "            \"gLast\":\"Alt+F11\",\n" +
+                "            \"gNext\":\"Alt+F12\",\n" +
+                "            \"gUpVolume\":\"Alt+F7\",\n" +
+                "            \"gDownVolume\":\"Alt+F6\",\n" +
+                "            \"gLoopMode\":\"Alt+F5\",\n" +
+                "            \"gMute\":\"Alt+F8\",\n" +
+                "            \"gDesktopLyric\":\"Alt+F1\",\n" +
+                "            \"gExit\":\"Alt+E\"\n" +
+                "        }\n" +
+                "    }," +
                 "\"bright\":100," +
                 "\"lyricFont\":20}}"
             fs.writeFileSync(filePath, rawDate, 'utf-8');
@@ -1075,6 +1228,254 @@ ipcMain.handle('sort-songs', async (event,orderType, newArray,playlistName) => {
     }
 });
 
+ // 修改快捷键
+ipcMain.handle('changeShortcuts', async (event,type, whichKey, oldVal, newVal) => {
+    try {
+        console.log(whichKey+" 由 "+oldVal+" 改为 "+newVal)
+        if (type === "local") {
+            if (oldVal !== "未设置") {
+                if (localShortcut.isRegistered(win, oldVal)) {
+                    localShortcut.unregister(win,oldVal)
+                }
+            }
+            if (newVal !== "未设置") {
+                if (whichKey === "lExit") {
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('closeFromBottom');
+                    });
+                }else if(whichKey === "lToggle"){
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('toggleG');
+                    });
+                }else if(whichKey === "lLast"){
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('playLastG');
+                    });
+                }else if(whichKey === "lNext"){
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('playNextG');
+                    });
+                }else if(whichKey === "lBack3"){
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('forwardBack',false);
+                    });
+                }else if(whichKey === "lForward3"){
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('forwardBack',true);
+                    });
+                }else if(whichKey === "lUpVolume"){
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('upVolume');
+                    });
+                }else if(whichKey === "lDownVolume"){
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('downVolume');
+                    });
+                }else if(whichKey === "lToHome"){
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('returnHome');
+                    });
+                }else if(whichKey === "lSettings"){
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('openSettings');
+                    });
+                }else if(whichKey === "lLoopMode"){
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('changeModeG');
+                    });
+                }else if(whichKey === "lMute"){
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('changeMute');
+                    });
+                }else if(whichKey === "lSearch"){
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('search');
+                    });
+                }else if(whichKey === "lQueue"){
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('showQueue');
+                    });
+                }else if(whichKey === "lLyric"){
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('showLyric');
+                    });
+                }else if(whichKey === "lInfo"){
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('showInfo');
+                    });
+                }else if(whichKey === "lPlaylists"){
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('showPlaylists');
+                    });
+                }else if(whichKey === "lDesktopLyric"){
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('changeShowDLyric');
+                    });
+                }else if(whichKey === "lFocusMode"){
+                    localShortcut.register(win, newVal, () => {
+                        win.webContents.send('focusMode');
+                    });
+                }
+            }
+        }else{
+            if (oldVal !== "未设置") {
+                if (globalShortcut.isRegistered(oldVal)) {
+                    globalShortcut.unregister(oldVal)
+                }
+            }
+            if (newVal !== "未设置") {
+                if(whichKey === "gOpen"){
+                    globalShortcut.register(newVal, () => {
+                        if (win) {
+                            if (win.isMinimized()) {
+                                // 如果窗口被最小化了，将其还原
+                                win.restore();
+                            } else {
+                                // 如果窗口没有最小化，将其显示在前面
+                                win.show();
+                            }
+                        }
+                    });
+                }else if(whichKey === "gToggle"){
+                    globalShortcut.register(newVal, () => {
+                        win.webContents.send('toggleG');
+                    });
+                }else if(whichKey === "gLast"){
+                    globalShortcut.register(newVal, () => {
+                        win.webContents.send('playLastG');
+                    });
+                }else if(whichKey === "gNext"){
+                    globalShortcut.register(newVal, () => {
+                        win.webContents.send('playNextG');
+                    });
+                }else if(whichKey === "gUpVolume"){
+                    globalShortcut.register(newVal, () => {
+                        win.webContents.send('upVolumeG');
+                    });
+                }else if(whichKey === "gDownVolume"){
+                    globalShortcut.register(newVal, () => {
+                        win.webContents.send('downVolumeG');
+                    });
+                }else if(whichKey === "gLoopMode"){
+                    globalShortcut.register(newVal, () => {
+                        win.webContents.send('changeModeG');
+                    });
+                }else if(whichKey === "gMute"){
+                    globalShortcut.register(newVal, () => {
+                        win.webContents.send('changeMuteG');
+                    });
+                }else if(whichKey === "gDesktopLyric"){
+                    globalShortcut.register(newVal, () => {
+                        win.webContents.send('changeShowDLyric');
+                    });
+                }else if(whichKey === "gExit"){
+                    globalShortcut.register(newVal, () => {
+                        win.webContents.send('saveBeforeQuit',2);
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error changing shortcuts:', error);
+        throw error;
+    }
+});
+
+// 初始化或者恢复默认的快捷键
+ipcMain.handle('initializeShortcuts', async (event,shortcuts) => {
+    try {
+        console.log(shortcuts)
+        // 注销所有快捷键
+        localShortcut.unregisterAll(win)
+        globalShortcut.unregisterAll()
+
+        // 注册局部快捷键
+        for (let key in shortcuts.local) {
+            if (shortcuts.local[key] !== "未设置") {
+                localShortcut.register(win, shortcuts.local[key], () => {
+                    if (key === "lExit") {
+                        win.webContents.send('closeFromBottom');
+                    }else if(key === "lToggle"){
+                        win.webContents.send('toggleG');
+                    }else if(key === "lLast"){
+                        win.webContents.send('playLastG');
+                    }else if(key === "lNext"){
+                        win.webContents.send('playNextG');
+                    }else if(key === "lBack3"){
+                        win.webContents.send('forwardBack',false);
+                    }else if(key === "lForward3"){
+                        win.webContents.send('forwardBack',true);
+                    }else if(key === "lUpVolume"){
+                        win.webContents.send('upVolume');
+                    }else if(key === "lDownVolume"){
+                        win.webContents.send('downVolume');
+                    }else if(key === "lSettings"){
+                        win.webContents.send('openSettings');
+                    }else if(key === "lLoopMode"){
+                        win.webContents.send('changeModeG');
+                    }else if(key === "lSearch"){
+                        win.webContents.send('search');
+                    }else if(key === "lQueue"){
+                        win.webContents.send('showQueue');
+                    }else if(key === "lLyric"){
+                        win.webContents.send('showLyric');
+                    }else if(key === "lInfo"){
+                        win.webContents.send('showInfo');
+                    }else if(key === "lPlaylists"){
+                        win.webContents.send('showPlaylists');
+                    }else if(key === "lFocusMode"){
+                        win.webContents.send('focusMode');
+                    }else if(key === "lToHome"){
+                        win.webContents.send('returnHome');
+                    }else if(key === "lMute"){
+                        win.webContents.send('changeMute');
+                    }else if(key === "lDesktopLyric"){
+                        win.webContents.send('changeShowDLyric');
+                    }
+                });
+            }
+        }
+
+        // 注册全局快捷键
+        for (let key in shortcuts.global) {
+            if (shortcuts.local[key] !== "未设置") {
+                globalShortcut.register(shortcuts.global[key], () => {
+                    if (key === "gToggle") {
+                        win.webContents.send('toggleG');
+                    }else if(key === "gLast"){
+                        win.webContents.send('playLastG');
+                    }else if(key === "gNext"){
+                        win.webContents.send('playNextG');
+                    }else if(key === "gUpVolume"){
+                        win.webContents.send('upVolumeG');
+                    }else if(key === "gDownVolume"){
+                        win.webContents.send('downVolumeG');
+                    }else if(key === "gLoopMode"){
+                        win.webContents.send('changeModeG');
+                    }else if(key === "gMute"){
+                        win.webContents.send('changeMuteG');
+                    }else if(key === "gDesktopLyric"){
+                        win.webContents.send('changeShowDLyric');
+                    }else if(key === "gExit"){
+                        win.webContents.send('saveBeforeQuit',2);
+                    }else if(key === "gOpen"){
+                        if (win) {
+                            if (win.isMinimized()) {
+                                win.restore();
+                            } else {
+                                win.show();
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error initializeShortcuts:', error);
+        throw error;
+    }
+});
+
 //写入歌曲的网易云netId
 ipcMain.handle('setId', async (event,netId, songId) => {
     try {
@@ -1103,6 +1504,27 @@ ipcMain.handle('setId', async (event,netId, songId) => {
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
     } catch (error) {
         console.error('Error updating playlist:', error);
+        throw error;
+    }
+});
+
+// 更新任务栏绿色播放进度
+ipcMain.handle('sendProgress', async (event,progress) => {
+    try {
+        win.setProgressBar(progress)
+    } catch (error) {
+        console.error('Error sendProgress:', error);
+        throw error;
+    }
+});
+
+// 更新任务栏暂停播放状态
+ipcMain.handle('sendToggle', async (event,progress, isPlaying) => {
+    try {
+        const mode = isPlaying ? "normal" : "paused"
+        win.setProgressBar(progress, {mode})
+    } catch (error) {
+        console.error('Error sendProgress:', error);
         throw error;
     }
 });

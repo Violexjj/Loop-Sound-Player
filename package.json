@@ -1,6 +1,6 @@
 {
   "name": "vue_pro",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "main": "main.js",
   "description": "An exquisite local music player",
@@ -47,6 +47,7 @@
     "electron-store": "^8.1.0",
     "electron-win-state": "^1.1.22",
     "electron-window-state": "^5.0.3",
+    "flac-metadata": "^0.1.1",
     "fs": "^0.0.1-security",
     "howler": "^2.2.3",
     "jsmediatags": "^3.9.7",
@@ -60,6 +61,7 @@
     "qs": "^6.11.2",
     "sharp": "^0.32.6",
     "vue": "^2.6.14",
+    "vue-color": "^2.8.1",
     "vue-lazyload": "^3.0.0",
     "vue-router": "^3.6.5",
     "vue-slider-component": "^3.2.24",

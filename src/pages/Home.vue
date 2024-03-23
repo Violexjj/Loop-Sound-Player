@@ -200,6 +200,19 @@
             },
             currentLyricIndex(newTime) {
                 this.updateLyricScroll();
+                if (this.parsedLyrics[this.currentLyricIndex].text1 !== "") {
+                    if (this.parsedLyrics[this.currentLyricIndex].hasTranslation) {
+                        this.$store.state.dLyricText = {
+                            text1:this.parsedLyrics[this.currentLyricIndex].text1,
+                            text2: this.parsedLyrics[this.currentLyricIndex].text2
+                        }
+                    }else{
+                        this.$store.state.dLyricText = {
+                            text1:this.parsedLyrics[this.currentLyricIndex].text1,
+                            text2: null
+                        }
+                    }
+                }
             },
             '$store.state.lyricOfNowSong': {
                 immediate: true,
@@ -241,6 +254,19 @@
                         }
                     }
                     this.parsedLyrics = this.parseLyrics(newLyricText);
+                    if (this.parsedLyrics[0].text1 !== "") {
+                        if (this.parsedLyrics[0].hasTranslation) {
+                            this.$store.state.dLyricText = {
+                                text1:this.parsedLyrics[0].text1,
+                                text2: this.parsedLyrics[0].text2
+                            }
+                        }else{
+                            this.$store.state.dLyricText = {
+                                text1:this.parsedLyrics[0].text1,
+                                text2: null
+                            }
+                        }
+                    }
                 },
             },
             '$store.state.showLyrics': {
@@ -372,7 +398,6 @@
                 }
             },
             updateCurrentLyricIndex() {
-                // 根据当前播放时间更新当前歌词行的索引
                 // 根据当前播放时间更新当前歌词行的索引
                 for (let i = 0; i < this.parsedLyrics.length - 1; i++) {
                     if (this.parsedLyrics[i + 1] && this.currentPlayTime >= this.parsedLyrics[i].time && this.currentPlayTime < this.parsedLyrics[i + 1].time) {
@@ -607,7 +632,7 @@
     }
 
     .otherBlur{
-        filter: blur(3px);
+        filter: blur(5px);
     }
 
     .notAllowWrap{

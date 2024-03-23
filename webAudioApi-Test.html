@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+<button onclick="playSong()">开始播放</button>
+<br>
+<button onclick="increaseSpeed()">加速</button>
+<br>
+<button onclick="decreaseSpeed()">减速</button>
+<br>
+<button onclick="resetSpeed()">恢复原速</button>
+<br>
+<button onclick="toggle()">暂停</button>
+<br>
+<button onclick="playNext()">下一首</button>
+<br>
+<button onclick="changeVolume(false)">音量-</button><span id="volume" style="color: black"></span><button onclick="changeVolume(true)">音量+</button>
+
+
+<script>
+    let songIndex = 0
+    let audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    let gainNode = audioContext.createGain();
+    gainNode.connect(audioContext.destination);
+    let volume = 50
+    gainNode.gain.value = volume/100
+    let source;
+    let isPlaying = false;
+
+
+    const songs = [
+        ["D:\\全部音乐\\957 - ウンディーネ.mp3",246500],
+        ["D:\\全部音乐\\郭顶 - 凄美地.flac",250653],
+        ["D:\\全部音乐\\03. Exist.flac",231253],
+        ["D:\\全部音乐\\狂乱 Hey Kids!!.flac",253687]
+    ]
+
+    async function playSong() {
+        const songAudioAndInfos = await myAPI.readFile(songs[songIndex][0],"未设置",222);
+        const songAudio = songAudioAndInfos[0];
+        audioContext.decodeAudioData(songAudio, (buffer) => {
+            source = audioContext.createBufferSource()
+            source.buffer = buffer;
+            source.connect(audioContext.destination)
+            source.connect(gainNode)
+            if (!isPlaying) {
+                source.start(0);
+                isPlaying = true;
+            }
+        });
+    }
+
+
+    function updateVolumeDisplay() {
+        const volumeDisplay = document.getElementById('volume');
+        volumeDisplay.innerText = `Volume: ${gainNode.gain.value}`;
+    }
+    // 每隔一段时间更新一次音量显示
+    // setInterval(updateVolumeDisplay, 100);
+    function changeVolume(flag){
+        if (flag) {
+            volume += 10
+        }else{
+            volume -= 10
+        }
+        gainNode.gain.value = volume/100
+        updateVolumeDisplay()
+        console.log(gainNode.gain.value)
+    }
+
+    async function playNext(){
+        if (source) {
+            source.stop()
+
+            if (songIndex + 1 === songs.length) {
+                songIndex = 0
+            }else{
+                songIndex += 1
+            }
+            console.log(songs[songIndex][0])
+            const songAudioAndInfos = await myAPI.readFile(songs[songIndex][0],"未设置",222);
+            const songAudio = songAudioAndInfos[0];
+
+            audioContext.decodeAudioData(songAudio, (buffer) => {
+                source = audioContext.createBufferSource();
+                source.buffer = buffer;
+                console.log(source.duration)
+                source.connect(audioContext.destination)
+                source.connect(gainNode)
+                if (!isPlaying) {
+                    isPlaying = true;
+                    source.start(0);
+                    audioContext.resume();
+                }else{
+                    source.start(0);
+                }
+            });
+        }
+    }
+
+    function toggle() {
+        if (!source || !audioContext) return;
+        if (!isPlaying) {
+            audioContext.resume();
+            isPlaying = true;
+        } else {
+            audioContext.suspend();
+            isPlaying = false;
+        }
+        console.log(isPlaying?"播放歌曲":"暂停歌曲")
+    }
+
+    function increaseSpeed() {
+        if (!source) return;
+        source.playbackRate.value += 0.5;
+    }
+
+    function decreaseSpeed() {
+        if (!source) return;
+        source.playbackRate.value -= 0.5;
+    }
+
+    function resetSpeed() {
+        if (!source) return;
+        source.playbackRate.value = 1.0;
+    }
+
+</script>
+</body>
+</html>
