@@ -23,13 +23,13 @@
 
 ## 图片展示
 
-![](Loop-Sound-Player\images\截图20240104224403.png)
+![](images\截图20240104224403.png)
 
-![截图20240104224443](Loop-Sound-Player\images\截图20240104224443.png)
+![](images\截图20240104224443.png)
 
-![截图20240104224513](Loop-Sound-Player\images\截图20240104224513.png)
+![](images\截图20240104224513.png)
 
-![截图20240104224537](Loop-Sound-Player\images\截图20240104224537.png)
+![](images\截图20240104224537.png)
 
 
 
