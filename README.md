@@ -23,13 +23,13 @@
 
 ## 图片展示
 
-![](images\截图20240104224403.png)
+![shortcut1](images/截图20240104224403.png)
 
-![](images\截图20240104224443.png)
+![shortcut2](images/截图20240104224443.png)
 
-![](images\截图20240104224513.png)
+![shortcut3](images/截图20240104224513.png)
 
-![](images\截图20240104224537.png)
+![shortcut4](images/截图20240104224537.png)
 
 
 
