@@ -4,7 +4,6 @@
          @click="closeContext()"
          @blur="closeContext"
     >
-
         <div class="app" v-show="!this.$store.state.miniMode">
             <div v-if="!focusMode" class="logo-and-control draggable-area" id="draggable-area">
                 <!--                logo部分-->
