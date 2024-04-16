@@ -429,9 +429,27 @@ const mutations = {
         }
     },
 
+    SET_UseEQ(state, value){
+        if (value !== undefined) {
+            state.useEQ = value;
+        }
+    },
+
+    SET_EQPARAM(state, value){
+        if (value !== undefined) {
+            state.EQParam = value;
+        }
+    },
+
     SET_USE_PURE_COLOR(state, value){
         if (value !== undefined) {
             state.usePureColor = value;
+        }
+    },
+
+    SET_BOLD_LRC(state, value){
+        if (value !== undefined) {
+            state.boldLrc = value;
         }
     },
 
@@ -453,7 +471,7 @@ const mutations = {
 
 const state = {
     check: null,
-    nowVersion: "1.0.3",
+    nowVersion: "1.0.4",
     latestVersion: null,
     latestVersionInfo: "",
     errorMessage:"请开启自动检查更新",
@@ -484,7 +502,9 @@ const state = {
     showIsExist : false,
     moreInfoOfNowSong : null,
     lyricOfNowSong : "加载歌词中",
+    homeLyric:[],
     currentPlayTime : 0,
+    currentLyricIndex: 0,
     showLyrics : true,
     lyricFont : 20,
     biggerLyric : 10,
@@ -532,8 +552,10 @@ const state = {
     deckTopLyric: false,
     dLyricColor: ["#FFA6B7","#1E2AD2"],
     dLyricColorPure: "#03A9F4",
-    usePureColor: true,
-    dLyricText:{},
+    usePureColor: false,
+    EQParam: [0,0,0,0,0,0,0,0,0,0],
+    useEQ: false,
+    boldLrc: true,
     shortcuts: {
         "local": {
             "lExit": "Escape",
@@ -624,8 +646,6 @@ const getters = {
                         const song = state.songs.songs.find(song => song.id === songId);
                         return song ? song : null; // Return song if found, otherwise null
                     });
-
-                    // Filter out null values from the array
                     return songsInSelectedPlaylist.filter(song => song !== null);
                 }
             }

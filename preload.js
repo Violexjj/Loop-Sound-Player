@@ -63,6 +63,7 @@ contextBridge.exposeInMainWorld('myAPI', {
     onLockButton: (callback,arg) => ipcRenderer.on('lockButton', callback, arg),
     onCloseDeskTopLyric: (callback) => ipcRenderer.on('closeDeskTopLyric', callback),
     onSendIsPlaying: (callback,arg) => ipcRenderer.on('sendIsPlaying', callback, arg),
+    onChangeBold: (callback,arg) => ipcRenderer.on('changeBold', callback, arg),
     onChangeColor: (callback,arg1,arg2) => ipcRenderer.on('changeColor', callback, arg1, arg2),
 
 
@@ -218,6 +219,10 @@ contextBridge.exposeInMainWorld('myAPI', {
 
     sendColor:(color, type) =>{
         ipcRenderer.invoke('sendColor',color, type)
+    },
+
+    sendBold:(bold) =>{
+        ipcRenderer.invoke('sendBold',bold)
     },
 
     deskTopLyricButtons:(buttonNo) =>{

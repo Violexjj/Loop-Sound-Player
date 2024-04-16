@@ -67,12 +67,19 @@ new Vue({
                     this.$store.commit('SET_DLYRIC_COLOR',savingState.dLyricColor)
                     this.$store.commit('SET_USE_PURE_COLOR',savingState.usePureColor)
                     this.$store.commit('SET_DLYRIC_COLOR_PURE',savingState.dLyricColorPure)
-                    console.log("vue get savingState")
-                if (this.$store.state.queue[0].id === "") {
+                    this.$store.commit('SET_UseEQ',savingState.useEQ)
+                    this.$store.commit('SET_EQPARAM',savingState.EQParam)
+                    this.$store.commit('SET_BOLD_LRC',savingState.boldLrc)
+                    console.log("读取设置：成功")
+                if (this.$store.state.queue[0] !== undefined) {
+                    if (this.$store.state.queue[0].id === "") {
+                        window.myAPI.closeWelcome()
+                    }
+                }else{
                     window.myAPI.closeWelcome()
                 }
             }else{
-                console.log("vue get savingState fail")
+                console.log("读取设置：失败")
             }
         });
 

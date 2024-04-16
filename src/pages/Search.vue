@@ -133,6 +133,8 @@
         height: 100%;
         border-radius: 7px;
         margin-left: 5px;
+        transition: 1s;
+        opacity: 0;
     }
     .notFound{
         position: absolute;
@@ -332,6 +334,7 @@
                             const img = entry.target.childNodes[0].childNodes[0]
                             if (img && img.getAttribute('data-src')) {
                                 img.src = await myAPI.getSongCover(img.getAttribute('data-src'),2)
+                                img.style.opacity = 1
                                 observer.unobserve(entry.target);
                             }
                         }
@@ -357,6 +360,7 @@
                             const img = entry.target.childNodes[0].childNodes[0]
                             if (img && img.getAttribute('data-src')) {
                                 img.src = await myAPI.getSongCover(img.getAttribute('data-src'),2)
+                                img.style.opacity = 1
                                 observer.unobserve(entry.target);
                             }
                         }

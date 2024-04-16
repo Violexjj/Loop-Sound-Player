@@ -12,6 +12,7 @@
                             class="image"
                             :style="{ animationPlayState: this.isPlaying ? 'running' : 'paused' }"
                             @click="toHome"
+                            title="返回主页"
                     />
                 </div>
             </div>
@@ -78,57 +79,317 @@
 
         <!--        ------------------------------------------------------------------------------------------->
         <div class="right-controls">
-            <!-- 桌面歌词按钮 -->
-            <div class="control-button lyric-button" @click="changeDeskTopLyric()" :class="{ 'active': deskTopLyric }" title="显示/隐藏桌面歌词">
-                <div class="dLyric-image"></div>
-            </div>
             <!-- 歌词按钮 -->
-            <div class="control-button lyric-button" @click="changeShowLyric" :class="{ 'active': showLyric }" title="显示/隐藏歌词">
+            <div class="control-button lyric-button" @click="changeShowLyric" :class="{ 'active': showLyric }" title="歌词">
                 <div class="lyrics-image"></div>
             </div>
             <!-- 队列按钮 -->
-            <div class="control-button queue-button" @click="changeShowQueue()" :class="{ 'active': showQueue }" title="显示/隐藏队列">
+            <div class="control-button queue-button" @click="changeShowQueue()" :class="{ 'active': showQueue }" title="播放队列">
                 <div class="queue-image"></div>
             </div>
-            <!-- 播放列表按钮 -->
-            <div class="control-button" @click="showPlaylistModal = true" title="切换播放列表">
-                <div class="playlist-image"></div>
+            <!-- 更多操作按钮 -->
+            <div class="control-button" title="更多"
+                 @mouseleave="handleMouseLeave(true)"
+                 @click="handleMouseEnter(true)">
+                <div class="more-image"></div>
             </div>
-            <div class="volume-container"
-                 @mouseover="showVolumeSlider = true"
-                 @mouseleave="handleMouseLeave">
-                <!-- 音量按钮 -->
-                <div title="鼠标滚轮调节" class="control-button" @mouseenter="handleMouseEnter" @click="changeMute" @wheel="adjustVolumeWithWheel">
-                    <div v-show="!this.$store.state.isMute && this.volume !== 0"  class="volume-image"></div>
+
+            <!-- 音量按钮 和 音量条 -->
+                <div class="control-button" title="滚轮调节" @click="changeMute" @wheel="adjustVolumeWithWheel">
+                    <div v-show="!this.$store.state.isMute && this.volume !== 0" class="volume-image"></div>
                     <div v-show="this.$store.state.isMute || this.volume === 0" class="noVolume-image"></div>
                 </div>
-                <!-- 音量条 -->
-                <div @mouseenter="handleMouseEnter">
-                    <vue-slider
-                            v-if="showVolumeSlider"
-                            v-model="$store.state.volume"
-                            :min="0"
-                            :max="100"
-                            :interval="1"
-                            :dot-size="15"
-                            :height="100"
-                            :width="10"
-                            :duration="0.2"
-                            direction="btt"
-                            contained="true"
-                            class="volume-slider"
-                    ></vue-slider>
-                </div>
-
-            </div>
+                <vue-slider
+                        v-model="$store.state.volume"
+                        :min="0"
+                        :max="100"
+                        :interval="1"
+                        :dot-size="12"
+                        :height="10"
+                        :duration="0.2"
+                        style="width:100px;margin-left: 5px"
+                ></vue-slider>
+            <!--音量数值显示-->
             <div v-show="showVolumeValue" class="volume-value">
                 {{ `音量 :  ${volume}` }}
             </div>
         </div>
 
+        <!--更多操作的菜单-->
+        <div class="menu" :class="{ show: showMenu }"
+             @mouseenter="handleMouseEnter(false)"
+             @mouseleave="handleMouseLeave(false)"
+             v-show="showMenu"
+             ref="menu">
+            <div style="display: flex; gap: 5px;">
+                <!--桌面歌词-->
+                <div class="circle-container" title="桌面歌词"
+                     @click="changeDeskTopLyric();handleMouseLeave(false)" :class="{ 'dlrcActive': deskTopLyric }"
+                >
+                    <div class="dLyric-image"></div>
+                </div>
+                <!--播放列表-->
+                <div class="circle-container" title="播放列表"
+                     @click="showPlaylistModal = true;handleMouseLeave(false)"
+                >
+                    <div class="pl-image"></div>
+                </div>
+                <!--均衡器-->
+                <div class="circle-container" title="均衡器"
+                     @click="showEQ = true;handleMouseLeave(false)"
+                >
+                    <div class="eq-image"></div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- 展示均衡器 -->
+        <div v-if="showEQ" class="modal">
+            <div class="playlist-panel" style="max-width: 600px;">
+                <!-- 关闭按钮 -->
+                <div class="modal-close" @click="showEQ= false">
+                    <div class="close-button close-image"></div>
+                </div>
+                <!--预设和调节器-->
+                <div style="display: flex;gap:30px; margin-top: 40px">
+                    <!--预设-->
+                    <table>
+                        <tr class="TR">
+                            <td class="TD">
+                                <div class="EQOption" @click="changeUseEQ()" :class="{ 'EQActive': $store.state.useEQ }">
+                                    {{$store.state.useEQ?"开启":"关闭"}}
+                                </div>
+                            </td>
+                            <td class="TD">
+                                <div class="EQOption" :class="{ 'EQActive': $store.state.EQParam===[0,0,0,0,0,0,0,0,0,0] }" @click="changeEQ(-1)">
+                                默认
+                            </div></td>
+                        </tr>
+                        <tr class="TR">
+                            <td class="TD">
+                                <div class="EQOption" :class="{ 'EQActive': JSON.stringify(this.$store.state.EQParam) === JSON.stringify(this.tenEQ[0])}" @click="changeEQ(0)">
+                                流行
+                            </div></td>
+                            <td class="TD">
+                                <div class="EQOption" :class="{ 'EQActive': JSON.stringify(this.$store.state.EQParam) === JSON.stringify(this.tenEQ[1])}" @click="changeEQ(1)">
+                                舞曲
+                            </div></td>
+                        </tr>
+                        <tr class="TR">
+                            <td class="TD">
+                                <div class="EQOption" :class="{ 'EQActive': JSON.stringify(this.$store.state.EQParam) === JSON.stringify(this.tenEQ[2])}" @click="changeEQ(2)">
+                                蓝调
+                            </div></td>
+                            <td class="TD">
+                                <div class="EQOption" :class="{ 'EQActive': JSON.stringify(this.$store.state.EQParam) === JSON.stringify(this.tenEQ[3])}" @click="changeEQ(3)">
+                                古典
+                            </div></td>
+                        </tr>
+                        <tr class="TR">
+                            <td class="TD">
+                                <div class="EQOption" :class="{ 'EQActive': JSON.stringify(this.$store.state.EQParam) === JSON.stringify(this.tenEQ[4])}" @click="changeEQ(4)">
+                                爵士
+                            </div></td>
+                            <td class="TD">
+                                <div class="EQOption" :class="{ 'EQActive': JSON.stringify(this.$store.state.EQParam) === JSON.stringify(this.tenEQ[5])}" @click="changeEQ(5)">
+                                慢歌
+                            </div></td>
+                        </tr>
+                        <tr class="TR">
+                            <td class="TD">
+                                <div class="EQOption" :class="{ 'EQActive': JSON.stringify(this.$store.state.EQParam) === JSON.stringify(this.tenEQ[6])}" @click="changeEQ(6)">
+                                电子
+                            </div></td>
+                            <td class="TD">
+                                <div class="EQOption" :class="{ 'EQActive': JSON.stringify(this.$store.state.EQParam) === JSON.stringify(this.tenEQ[7])}" @click="changeEQ(7)">
+                                摇滚
+                            </div></td>
+                        </tr>
+                        <tr class="TR">
+                            <td class="TD">
+                                <div class="EQOption" :class="{ 'EQActive': JSON.stringify(this.$store.state.EQParam) === JSON.stringify(this.tenEQ[8])}" @click="changeEQ(8)">
+                                乡村
+                            </div></td>
+                            <td class="TD">
+                                <div class="EQOption" :class="{ 'EQActive': JSON.stringify(this.$store.state.EQParam) === JSON.stringify(this.tenEQ[9])}" @click="changeEQ(9)">
+                                人声
+                            </div></td>
+                        </tr>
+                    </table>
+
+                    <!--调节器-->
+                    <div style="display: flex;gap: 20px;margin-top: 5px;">
+                        <div style="display: flex; flex-direction: column; align-items: center;gap:10px;width: 20px">
+                            <span>{{ EQParam[0] }}</span>
+                            <vue-slider
+                                    v-model="$store.state.EQParam[0]"
+                                    :min="-12"
+                                    :max="12"
+                                    :interval="1"
+                                    :dot-size="15"
+                                    :height="300"
+                                    direction="btt"
+                                    :tooltip="'none'"
+                                    :duration="0.2"
+                                    style="width:10px"
+                            ></vue-slider>
+                            <span>31</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;gap:10px;width: 20px">
+                            <span>{{ EQParam[1] }}</span>
+                            <vue-slider
+                                    v-model="$store.state.EQParam[1]"
+                                    :min="-12"
+                                    :max="12"
+                                    :interval="1"
+                                    :dot-size="15"
+                                    :height="300"
+                                    direction="btt"
+                                    :tooltip="'none'"
+                                    :duration="0.2"
+                                    style="width:10px"
+                            ></vue-slider>
+                            <span>62</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;gap:10px;width: 20px">
+                            <span>{{ EQParam[2] }}</span>
+                            <vue-slider
+                                    v-model="$store.state.EQParam[2]"
+                                    :min="-12"
+                                    :max="12"
+                                    :interval="1"
+                                    :dot-size="15"
+                                    :height="300"
+                                    direction="btt"
+                                    :tooltip="'none'"
+                                    :duration="0.2"
+                                    style="width:10px"
+                            ></vue-slider>
+                            <span>125</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;gap:10px;width: 20px">
+                            <span>{{ EQParam[3] }}</span>
+                            <vue-slider
+                                    v-model="$store.state.EQParam[3]"
+                                    :min="-12"
+                                    :max="12"
+                                    :interval="1"
+                                    :dot-size="15"
+                                    :height="300"
+                                    direction="btt"
+                                    :tooltip="'none'"
+                                    :duration="0.2"
+                                    style="width:10px"
+                            ></vue-slider>
+                            <span>250</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;gap:10px;width: 20px">
+                            <span>{{ EQParam[4] }}</span>
+                            <vue-slider
+                                    v-model="$store.state.EQParam[4]"
+                                    :min="-12"
+                                    :max="12"
+                                    :interval="1"
+                                    :dot-size="15"
+                                    :height="300"
+                                    direction="btt"
+                                    :tooltip="'none'"
+                                    :duration="0.2"
+                                    style="width:10px"
+                            ></vue-slider>
+                            <span>500</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;gap:10px;width: 20px">
+                            <span>{{ EQParam[5] }}</span>
+                            <vue-slider
+                                    v-model="$store.state.EQParam[5]"
+                                    :min="-12"
+                                    :max="12"
+                                    :interval="1"
+                                    :dot-size="15"
+                                    :height="300"
+                                    direction="btt"
+                                    :tooltip="'none'"
+                                    :duration="0.2"
+                                    style="width:10px"
+                            ></vue-slider>
+                            <span>1k</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;gap:10px;width: 20px">
+                            <span>{{ EQParam[6] }}</span>
+                            <vue-slider
+                                    v-model="$store.state.EQParam[6]"
+                                    :min="-12"
+                                    :max="12"
+                                    :interval="1"
+                                    :dot-size="15"
+                                    :height="300"
+                                    direction="btt"
+                                    :tooltip="'none'"
+                                    :duration="0.2"
+                                    style="width:10px"
+                            ></vue-slider>
+                            <span>2k</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;gap:10px;width: 20px">
+                            <span>{{ EQParam[7] }}</span>
+                            <vue-slider
+                                    v-model="$store.state.EQParam[7]"
+                                    :min="-12"
+                                    :max="12"
+                                    :interval="1"
+                                    :dot-size="15"
+                                    :height="300"
+                                    direction="btt"
+                                    :tooltip="'none'"
+                                    :duration="0.2"
+                                    style="width:10px"
+                            ></vue-slider>
+                            <span>4k</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;gap:10px;width: 20px">
+                            <span>{{ EQParam[8] }}</span>
+                            <vue-slider
+                                    v-model="$store.state.EQParam[8]"
+                                    :min="-12"
+                                    :max="12"
+                                    :interval="1"
+                                    :dot-size="15"
+                                    :height="300"
+                                    direction="btt"
+                                    :tooltip="'none'"
+                                    :duration="0.2"
+                                    style="width:10px"
+                            ></vue-slider>
+                            <span>8k</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;gap:10px;width: 20px">
+                            <span>{{ EQParam[9] }}</span>
+                            <vue-slider
+                                    v-model="$store.state.EQParam[9]"
+                                    :min="-12"
+                                    :max="12"
+                                    :interval="1"
+                                    :dot-size="15"
+                                    :height="300"
+                                    direction="btt"
+                                    :tooltip="'none'"
+                                    :duration="0.2"
+                                    style="width:10px"
+                            ></vue-slider>
+                            <span>16k</span>
+                        </div>
+
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
         <!-- 展示播放列表 -->
         <div v-if="showPlaylistModal" class="modal">
-            <div class="playlist-panel">
+            <div class="playlist-panel" style="max-width: 400px;">
                 <!-- 关闭按钮 -->
                 <div class="modal-close" @click="showPlaylistModal = false">
                     <div class="close-button close-image"></div>
@@ -210,7 +471,7 @@
                                 </tr>
                                 <tr>
                                     <td><div class="info-label">流派：</div></td>
-                                    <td><div class="info-value">{{ this.songInfo.moreInfo.genre[0] }}</div></td>
+                                    <td><div class="info-value">{{ this.songInfo.moreInfo.genre[0] === ' ' ? "无" :  this.songInfo.moreInfo.genre[0]}}</div></td>
                                 </tr>
                                 <tr>
                                     <td><div class="info-label">注释：</div></td>
@@ -227,17 +488,94 @@
 </template>
 
 <style scoped>
-    .volume-container {
-        position: relative;
+    .TR{
+        height: 55px;
+        width: 100px;
+    }
+    .TD{
+        height: 50px;
+        width: 80px;
+    }
+    .EQOption{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 100px;
+        width: 80px;
+        height: 30px;
+        cursor: pointer;
+        transition: 0.3s;
+        border: 3px solid rgba(255,255,255,0.2);
+    }
+    .EQOption:hover{
+        border: 3px solid rgba(255,255,255,0.6);
+        background-color: rgba(255,255,255,0.2);
+    }
+    .EQActive{
+        background-color: rgba(255,255,255,0.3);
+        border: 3px solid rgba(255,255,255,0.6);
     }
 
-    .volume-slider {
-        position: absolute;
-        top: -150px; /* 相对音量按钮的位置 */
-        left: 50%; /* 居中 */
-        transform: translateX(-50%); /* 水平居中 */
-        z-index: 999; /* 显示在最上层 */
+    .eq-image{
+        height: 60%;
+        width: 60%;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-image: url('../assets/EQ.png')
     }
+    .pl-image{
+        height: 60%;
+        width: 60%;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-image: url('../assets/playlist3.png')
+    }
+    .dLyric-image{
+        height: 60%;
+        width: 60%;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-image: url('../assets/dLyric.png')
+    }
+    .dlrcActive{
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+    .menu {
+        backdrop-filter: blur(20px);
+        position: fixed;
+        bottom: 110px;
+        right: 122px;
+        transform: translateY(50px);
+        opacity: 0;
+        transition: transform 0.3s, opacity 0.3s;
+        z-index: 999;
+        background-color: rgba(0, 0, 0, 0.3);
+        padding: 5px;
+        border-radius: 100px;
+    }
+
+    .menu.show {
+        transform: translateY(0); /* 显示时恢复到原位置 */
+        opacity: 1; /* 显示时透明度为 1 */
+    }
+    .circle-container {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: 0.2s ease;
+    }
+    .circle-container:hover{
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    .circle-container:active {
+        transform: scale(0.85);
+    }
+
     .info-dialog-container {
         position: fixed;
         top: 0;
@@ -312,6 +650,7 @@
 
     .info-value {
         flex: 1;
+        margin-bottom: 5px;
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
@@ -431,12 +770,14 @@
         border-radius: 100px;
         overflow: hidden;
         margin-right: 5px;
-        transition: 0.3s;
+        transition: 0.2s;
     }
     .image-container:hover{
         filter: brightness(70%);
     }
-
+    .image-container:active {
+        transform: scale(0.85);
+    }
     .image-wrapper {
         width: 100%;
         height: 100%;
@@ -473,12 +814,14 @@
         border-radius: 50%;
         cursor: pointer;
         margin: 0 4px;
-        transition: background-color 0.2s ease; /* 添加过渡效果 */
+        transition: 0.2s ease; /* 添加过渡效果 */
     }
     .control-button:hover{
         background-color: rgba(255, 255, 255, 0.1);
     }
-
+    .control-button:active {
+        transform: scale(0.85);
+    }
     .large {
         width: 50px;
         height: 50px;
@@ -540,6 +883,13 @@
         background-size: contain; /* 保持原始比例，并适应容器 */
         background-repeat: no-repeat;
     }
+    .more-image {
+        width: 80%;
+        height: 80%;
+        background-image: url('../assets/more.png');
+        background-size: contain; /* 保持原始比例，并适应容器 */
+        background-repeat: no-repeat;
+    }
 
     .close-image {
         width: 100%;
@@ -578,7 +928,7 @@
         border-radius: 10px;
         padding: 10px;
         width: 80%;
-        max-width: 400px;
+
         position: relative;
         backdrop-filter: blur(20px);
     }
@@ -632,8 +982,6 @@
     import VueSlider from 'vue-slider-component';
     import 'vue-slider-component/theme/default.css'
 
-
-
     export default {
         name: "Footer",
         mixins: [mix3],
@@ -658,7 +1006,11 @@
                 }else{
                     this.$store.state.volume = this.$store.state.volume -3
                 }
-                this.$bus.$emit('showVolume')
+                if (this.$store.state.focusMode) {
+                    this.$bus.$emit('showVolumeFocus')
+                }else{
+                    this.$bus.$emit('showVolume')
+                }
             })
             myAPI.onUpVolume((_event) => {
                 if (this.$store.state.volume >= 97) {
@@ -666,7 +1018,11 @@
                 }else{
                     this.$store.state.volume = this.$store.state.volume + 3
                 }
-                this.$bus.$emit('showVolume')
+                if (this.$store.state.focusMode) {
+                    this.$bus.$emit('showVolumeFocus')
+                }else{
+                    this.$bus.$emit('showVolume')
+                }
             })
             myAPI.onChangeMute((_event) => {
                 this.$store.state.isMute = !this.$store.state.isMute
@@ -754,10 +1110,37 @@
                 isPrevButtonDisabled: false,
                 showInfoDialog : false,
                 timer: null,
-                showVolumeSlider: false
+                showMenu: false,
+                showEQ: false,
+                tenEQ:[
+                    [4, 2, 0, -3, -6, -6, -3, 0, 1, 3],
+                    [7, 6, 3, 0, 0, -4, -6, -6, 0, 0],
+                    [3, 6, 8, 3, -2, 0, 4, 7, 9, 10],
+                    [0, 0, 0, 0, 0, 0, -6, -6, -6, -8],
+                    [0, 0, 1, 4, 4, 4, 0, 1, 3, 3],
+                    [5, 4, 2, 0, -2, 0, 3, 6, 7, 8],
+                    [6, 5, 0, -5, -4, 0, 6, 8, 8, 7],
+                    [7, 4, -4, 7, -2, 1, 5, 7, 9, 9],
+                    [5, 6, 2, -5, 1, 1, -5, 3, 8, 5],
+                    [-2, -1, -1, 0, 3, 4, 3, 0, 0, 1]
+                ]
             };
         },
         mounted() {
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.setActionHandler('play', ()=>{
+                    this.togglePlay()
+                });
+                navigator.mediaSession.setActionHandler('pause', ()=>{
+                    this.togglePlay()
+                });
+                navigator.mediaSession.setActionHandler('previoustrack', ()=>{
+                    this.playLast()
+                });
+                navigator.mediaSession.setActionHandler('nexttrack', ()=>{
+                    this.playNext()
+                });
+            }
             this.$bus.$on('toggleSong',this.togglePlay)
             this.$bus.$on('playPrevSong',this.playLast)
             this.$bus.$on('playNextSong',this.playNext)
@@ -784,6 +1167,12 @@
                     }
                 },
             },
+            '$store.state.boldLrc': {
+                immediate: true,
+                handler(newValue) {
+                        myAPI.sendBold(this.$store.state.boldLrc)
+                },
+            },
             '$store.state.dLyricColor': {
                 handler(newValue) {
                     if (!this.$store.state.usePureColor) {
@@ -803,15 +1192,15 @@
                 handler(newValue) {
                     myAPI.sendProgress(newValue/100)
                 },
-            },
-            '$store.state.dLyricText': {
-                immediate: true,
-                handler(newValue) {
-                    myAPI.sendLyric(newValue.text1, newValue.text2)
-                },
-            },
+            }
         },
         computed : {
+            EQParam(){
+                return this.$store.state.EQParam
+            },
+            showSpectrum(){
+                return this.$store.state.showSpectrum
+            },
             currentProgressBy100(){
                 return Math.floor(this.$store.state.currentProgress)
             },
@@ -888,15 +1277,38 @@
             ...mapState(['currentIndex'])
         },
         methods: {
-            handleMouseEnter() {
-                clearTimeout(this.timer); // 取消隐藏计时器
-                this.showVolumeSlider = true; // 立即显示音量条
+            changeEQ(flag){
+                if (flag !== -1) {
+                    this.$store.state.useEQ = true
+                    this.$store.state.EQParam = JSON.parse(JSON.stringify(this.tenEQ[flag]));
+                }else{
+                    this.$store.state.EQParam = [0,0,0,0,0,0,0,0,0,0]
+                }
             },
-            handleMouseLeave() {
+            changeUseEQ(){
+                this.$store.state.useEQ = !this.$store.state.useEQ
+            },
+            handleMouseEnter(flag) {
+                if (flag) {
+                    clearTimeout(this.timer);
+                    this.showMenu = true;
+                    if (!this.$refs.menu.classList.contains("show")) {
+                        this.$refs.menu.classList.add("show")
+                    }
+                }else{
+                    clearTimeout(this.timer);
+                    this.showMenu = true;
+                }
+            },
+            handleMouseLeave(flag) {
                 this.timer = setTimeout(() => {
-                    this.showVolumeSlider = false; // 延迟一段时间后隐藏音量条
-                }, 1000);
+                    this.$refs.menu.classList.remove("show")
+                    setTimeout(()=>{
+                        this.showMenu = false
+                    },100)
+                }, flag?500:10);
             },
+
             changeInfo(){
                 myAPI.changeInfo(this.$store.getters.nowSong.path)
             },
@@ -910,14 +1322,12 @@
             changeMute(){
                 this.$store.state.isMute = !this.$store.state.isMute
             },
+            changeShowSpectrum(){
+                this.$store.state.showSpectrum = !this.$store.state.showSpectrum
+            },
             changeDeskTopLyric(){
                 this.$store.state.deckTopLyric = !this.$store.state.deckTopLyric
                 if (this.$store.state.deckTopLyric) {
-                    if (this.$route.path !== "/") {
-                        this.$router.push({
-                            name: "Home",
-                        });
-                    }
                     myAPI.openDeckTopLyric(true, this.$store.state.isPlaying)
                 }else{
                     myAPI.openDeckTopLyric(false, this.$store.state.isPlaying)

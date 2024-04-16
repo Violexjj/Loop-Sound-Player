@@ -14,10 +14,21 @@
                          title="左键半沉浸，右键全沉浸"
                            @click="openFocusMode(1)"
                          @contextmenu="openFocusMode(2)"
+                         ref="cover"
                     >
+
                 </div>
 
-                <div class="threeInfo-container">
+                <div class="threeInfo-container" ref="spectrum">
+                    <!--频谱-->
+<!--                    <div class="spectrum" v-if="showSpectrum">-->
+<!--                        <div v-for="(item, index) in spectrumData"-->
+<!--                             :key="index"-->
+<!--                             style="width: 10px;background-color: rgba(255,255,255,0.2);margin-right: 3px;border-radius: 100px;transition: 0.1s"-->
+<!--                             :style="{ height: Math.min((item + 15)/1.5, spectrumHeight-10) + 'px' }">-->
+<!--                        </div>-->
+<!--                    </div>-->
+
                     <b class="info title" v-if="nowSong">{{nowSong.title}}</b>
                     <b :class="{
                                       'info': true,
@@ -37,13 +48,13 @@
         <!-- 歌词部分的内容 -->
         <transition name="slide-left-right" >
             <div class="lyrics" :class="{ 'add-background-modal': lyricsModal }" v-if="this.$store.state.showLyrics === true" >
-                <div class="lyrics-container" ref="lyricsContainer">
+                <div class="lyrics-container" ref="lyricsContainer" @wheel="handleBlur()">
                     <div
-                            v-for="(line, index) in parsedLyrics"
+                            v-for="(line, index) in homeLyric"
                             :key="index"
                             ref="lyricLine"
                             @click="changeProgress(line.time)"
-                            :style="{ fontSize: (index === currentLyricIndex) ? ($store.state.lyricFont + $store.state.biggerLyric) + 'px' : $store.state.lyricFont + 'px', marginBottom: (index < parsedLyrics.length - 1) ? '5px' : '0' }"
+                            :style="{marginBottom: (index < homeLyric.length - 1) ? '5px' : '0', fontWeight: boldLrc ? 'bold' : 'normal' }"
                             :class="[
           'lyrics-line',
           {
@@ -58,8 +69,19 @@
           },
         ]"
                     >
-                        <div :class="{'notAllowWrap':index !== currentLyricIndex, 'otherBlur':index !== currentLyricIndex&& otherBlur}" ref="text">{{line.text1}}</div>
-                        <div :class="{'notAllowWrap':index !== currentLyricIndex, 'otherBlur':index !== currentLyricIndex&& otherBlur}" style="margin-top: 5px" v-if="line.hasTranslation && line.text2!=='' && $store.state.showTlyric" ref="text">{{line.text2}}</div>
+                        <div :class="{'notAllowWrap':index !== currentLyricIndex}"
+                             :style="{ fontSize: (index === currentLyricIndex) ? ($store.state.lyricFont + $store.state.biggerLyric) + 'px' : $store.state.lyricFont + 'px',
+                             filter: nowOtherBlur && index !== currentLyricIndex ? 'blur(' + Math.min(Math.abs((index - currentLyricIndex)/1.5), 5) + 'px)' : 'none'}"
+                             style="transition: 0.5s"
+                             ref="text">{{line.text1}}
+                        </div>
+                        <div :class="{'notAllowWrap':index !== currentLyricIndex}"
+                             style="margin-top: 5px;transition: 0.5s"
+                             :style="{ fontSize: (index === currentLyricIndex) ? ($store.state.lyricFont + $store.state.biggerLyric-3) + 'px' : $store.state.lyricFont-3 + 'px',
+                             filter: nowOtherBlur && index !== currentLyricIndex ? 'blur(' + Math.min(Math.abs((index - currentLyricIndex)/1.5), 5) + 'px)' : 'none'}"
+                             v-if="line.hasTranslation && line.text2!=='' && $store.state.showTlyric"
+                             ref="text">{{line.text2}}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -99,16 +121,33 @@
         mixins: [mix3, textTruncateMixin],
         data(){
             return {
-                parsedLyrics: [], // 歌词数组，每个元素格式为 { time: 秒数, text: 歌词文本 ,hasTranslation:有无翻译}
-                currentLyricIndex: 0, // 当前显示的歌词行索引
                 songCover : null,
                 nowSongTime:0,
                 smoothSpeed:50,
                 initial: true,
+                nowOtherBlur: null,
+                blurTimeout: null,
             };
         },
-
         computed: {
+            // showSpectrum(){
+            //     return this.$store.state.showSpectrum
+            // },
+            // spectrumHeight(){
+            //     return this.$refs.spectrum?this.$refs.spectrum.clientHeight:20
+            // },
+            // spectrumData(){
+            //     return this.$store.state.dataArray
+            // },
+            boldLrc(){
+                return this.$store.state.boldLrc
+            },
+            homeLyric(){
+                return this.$store.state.homeLyric
+            },
+            currentLyricIndex(){
+                return this.$store.state.currentLyricIndex
+            },
             focusMode2(){
                 return this.$store.state.focusMode2
             },
@@ -132,10 +171,13 @@
                         return " · "+val
                     }
                 }
-                const b = toSlash(this.nowSong.bitsPerSample)
-                const c = toSlash(this.nowSong.sampleRate)
-                const d = toSlash(this.nowSong.bitrate)
-                return a + b + c + d
+
+                if (this.nowSong !== null) {
+                    const b = toSlash(this.nowSong.bitsPerSample)
+                    const c = toSlash(this.nowSong.sampleRate)
+                    const d = toSlash(this.nowSong.bitrate)
+                    return a + b + c + d
+                }
             },
             ...mapState(['moreInfoOfNowSong','showFormat','infoModal','lyricsModal','queueModal']),
             ...mapGetters(['nowSong']),
@@ -164,6 +206,19 @@
         },
         mounted(){
             this.$bus.$on('songOnTop',this.scrollToCurrentSong)
+            this.$bus.$on('changeCover',(flag) =>{
+                if (flag) {
+                    if (this.$refs.cover) {
+                        this.$refs.cover.style.opacity = 0.5
+                        this.$refs.cover.style.filter = "brightness(0.5)"
+                    }
+                }else{
+                    if (this.$refs.cover) {
+                        this.$refs.cover.style.opacity = 1
+                        this.$refs.cover.style.filter = "brightness(1)"
+                    }
+                }
+            })
         },
         watch: {
             showQueue:{
@@ -184,35 +239,39 @@
             nowSong:{
                 immediate: true,
                 handler(newSong){
-                    const durationParts = this.nowSong.duration.split(':');
-                    const minutes = parseInt(durationParts[0]);
-                    const seconds = parseInt(durationParts[1]);
-                    const milliseconds = parseInt(durationParts[2]);
-                    this.nowSongTime = minutes * 60 + seconds + milliseconds / 1000;
-                    this.showCover = false
-                    setTimeout(()=>{
-                        this.showCover = true
-                    },500)
+                    this.lyricLoaded = false
+                    if (this.nowSong !== null) {
+                        const durationParts = this.nowSong.duration.split(':');
+                        const minutes = parseInt(durationParts[0]);
+                        const seconds = parseInt(durationParts[1]);
+                        const milliseconds = parseInt(durationParts[2]);
+                        this.nowSongTime = minutes * 60 + seconds + milliseconds / 1000;
+                        this.showCover = false
+                        setTimeout(()=>{
+                            this.showCover = true
+                        },500)
+                    }
                 }
-            },
-            currentPlayTime(newTime) {
-                this.updateCurrentLyricIndex();
             },
             currentLyricIndex(newTime) {
                 this.updateLyricScroll();
-                if (this.parsedLyrics[this.currentLyricIndex].text1 !== "") {
-                    if (this.parsedLyrics[this.currentLyricIndex].hasTranslation) {
-                        this.$store.state.dLyricText = {
-                            text1:this.parsedLyrics[this.currentLyricIndex].text1,
-                            text2: this.parsedLyrics[this.currentLyricIndex].text2
-                        }
-                    }else{
-                        this.$store.state.dLyricText = {
-                            text1:this.parsedLyrics[this.currentLyricIndex].text1,
-                            text2: null
-                        }
-                    }
-                }
+            },
+            '$store.state.showLyrics': {
+                immediate: true,
+                handler(newValue) {
+                    this.smoothSpeed = 300
+                    setTimeout(()=>{
+                        this.updateLyricScroll()
+                        this.smoothSpeed = 50
+                    },200)
+
+                },
+            },
+            otherBlur: {
+                immediate: true,
+                handler(newValue) {
+                    this.nowOtherBlur = newValue
+                },
             },
             '$store.state.lyricOfNowSong': {
                 immediate: true,
@@ -253,35 +312,19 @@
                             }
                         }
                     }
-                    this.parsedLyrics = this.parseLyrics(newLyricText);
-                    if (this.parsedLyrics[0].text1 !== "") {
-                        if (this.parsedLyrics[0].hasTranslation) {
-                            this.$store.state.dLyricText = {
-                                text1:this.parsedLyrics[0].text1,
-                                text2: this.parsedLyrics[0].text2
-                            }
-                        }else{
-                            this.$store.state.dLyricText = {
-                                text1:this.parsedLyrics[0].text1,
-                                text2: null
-                            }
-                        }
-                    }
-                },
-            },
-            '$store.state.showLyrics': {
-                immediate: true,
-                handler(newValue) {
-                    this.smoothSpeed = 300
-                    setTimeout(()=>{
-                        this.updateLyricScroll()
-                        this.smoothSpeed = 50
-                    },200)
-
                 },
             },
         },
         methods:{
+            handleBlur(){
+                if (this.otherBlur) {
+                    clearTimeout(this.blurTimeout);
+                    this.nowOtherBlur = false
+                    this.blurTimeout = setTimeout(()=>{
+                        this.nowOtherBlur = true
+                    },2000)
+                }
+            },
             openFocusMode(flag){
                 if (flag === 1) {
                     this.$store.state.focusMode2 = true
@@ -307,6 +350,9 @@
                 if (this.initial && this.$store.state.isPlaying === false) {
                     this.$store.state.isPlaying = true
                     this.initial = false
+                }
+                if (this.otherBlur) {
+                    this.nowOtherBlur = true
                 }
                 setTimeout(()=>{
                     const newProgress = (time / this.nowSongTime) * 100;
@@ -385,7 +431,7 @@
                 const container = this.$refs.lyricsContainer;
                 if (container) {
                     const lyricsLines = container.querySelectorAll('.lyrics-line');
-                    const currentLine = lyricsLines[this.currentLyricIndex];
+                    const currentLine = lyricsLines[this.$store.state.currentLyricIndex];
                     if (currentLine) {
                         setTimeout(()=>{
                             currentLine.scrollIntoView({
@@ -397,66 +443,9 @@
                     }
                 }
             },
-            updateCurrentLyricIndex() {
-                // 根据当前播放时间更新当前歌词行的索引
-                for (let i = 0; i < this.parsedLyrics.length - 1; i++) {
-                    if (this.parsedLyrics[i + 1] && this.currentPlayTime >= this.parsedLyrics[i].time && this.currentPlayTime < this.parsedLyrics[i + 1].time) {
-                        this.currentLyricIndex = i;
-                        break;
-                    }
-                }
-                // 处理最后一行歌词
-                const lastIndex = this.parsedLyrics.length - 1;
-                if (this.currentPlayTime >= this.parsedLyrics[lastIndex].time) {
-                    this.currentLyricIndex = lastIndex;
-                }
-            },
-            parseLyrics(lyricsText) {
-                const lines = lyricsText.split('\n');
-                const lyrics = [];
-
-                let previousTime = null;
-                let previousLine = null;
-
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i];
-                    const matches = line.match(/\[(\d+):(\d+\.\d+)\](.*)/);
-
-
-                    if (matches) {
-                        const minute = parseInt(matches[1]);
-                        const second = parseFloat(matches[2]);
-                        const time = minute * 60 + second;
-                        const text = matches[3].trim();
-
-                        const xiegangcount = text.match(/[^ ] \/ [^ ]/g);
-                        const parts = text.split(" / ");
-
-                        if (xiegangcount && xiegangcount.length === 1 && (parts.length === 2 && parts[0].trim() !== "" && parts[1].trim() !== "")) {
-                            const [originalText, translatedText] = text.split(' / ');
-                            lyrics.push({time, text1: originalText, text2: translatedText, hasTranslation: true});
-                        }else{
-                            if (previousTime === time) {
-                                // 如果当前时间戳与上一行相同，则将当前文本视为译文，并与上一行的文本合并
-                                lyrics.pop(); // 移除上一次添加的原文
-                                const [originalText, translatedText] = [previousLine, text];
-                                lyrics.push({ time, text1: originalText, text2: translatedText, hasTranslation: true });
-                            } else {
-                                lyrics.push({ time, text1: text, hasTranslation: false });
-                                previousTime = time;
-                                previousLine = text;
-                            }
-                        }
-
-                    }
-                }
-                return lyrics;
-            },
-
             ...mapMutations({
                 setCurrentIndex: 'SET_CURRENT_INDEX'
             }),
-
             scrollToCurrentSong() {
                 if (this.showQueue) {
                     const queueTable = this.$refs.queueTable;
@@ -487,6 +476,14 @@
     };
 </script>
 <style scoped>
+    .spectrum{
+        display: flex; /* 使用 Flexbox 布局 */
+        justify-content: space-between; /* 元素之间平均分布 */
+        align-items: center; /* 垂直居中 */
+        position: absolute;
+        margin-top: 25px;
+        z-index: -1;
+    }
     /* 自定义 slide-right-left 过渡效果 */
     .slide-right-left-enter-active, .slide-right-left-leave-active {
         transition: transform 0.5s ease, opacity 0.5s ease; /* 添加 transform 和 opacity 属性的过渡效果 */
@@ -539,13 +536,13 @@
     }
     .table-row {
         background-color: rgba(255, 255, 255, 0);
-        transition: 0.1s;
     }
     .table-row:hover {
         background-color: rgba(255, 255, 255, 0.4);
         cursor: pointer;
     }
     .table-cell {
+        letter-spacing: 0.5px;
         padding: 6px;
         font-size: 13px;
         border: 1px solid rgba(255, 255, 255, 0);
@@ -561,6 +558,7 @@
         background-color: rgba(255, 255, 255, 0.3);;
     }
     .home-container {
+        width: 100%;
         display: flex;
         gap: 15px;
     }
@@ -601,12 +599,11 @@
     .lyrics-line {
         padding:5px 10px;
         overflow: hidden;
-        color: rgba(255, 255, 255, 0.4);
-        font-weight: bold;
+        color: rgba(255, 255, 255, 0.35);
         letter-spacing: 1px;
-        transition: 0.2s;
         border-radius: 10px;
         scroll-behavior: smooth;
+        transition: 0.2s;
     }
     .lyrics-line:not(.divide):hover{
         background-color: rgba(255, 255, 255, 0.1);
@@ -631,9 +628,6 @@
         padding-top: 10px;
     }
 
-    .otherBlur{
-        filter: blur(5px);
-    }
 
     .notAllowWrap{
         white-space: nowrap;
@@ -664,8 +658,7 @@
         padding: 5px;
         position: sticky;
         top: 0;
-        overflow: auto;
-        /*区域背景*/
+        overflow: hidden;
         border-radius: 10px;
     }
     .add-background-modal{
@@ -678,18 +671,16 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 100%;
-        height: 70%;
+        width: 95%;
+        height: 68%;
         border-radius: 18px;
         overflow: hidden;
-        margin-bottom: 10px;
-        margin-top: 0px;
         user-select: none;
         user-drag: none;
     }
 
     .cover {
-        transition: 0.25s;
+        transition: 0.5s;
         max-width: 95%;
         max-height: 95%;
         object-fit: contain;
@@ -697,14 +688,17 @@
         cursor: pointer;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
     }
+    .cover:active {
+        transform: scale(0.9);
+    }
 
     .threeInfo-container {
         display: flex;
         flex-direction: column;
         justify-content: space-around;
         align-items: center;
-        height: 30%;
-        width: 100%;
+        height: 32%;
+        width: 95%;
     }
 
     .info {
@@ -717,7 +711,7 @@
     }
 
     .title {
-        font-size: 25px;
+        font-size: 30px;
     }
 
     .artist,

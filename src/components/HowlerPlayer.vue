@@ -1,6 +1,6 @@
 <template>
     <div v-show="needMagic" class="need-magic">
-        {{ `访问 https://net-lyrics.vercel.app 获取歌词失败，需要“魔法”。` }}
+        {{ `访问网易云歌词失败，可能网络有问题` }}
     </div>
 </template>
 
@@ -8,10 +8,17 @@
     import { Howl } from 'howler';
     import { mapState, mapGetters } from 'vuex';
     import axios from 'axios'
+    import { WebAudioApi } from './WebAudioApi';
 
     export default {
         name: 'HowlerPlayer',
         computed: {
+            currentLyricIndex(){
+                return this.$store.state.currentLyricIndex
+            },
+            currentPlayTime(){
+                return this.$store.state.currentPlayTime
+            },
             keywords(){
                 return this.nowSong.title+this.nowSong.artist
             },
@@ -29,7 +36,10 @@
                 oLyric: "",
                 tLyric:"",
                 needMagic:false,
-                paused: true
+                paused: true,
+                parsedLyrics: [],
+                webAudioApi: null,
+                analyser: null
             };
         },
         created() {
@@ -46,11 +56,20 @@
                 this.changeProgress(newProgress);
             });
         },
+        mounted() {
+            this.$bus.$on('changeEQ',(EQParam)=>{
+                if (this.webAudioApi) {
+                    console.log(EQParam)
+                    this.webAudioApi.updateEQ(EQParam)
+                }
+            })
+        },
         watch: {
             nowSong: {
                 immediate : true,
                 handler(newSong) {
                     if (this.nowSong) {
+                        myAPI.sendLyric(newSong.title+" - "+newSong.artist, null)
                         if (!this.$store.state.notChangeNextSong) {
                             this.playAudio(newSong.path,newSong.id);
                         }else{
@@ -106,8 +125,113 @@
                     }
                 },
             },
+            '$store.state.lyricOfNowSong':{
+                handler(newLyricText){
+                    this.parsedLyrics = this.parseLyrics(newLyricText);
+                    this.$store.state.homeLyric = this.parsedLyrics
+                    this.$store.state.currentLyricIndex = 0
+                    if (this.parsedLyrics[0].text1 !== "") {
+                        if (this.parsedLyrics[0].hasTranslation) {
+                            myAPI.sendLyric(this.parsedLyrics[0].text1, this.parsedLyrics[0].text2)
+                        }else{
+                            myAPI.sendLyric(this.parsedLyrics[0].text1, null)
+                        }
+                    }
+                }
+            },
+            '$store.state.EQParam':{
+                deep: true,
+                handler(EQParam){
+                    if (this.$store.state.useEQ) {
+                        if (this.webAudioApi) {
+                            this.webAudioApi.updateEQ(EQParam)
+                        }
+                    }
+                }
+            },
+            '$store.state.useEQ':{
+                handler(){
+                    if (this.webAudioApi) {
+                        if (this.$store.state.useEQ) {
+                            this.webAudioApi.updateEQ(this.$store.state.EQParam)
+                        }else{
+                            this.webAudioApi.updateEQ([0,0,0,0,0,0,0,0,0,0])
+                        }
+                    }
+                }
+            },
+            currentPlayTime(newTime) {
+                this.updateCurrentLyricIndex();
+            },
+            currentLyricIndex(newVal) {
+                    if (this.parsedLyrics[this.currentLyricIndex].text1 !== "" && this.$store.state.currentLyricIndex !== 0) {
+                        if (this.parsedLyrics[this.currentLyricIndex].hasTranslation) {
+                            myAPI.sendLyric(this.parsedLyrics[this.currentLyricIndex].text1, this.parsedLyrics[this.currentLyricIndex].text2)
+                        }else{
+                            myAPI.sendLyric(this.parsedLyrics[this.currentLyricIndex].text1, null)
+                        }
+                    }
+            },
         },
         methods: {
+            updateCurrentLyricIndex() {
+                // 根据当前播放时间更新当前歌词行的索引
+                for (let i = 0; i < this.parsedLyrics.length - 1; i++) {
+                    if (this.parsedLyrics[i + 1] && this.currentPlayTime >= this.parsedLyrics[i].time && this.currentPlayTime < this.parsedLyrics[i + 1].time) {
+                        this.$store.state.currentLyricIndex = i;
+                        break;
+                    }
+                }
+                // 处理最后一行歌词
+                const lastIndex = this.parsedLyrics.length - 1;
+                if (this.currentPlayTime >= this.parsedLyrics[lastIndex].time) {
+                    this.$store.state.currentLyricIndex = lastIndex;
+                }
+            },
+            parseLyrics(lyricsText) {
+                const lines = lyricsText.split('\n');
+                const lyrics = [];
+
+
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const matches = line.match(/\[(\d+):(\d+\.\d+)\](.*)/);
+
+                    if (matches) {
+                        const minute = parseInt(matches[1]);
+                        const second = parseFloat(matches[2]);
+                        const time = minute * 60 + second;
+                        const text = matches[3].trim();
+
+                        const xiegangcount = text.match(/[^ ] \/ [^ ]/g);
+                        const parts = text.split(" / ");
+
+                        if (xiegangcount && xiegangcount.length === 1 && (parts.length === 2 && parts[0].trim() !== "" && parts[1].trim() !== "")) {
+                            // 有斜杠，这行歌词是原文和译文在同一行
+                            const [originalText, translatedText] = text.split(' / ');
+                            lyrics.push({time, text1: originalText, text2: translatedText, hasTranslation: true});
+                        }else{
+                            // 这行歌词没有斜杠，可能是原文也可能是译文
+                            const existingLyric = lyrics.find(lyric => lyric.time === time);
+                            if (existingLyric) {
+                                existingLyric.text2 = text;
+                                existingLyric.hasTranslation = true;
+                            } else {
+                                lyrics.push({ time, text1: text, hasTranslation: false });
+                            }
+                            // if (previousTime === time) {
+                            //     // 如果当前时间戳与上一行相同，则将当前文本视为译文，并与上一行的原文文本合并
+                            //     lyrics.pop(); // 移除上一次添加的原文
+                            //     const [originalText, translatedText] = [previousLine, text];
+                            //     lyrics.push({ time, text1: originalText, text2: translatedText, hasTranslation: true });
+                            // } else {
+                            //     lyrics.push({ time, text1: text, hasTranslation: false });
+                            // }
+                        }
+                    }
+                }
+                return lyrics;
+            },
             showNeedMagic(){
                 this.needMagic = true
                 setTimeout(()=>{this.needMagic = false},5000)
@@ -185,6 +309,7 @@
                 console.log("当前播放歌曲ID是"+this.$store.state.nowSongNetId)
                 try {
                         const lyricResult = await myAPI.searchLyric(this.$store.state.nowSongNetId)
+                        console.log(lyricResult);
                         if (lyricResult.body.code === 200 && lyricResult.body.lrc!==undefined && lyricResult.body.lrc.lyric!=='') {
                             console.log("找到了在线歌词")
                             this.oLyric = lyricResult.body.lrc.lyric
@@ -197,40 +322,20 @@
                             this.$store.state.lyricOfNowSong = "[00:00.00]根据精确匹配的 ID，该歌曲网易云无歌词"
                         }
                 }catch (error){
-                    //    访问别人的网站失败
-                    console.log("访问网易云歌词失败");
-                    //    翻墙搜索自己的网站
-                    try{
-                            const lyricResult = await axios.get("https://net-lyrics.vercel.app/lyric?id="+this.$store.state.nowSongNetId,{timeout:5000})
-                        if (lyricResult.data.code === 200 && lyricResult.data.lrc!==undefined) {
-                                console.log("找到了在线歌词（net-lyrics.vercel.app）")
-                                this.oLyric = lyricResult.data.lrc.lyric
-                                if (lyricResult.data.tlyric) {
-                                    this.tLyric = lyricResult.data.tlyric.lyric
-                                }
-                                this.mergeLyric()
-                            }else{
-                                //    网易云这首歌没歌词
-                                this.$store.state.lyricOfNowSong = "[00:00.00]该歌曲网易云无歌词"
-                            }
-                    }catch(error){
-                        console.log("访问 https://net-lyrics.vercel.app 失败");
-                        this.showNeedMagic()
-                        this.$store.state.lyricOfNowSong = "[00:00.00]没有找到在线歌词"
-                    }
+                    console.log("访问网易云歌词失败，可能网络有问题");
+                    this.showNeedMagic()
+                    this.$store.state.lyricOfNowSong = "[00:00.00]查找在线歌词失败"
                 }
             },
-            //下面方法根据标题艺术家获取在线歌词
+            //根据标题艺术家获取在线歌词
             async getNetLyric(){
                 try {
-                    // const searchResult = await axios.get("https://autumnfish.cn/cloudsearch?keywords="+this.keywords,{timeout:3000})
                     const searchResult = await myAPI.searchSong(this.keywords)
-                    // console.log(searchResult);
+                    console.log(searchResult);
                     if (searchResult.body.code === 200&&searchResult.body.result.songCount>0) {
                         const searchSongId = searchResult.body.result.songs[0].id
-                        // const lyricResult = await axios.get("https://autumnfish.cn/lyric?id="+searchSongId)
                         const lyricResult = await myAPI.searchLyric(searchSongId)
-                        // console.log(lyricResult)
+						console.log(lyricResult);
                         if (lyricResult.body.code === 200 && lyricResult.body.lrc!==undefined && lyricResult.body.lrc.lyric!=='') {
                             console.log("找到了在线歌词")
                             this.oLyric = lyricResult.body.lrc.lyric
@@ -247,34 +352,9 @@
                         this.$store.state.lyricOfNowSong = "[00:00.00]查找歌曲错误，可能网易云无此歌曲；或者请添加精确匹配"
                     }
                 }catch (error){
-                    //    访问别人的网站失败
                     console.log("访问网易云歌词失败，可能网络有问题");
-                    //    翻墙搜索自己的网站
-                    try{
-                        const searchResult = await axios.get("https://net-lyrics.vercel.app/cloudsearch?keywords="+this.keywords,{timeout:5000})
-                        if (searchResult.data.code === 200&&searchResult.data.result.songCount>0) {
-                            const searchSongId = searchResult.data.result.songs[0].id
-                            const lyricResult = await axios.get("https://net-lyrics.vercel.app/lyric?id="+searchSongId)
-                            if (lyricResult.data.code === 200 && lyricResult.data.lrc!==undefined) {
-                                console.log("找到了在线歌词（net-lyrics.vercel.app）")
-                                this.oLyric = lyricResult.data.lrc.lyric
-                                if (lyricResult.data.tlyric) {
-                                    this.tLyric = lyricResult.data.tlyric.lyric
-                                }
-                                this.mergeLyric()
-                            }else{
-                                //    网易云这首歌没歌词
-                                this.$store.state.lyricOfNowSong = "[00:00.00]该歌曲网易云无歌词"
-                            }
-                        }else{
-                            //    通过自己的网站搜索结果是空的
-                            this.$store.state.lyricOfNowSong = "[00:00.00]没有找到在线歌词"
-                        }
-                    }catch(error){
-                        console.log("访问 https://net-lyrics.vercel.app 失败");
-                        this.showNeedMagic()
-                        this.$store.state.lyricOfNowSong = "[00:00.00]没有找到在线歌词"
-                    }
+                    this.showNeedMagic()
+                    this.$store.state.lyricOfNowSong = "[00:00.00]查找在线歌词失败"
                 }
             },
             // 下面方法对获取的在线歌词进行整理
@@ -329,6 +409,21 @@
             // 写入获取的在线歌词到本地
             writeOnlineLrc(onlineLrc, songPath){
                 myAPI.writeOnlineLrc(onlineLrc, songPath,this.$store.state.lyricDirectory)
+            },
+
+            analyseSpectrumData() {
+                const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+
+                const updateDataArray = () => {
+                    this.analyser.getByteFrequencyData(dataArray);
+                    const array = dataArray.slice(0, 200).filter((_, index) => index % 8 === 0);
+                    const reversedArray = array.slice(1, 24).reverse();
+                    this.$store.state.dataArray = [...reversedArray, ...array];
+                };
+
+                updateDataArray();
+
+                setInterval(updateDataArray, 50);
             },
 
             async playAudio(path,songId) {
@@ -417,14 +512,17 @@
 
                 const blob = new Blob([songAudio], { type: 'audio/flac' });
                 const blobUrl = URL.createObjectURL(blob);
+                if (path !== this.$store.getters.nowSong.path) {
+                    return
+                }
                 this.howlerInstance = new Howl({
                     src: [blobUrl],
                     format: ['flac'],
+                    html5: true,
                     volume: this.volume / 100,
                     mute : this.isMute,
                     onend: () => {
                         this.$store.commit('SET_PLAYING_STATE', false);
-                        //                                                                                                        4
                         if (this.nextSongs.length !== 0 && this.nextSongsIndex < this.nextSongs.length-1) {
                             this.$store.state.nextSongsIndex += 1
                             if (this.nextSongsIndex === 0) {
@@ -452,6 +550,9 @@
                             }
                         }
                     },
+                    // onplay: ()=>{
+                    //     this.analyseSpectrum()
+                    // }
                 });
 
                     if (this.isPlaying) {
@@ -459,6 +560,7 @@
                             this.howlerInstance.play();
                         }
                     }
+
 
                 this.howlerInstance.once('play', () => {
                     this.startUpdatingProgress();
@@ -469,6 +571,20 @@
                     if (this.$store.state.savedCurrentPlaytime && path === this.$store.getters.nowSong.path) {
                         this.$store.commit('SET_CURRENT_PROGRESS', (this.$store.state.savedCurrentPlaytime / this.getDurationInSeconds()) * 100);
                         this.howlerInstance.seek(this.$store.state.savedCurrentPlaytime);
+
+                        const audioCtx = Howler.ctx
+                        const audioNode = this.howlerInstance._sounds[0]._node
+                        this.webAudioApi = WebAudioApi.create(audioCtx, audioNode)
+                        setTimeout(()=>{
+                            if (this.$store.state.useEQ) {
+                                this.webAudioApi.updateEQ(this.$store.state.EQParam)
+                            }
+                        },500)
+                        // console.log(123123)
+                        // this.webAudioApi.updateEQ([-12,-12,-12,-12,-12,12,12,12,12,12])
+                        // console.log(this.webAudioApi)
+                        this.analyser = this.webAudioApi.analyser
+                        // this.analyseSpectrumData()
                     }
                     this.isInitializing = false;
                 }

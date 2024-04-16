@@ -49,13 +49,16 @@
         text-align: center;
         cursor: pointer;
         font-size: 16px;
-        transition: background-color 0.2s, color 0.2s;
+        transition: 0.2s;
         border-radius: 100px;
-        flex-grow: 1; /* 均匀填充剩余空间 */
+        flex-grow: 1;
     }
     .nav-button:hover{
         background-color: rgba(255, 255, 255, 0.1);
         color: #f0f0f0;
+    }
+    .nav-button:active {
+        transform: scale(0.85);
     }
 
     .active {
@@ -88,7 +91,6 @@
         margin-right: 5px;
         color: #f0f0f0;
         text-align: center;
-        cursor: pointer;
         font-size: 15px;
         transition: background-color 0.2s, color 0.2s, border-color 0.2s;
         border-radius: 100px;
@@ -104,7 +106,7 @@
         color: white;
         font-size: 15px;
         padding: 0 10px;
-        outline: none; /* 移除默认的外部轮廓 */
+        outline: none;
     }
     .search-button input::placeholder {
         color: darkgrey;

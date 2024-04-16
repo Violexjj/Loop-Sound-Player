@@ -3,6 +3,9 @@
 // 打包vue为dist，npm run build
 // 打包electron，cnpm run dist
 
+
+
+
 const path = require('path');
 const { shell, app, BrowserWindow, ipcMain,nativeImage,dialog, Tray,Menu, globalShortcut,screen} = require('electron');
 const fs = require('fs');
@@ -26,8 +29,8 @@ let deskTopLyricState = null;
 const createWindow = () => {
     // 从存储中获取窗口状态，如果不存在则使用默认值
     windowState = store.get('windowState', {
-        width: 1000,  // 默认宽度
-        height: 780, // 默认高度
+        width: 1200,  // 默认宽度
+        height: 750, // 默认高度
         x: 30, // 默认 x 位置
         y: 30, // 默认 y 位置
     });
@@ -49,12 +52,12 @@ const createWindow = () => {
             preload: path.resolve(__dirname, './preload.js')
         }
     });
-    win.setMinimumSize(650, 650);
+    win.setMinimumSize(800, 800);
 
     // win.loadURL('http://localhost:8080');
+    win.loadFile(path.join(__dirname, 'dist','index.html'));
     //win.loadURL('https://music.163.com/');
-    //  win.loadFile('./color-Test.html');
-    win.loadFile(path.join(__dirname, 'dist', 'index.html'));
+    //  win.loadFile('./test.html');
 
     // 打开开发者工具
     // win.webContents.openDevTools();
@@ -68,7 +71,7 @@ const createWindow = () => {
         show: false,
         icon: path.join(__dirname, 'dist','img','logo.ico'),
     });
-    showWelcome.loadFile(path.join(__dirname, 'dist', 'Welcome.html'));
+    showWelcome.loadFile(path.join(__dirname, 'dist','WelPageAndDeskLrc', 'Welcome.html'));
 
     // 桌面歌词
     deskTopLyric = new BrowserWindow({
@@ -85,9 +88,9 @@ const createWindow = () => {
             preload: path.resolve(__dirname, './preload.js')
         }
     });
-    deskTopLyric.loadFile(path.join(__dirname, 'dist', 'DeskTopLyric.html'));
+    deskTopLyric.loadFile(path.join(__dirname, 'dist', 'WelPageAndDeskLrc', 'DeskTopLyric.html'));
     deskTopLyric.setSkipTaskbar(true)
-    deskTopLyric.setMinimumSize(352, 116);
+    deskTopLyric.setMinimumSize(352, 92);
 
     // 加载好页面内容再打开界面
     win.on("ready-to-show", () => {
@@ -316,6 +319,16 @@ ipcMain.handle('sendColor', async (event,color, type) => {
     }
 });
 
+// 更改桌面歌词粗细
+ipcMain.handle('sendBold', async (event,bold) => {
+    try {
+        deskTopLyric.webContents.send('changeBold', bold);
+    } catch (error) {
+        console.error('Error sending bold:', error);
+        throw error;
+    }
+});
+
 // 接收桌面歌词按钮的请求，对播放器进行控制
 ipcMain.handle('deskTopLyricButtons', async (event,buttonNo) => {
     try {
@@ -414,30 +427,7 @@ ipcMain.on('set-ignore-mouse-events', (event) => {
 
 // 修改元数据（测试中）
 ipcMain.handle('changeInfo', async (event, path) => {
-    // console.log(path)
-    // const NodeID3 = require('node-id3')
-    // const tags = NodeID3.read(path)
-    // console.log(tags);
-    // tags.comment.text = "Sun"
-    // const success = NodeID3.write(tags, path)
-    // console.log(success)
-    // const fileBuffer = await fs.promises.readFile(path)
-    // const tag = require('flac-tagger')
-    // const tags = tag.readFlacTags(fileBuffer)
-    // console.log((await tags).tagMap.ARTIST)
-    // const tagMap = {
-    //     FlacTagMap:{
-    //         title: 'hhh'
-    //     }
-    // }
-    // await tag.writeFlacTags(tagMap, path)
-    // 读取 FLAC 文件的内容
-    // const fileBuffer = await fs.promises.readFile(path);
 
-    // 读取 FLAC 文件的标签信息
-    // const tags = await tag.readFlacTags(fileBuffer);
-    // tags.tagMap.TITLE = "fds"
-    // await tag.writeFlacTags(tags, path)
 });
 
 // 迷你模式
@@ -458,10 +448,10 @@ ipcMain.handle('miniMode', async (event, miniMode) => {
             win.setSize(270, 70, false)
             win.setPosition(Math.floor((width-270)/2),0)
         }else{
+            win.setMinimumSize(800, 800);
             win.setAlwaysOnTop(false)
             win.setSize(windowState.width, windowState.height,false)
             win.setPosition(Math.floor((width-windowState.width)/2),Math.floor((height-windowState.height)/2))
-            win.setMinimumSize(650, 650);
         }
     } catch (error) {
         console.error('open miniMode failed:', error);
@@ -513,25 +503,27 @@ ipcMain.handle('read-file', async (event, filePath,lyricDirectory,songId) => {
     // const NodeID3 = require('node-id3')
     // var tags = NodeID3.read(filePath);
     // console.log(tags)
-    // tags.trackNumber = '1'
-    // tags.year = '2017'
-    // tags.genre = "Pure"
+    // tags.unsynchronisedLyrics = {
+    //     language: "Eng",
+    //     shortText: '',
+    //     text: '[00:00.00]新修改的歌词哦'
+    // }
+    // // tags.trackNumber = '1'
+    // tags.year = '0'
+    // tags.title = 'Fine'
+    // tags.artist = 'Fine'
+    // tags.genre = "ure"
     // tags.comment = {
     //     language: "eng",
     //     text: "纯音乐"
     // }
     // const success  = NodeID3.update(tags,filePath);
     // console.log(success)
-    //
-    // const flac = require("flac-metadata");
-    //
-    // const reader = fs.createReadStream(filePath);
-    // const processor = new flac.Processor({ parseMetaDataBlocks: true });
-    // processor.on("postprocess", function(mdb) {
-    //     console.log(mdb.toString());
-    // });
-    //
-    // reader.pipe(processor);
+
+    // const Metaflac = require('metaflac-js');
+    // const flac = new Metaflac(fileBuffer);
+    // console.log(flac.getAllTags());
+    // flac.save();
 
     try {
         const mm = await import('music-metadata');
@@ -539,6 +531,7 @@ ipcMain.handle('read-file', async (event, filePath,lyricDirectory,songId) => {
             return []
         }
         const fileBuffer = await fs.promises.readFile(filePath)
+
         const audioDir = path.dirname(filePath); // 音频文件所在的文件夹路径
         const audioName = path.basename(filePath, path.extname(filePath)); // 音频文件的文件名（不包括扩展名）
         const lrcPath = path.join(audioDir, audioName + '.lrc'); // 构建LRC文件的路径
@@ -546,6 +539,7 @@ ipcMain.handle('read-file', async (event, filePath,lyricDirectory,songId) => {
         const songAudio = (fileBuffer).buffer;
 
         const metadata = await mm.parseFile(filePath);
+        // console.log(metadata)
         //更多的音频信息：格式、音轨号、年份、流派、注释
         const format = metadata.format.container
         const trackNumber = metadata.common.track.no || "无"
@@ -854,6 +848,7 @@ ipcMain.handle('getSavingState', async (event) => {
                 "\"showTlyric\":true," +
                 "\"highlight\":true," +
                 "\"otherBlur\":false," +
+                "\"boldLrc\":true," +
                 "\"showFormat\":true," +
                 "\"showFolders\":true," +
                 "\"showAlbums\":true," +
@@ -864,12 +859,14 @@ ipcMain.handle('getSavingState', async (event) => {
                 "\"exit\":false," +
                 "\"globalShortcut\":false," +
                 "\"deleteLocalFile\":false," +
-                "\"usePureColor\":true," +
+                "\"usePureColor\":false," +
+                "\"useEQ\":true," +
                 "\"onlineLrc\":true," +
                 "\"savedCurrentPlaytime\":0," +
                 "\"lyricDirectory\":\"未设置\"," +
                 "\"dLyricColorPure\": \"#03A9F4\","+
                 "\"dLyricColor\": [\"#FFA6B7\",\"#1E2AD2\"]," +
+                "\"EQParam\": [0,0,0,0,0,0,0,0,0,0]," +
                 "\"biggerLyric\":10," +
                 "\"blur\":40," +
                 "\"shortcuts\":{\n" +
@@ -1384,7 +1381,6 @@ ipcMain.handle('changeShortcuts', async (event,type, whichKey, oldVal, newVal) =
 // 初始化或者恢复默认的快捷键
 ipcMain.handle('initializeShortcuts', async (event,shortcuts) => {
     try {
-        console.log(shortcuts)
         // 注销所有快捷键
         localShortcut.unregisterAll(win)
         globalShortcut.unregisterAll()

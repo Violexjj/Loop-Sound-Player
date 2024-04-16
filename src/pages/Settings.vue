@@ -9,7 +9,7 @@
                          @click="changeColor(color)"
                          :style="{
                             'background-image': `linear-gradient(135deg, ${color[0]} 10%, ${color[1]} 100%)`,
-                            'box-shadow': color === dLyricColor ? '0 0 0 5px rgba(255, 255, 255, 1)' : 'none'
+                            'box-shadow': index === dLyricColorIndex ? '0 0 0 5px rgba(255, 255, 255, 1)' : 'none'
                          }">
                     </div>
                 </div>
@@ -41,7 +41,7 @@
         <div v-show="showReboot" class="showReboot">
             {{info}}
         </div>
-        <h1 class="title" @click="changeShowSelectColor(1)">设置 & 说明</h1><br>
+        <h1 class="title">设置 & 说明</h1><br>
         <hr style="border-top: 3px solid #ccc;margin-right: 30px">
         <br>
 <!--        导入歌曲-->
@@ -164,6 +164,17 @@
                 <td>
                     <div class="custom-switch" @click="setOtherBlur">
                         <input type="checkbox" v-model="otherBlur" />
+                        <label ></label>
+                    </div>
+                </td>
+            </tr>
+            <tr style="height: 60px;">
+                <td>
+                    <b style="font-size: 20px">歌词字体加粗：</b>
+                </td>
+                <td>
+                    <div class="custom-switch" @click="setBoldLrc">
+                        <input type="checkbox" v-model="boldLrc" />
                         <label ></label>
                     </div>
                 </td>
@@ -357,6 +368,7 @@
         <span><b>• 本播放器仅为实践小项目，如若出现问题（页面爆红、白屏、无法播放）请联系我，QQ：3059557534。</b></span><br><br>
         <span><b>• 技术栈为 Vue2 + Electron。</b></span><br><br>
         <span><b>• 仅支持 FLAC、MP3、WAV 格式的音频文件。</b></span><br><br>
+        <span><b>• 若歌曲出现“未知标题[ERROR]”等字样，是歌曲标签有问题，请编辑好标题。视频简介里有可以批量匹配标签的软件。</b></span><br><br>
         <span><b>• WAV 格式所有播放器默认都是缺少很多信息的，可以去操作说明第 4 点的文件夹里的“songsNoSameId.json”文件手动编辑信息。</b></span><br><br>
         <span><b>• 目前由于性能问题，时间过长的歌曲（超过 1 小时）大概率会卡死，歌曲时长计算也会出错，请谅解。</b></span><br><br>
         <hr style="border-top: 3px solid #ccc;margin-right: 30px">
@@ -377,15 +389,13 @@
         <span><b>• 搜索界面的歌曲搜索结果，双击播放，右键打开菜单。</b></span><br><br>
         <hr style="border-top: 3px solid #ccc;margin-right: 30px">
 
-        <h1 class="title">主页歌词和桌面歌词说明</h1><br>
-        <span><b>• 桌面歌词必须在播放器展示主页的时候，才会更新，二者歌词的切换是绑定的。</b></span><br><br>
+        <h1 class="title">歌词说明</h1><br>
         <span><b>• 建议先设置歌词文件夹！</b></span><br><br>
         <span><b>• 歌词匹配优先级别：内嵌歌词 > 自定义的歌词文件夹 > 歌曲所在文件夹 > 在线搜索歌词。</b></span><br><br>
         <span><b>• 在线搜索歌词使用歌曲标签“标题+艺术家”的格式搜索，如果匹配不满意，可以在音乐库、播放列表和文件夹板块进行精确匹配。</b></span><br><br>
         <span><b>• 精确匹配需要输入歌曲ID，获取方法就是找到网易云对应的歌曲，复制链接，找到“song?”后面的id，输入对应的数字即可。</b></span><br><br>
         <span><b>• 原则上，精确匹配是（ID正确）是一定能找到歌词的，除非网易云真的没有那首歌或者歌词。</b></span><br><br>
         <span><b>• 在线搜索到歌词之后，会将lrc文件保存到自定义的文件夹，如果未设置会保存到歌曲同文件夹下。</b></span><br><br>
-        <span><b>• 如果遇到弹窗，需要魔法，懂的都懂。</b></span><br><br>
         <hr style="border-top: 3px solid #ccc;margin-right: 30px">
         <br>
         <h1 class="title">快捷键说明</h1><br>
@@ -617,7 +627,7 @@
     }
 
     .color-circle {
-        transition: 0.2s;
+        transition: 0.4s;
         width: 40px;
         height: 40px;
         margin: 5px;
@@ -961,19 +971,20 @@
             }
         },
         computed:{
+            boldLrc(){
+                return this.$store.state.boldLrc
+            },
+            dLyricColorIndex(){
+                return this.colors.findIndex(color => color[0] === this.dLyricColor[0] && color[1] === this.dLyricColor[1]);
+            },
             notUsePureColor(){
                 return !this.$store.state.usePureColor
             },
             usePureColor(){
                 return this.$store.state.usePureColor
             },
-            dLyricColor: {
-                get() {
+            dLyricColor(){
                     return this.$store.state.dLyricColor;
-                },
-                set(value) {
-                    this.$store.state.dLyricColor = value.hex
-                }
             },
             dLyricColorPure: {
                 get() {
@@ -1250,6 +1261,9 @@
             },
             setOtherBlur(){
                 this.$store.state.otherBlur = !this.$store.state.otherBlur
+            },
+            setBoldLrc(){
+                this.$store.state.boldLrc = !this.$store.state.boldLrc
             },
             changeLyricAlignmentMode(no){
                 this.CHANGE_LYRIC_ALIGNMENT_MODE(no)

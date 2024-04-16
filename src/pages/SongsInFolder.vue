@@ -13,7 +13,7 @@
             </div>
             <!-- 右键菜单框 -->
             <div
-                    v-if="showContextMenu"
+                    v-show="showContextMenu"
                     class="context-menu"
                     :style="{ top: contextMenuTop, left: contextMenuLeft }"
                     ref="contextMenu"
@@ -53,7 +53,10 @@
                 <div class="choice" @click="startShowDeleteFromContext(true)">
                     <img src="../assets/delete3.png" alt="Logo" class="choiceIco">
                     <span style="margin-left: 7px">从磁盘删除</span>
-
+                </div>
+                <div class="choice" @click="targetNowSong()">
+                    <img src="../assets/target.png" alt="Logo" class="choiceIco">
+                    <span style="margin-left: 7px">定位到当前播放</span>
                 </div>
                 <div class="choice" @click="startSelectMode()">
                     <img src="../assets/choice.png" alt="Logo" class="choiceIco">
@@ -62,11 +65,11 @@
                 </div>
             </div>
             <!--        歌曲列表-->
-            <div class="song-table-body route-container" >
+            <div class="song-table-body route-container" ref="container">
                 <div
                         v-for="(song, index) in songsWithSelection"
                         :key="song.id"
-                        :class="['song-row', { 'selected-row': index === contextIndex }]"
+                        :class="['song-row', { 'selected-row': index === contextIndex || index === checkIndex}]"
                         @dblclick="changeQueueAndPlay(filteredSongs, index);clearShuffledIndex()"
                         @click="selectThisSong(index)"
                         @contextmenu.prevent="showContext(index,$event)"
@@ -214,6 +217,7 @@
                             const img = entry.target.childNodes[0].childNodes[0]
                             if (img && img.getAttribute('data-src')) {
                                 img.src = await myAPI.getSongCover(img.getAttribute('data-src'),2)
+                                img.style.opacity = 1
                                 observer.unobserve(entry.target);
                             }
                         }
@@ -243,6 +247,7 @@
                             const img = entry.target.childNodes[0].childNodes[0]
                             if (img && img.getAttribute('data-src')) {
                                 img.src = await myAPI.getSongCover(img.getAttribute('data-src'),2)
+                                img.style.opacity = 1
                                 observer.unobserve(entry.target);
                             }
                         }
@@ -275,7 +280,8 @@
                 contextIndex:-1,
                 toHandleIndex:-1,
                 showDelete:false,
-                showDeleteFile:false
+                showDeleteFile:false,
+                checkIndex: -1
             }
         },
         beforeRouteLeave(to, from, next) {
@@ -326,6 +332,28 @@
             },
         },
         methods :{
+            targetNowSong(){
+                const songIndex = this.filteredSongs.findIndex(song => song.id === this.$store.getters.nowSong.id);
+                if (songIndex !== -1) {
+                    this.openInLibrary(songIndex)
+                }else{
+                    this.$bus.$emit("showNoTarget")
+                }
+            },
+            openInLibrary(index){
+                const songRows = this.$refs.songRows;
+                if (Array.isArray(songRows) && index >= 0 && index < songRows.length) {
+                    const container = this.$refs.container; // 你的滚动容器的 ref
+
+                    // 计算滚动条的位置，使得 song-row 定位到视窗中间
+                    const offsetTop = songRows[index].offsetTop;
+                    const containerHeight = container.clientHeight;
+                    const songRowHeight = songRows[index].clientHeight;
+
+                    container.scrollTop = offsetTop - (containerHeight - songRowHeight) / 2;
+                    this.checkIndex = index
+                }
+            },
             setNextSongToPlay(song, index){
                 if (this.$store.state.playNextSongs) {
                     this.$store.state.notChangeNextSong = true
@@ -410,7 +438,7 @@
 
                 // 检查是否会超出界面范围
                 const menuWidth = 170; // 菜单框宽度
-                const menuHeight = 350; // 菜单框高度
+                const menuHeight = 385; // 菜单框高度
 
                 const screenWidth = window.innerWidth;
                 const screenHeight = window.innerHeight;
@@ -432,7 +460,11 @@
                 // 设置菜单栏位置和显示状态
                 this.contextMenuLeft = `${left}px`;
                 this.contextMenuTop = `${top}px`;
+                this.$refs.contextMenu.style.opacity = 0
                 this.$store.state.showContextMenu = true
+                setTimeout(()=>{
+                    this.$refs.contextMenu.style.opacity = 1
+                },10)
 
                 // 阻止浏览器默认的右键菜单
                 event.preventDefault();
@@ -716,16 +748,18 @@
     }
     .context-menu {
         width: 175px;
-        height: 350px;
+        height: 385px;
         line-height: 35px;
         position: fixed;
-        background-color: rgba(0, 0, 0, 0.3);
+        background-color: rgba(0, 0, 0, 0.2);
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
         backdrop-filter: blur(20px);
         border-radius: 10px;
         padding: 6px 5px;
         z-index: 9999;
         white-space: nowrap;
+        opacity: 0;
+        transition: opacity 0.4s;
     }
     .close-image-2 {
         width: 100%;
@@ -778,7 +812,9 @@
         object-fit: contain;
         height: 100%;
         border-radius: 7px;
-        margin-left: 5px;
+        margin-left: 4px;
+        transition: 1s;
+        opacity: 0;
     }
 
     .music-library {
@@ -972,7 +1008,7 @@
         bottom: 120px;
         left: 15%;
         width: 70%;
-        background-color: rgba(0, 0, 0, 0.6);
+        background-color: rgba(0, 0, 0, 0.9);
         display: flex;
         justify-content: space-between;
         padding: 10px;

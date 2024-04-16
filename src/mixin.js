@@ -71,6 +71,7 @@ export  const mix7 = {
 export  const mix5 = {
     //改变播放模式并播放
     methods: {
+
         setNextSongToPlay(song, index){
             if (this.$store.state.playNextSongs) {
                 this.$store.state.notChangeNextSong = true

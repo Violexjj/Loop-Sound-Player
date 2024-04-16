@@ -16,13 +16,17 @@
                 <!--                歌曲信息部分-->
                 <div class="songInfo">
                     <span v-if="this.$route.path === '/SongsInPlaylist'" class="songInfoText">{{"当前播放列表："+this.$store.state.selectedPlaylistName}}</span>
+
                     <span v-if="this.$route.path === '/SongsInFolder'" class="songInfoText">{{"当前文件夹："+this.$store.state.selectedFolderPath}}</span>
+
                     <span v-if="this.$route.path !== '/SongsInPlaylist' && this.$route.path !== '/SongsInFolder' && this.$store.state.playNextSongs" class="songInfoText">
-                        {{"临时播放："+this.$store.getters.nowSong.title+" - "+this.$store.getters.nowSong.artist}}
+                        {{"临时播放："+nowSongTitle+" - "+nowSongArtist}}
                     </span>
+
                     <span v-if="this.$route.path !== '/SongsInPlaylist' && this.$route.path !== '/SongsInFolder'  && !this.$store.state.playNextSongs" class="songInfoText">
-                        {{(this.$store.state.currentIndex+1)+" / "+(this.$store.state.queue.length)+" · "+this.$store.getters.nowSong.title+" - "+this.$store.getters.nowSong.artist}}
+                        {{"正在播放："+nowSongTitle+" - "+nowSongArtist+"（"+(this.$store.state.currentIndex+1)+" / "+(this.$store.state.queue.length)+"）"}}
                     </span>
+
                 </div>
                 <!--                控制按钮部分-->
                 <div class="control-buttons">
@@ -49,6 +53,7 @@
                 </div>
             </div>
 
+<!--            全局背景-->
             <div class="background">
                 <img :src="this.$store.state.nowSongCover" alt="Background Image" class="background-image"
                      :style="{ filter: 'blur(' + $store.state.blur + 'px) saturate(120%) brightness(' + $store.state.bright + '%)' }">
@@ -258,6 +263,7 @@
         padding-top: 8px;
         padding-bottom: 10px;
         background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
         color: white;
         border-radius: 20px;
         font-size: 16px;
@@ -380,6 +386,9 @@
     .noDrag{
         -webkit-app-region: no-drag;
     }
+    .noDrag:active {
+        transform: scale(0.85);
+    }
     .control-buttonMini {
         display: flex;
         align-items: center;
@@ -391,7 +400,7 @@
         border-radius: 50%;
         cursor: pointer;
         margin: 0 4px;
-        transition: background-color 0.2s ease; /* 添加过渡效果 */
+        transition: 0.2s ease; /* 添加过渡效果 */
     }
     .control-buttonMini:hover{
         background-color: rgba(255, 255, 255, 0.1);
@@ -406,7 +415,7 @@
         color: white;
         border-radius: 50%;
         cursor: pointer;
-        transition: background-color 0.2s ease; /* 添加过渡效果 */
+        transition: 0.2s ease; /* 添加过渡效果 */
     }
     .control-buttonLargeMini:hover{
         background-color: rgba(255, 255, 255, 0.1);
@@ -725,6 +734,7 @@
         },
         mounted() {
             this.$bus.$on('showVolumeFocus',this.emitShowVolume)
+            this.$bus.$on('showNoTarget',this.showNoTarget)
         },
         data(){
             return{
@@ -828,6 +838,12 @@
             SongsInFolder
         },
         computed: {
+            nowSongTitle(){
+                return this.$store.getters.nowSong !== null ? this.$store.getters.nowSong.title : "无"
+            },
+            nowSongArtist(){
+                return this.$store.getters.nowSong !== null ? this.$store.getters.nowSong.artist : "无"
+            },
             focusMode2(){
                 return this.$store.state.focusMode2
             },
@@ -950,7 +966,13 @@
             },
         },
         methods : {
-
+            showNoTarget(){
+                this.info = "定位失败：列表中无当前播放歌曲"
+                this.showReboot = true
+                setTimeout(()=>{
+                    this.showReboot = false
+                },2000)
+            },
             padTime(time) {
                 if (isNaN(time.toString().padStart(2, '0'))) {
                     return "00"
@@ -1230,7 +1252,22 @@
 
             async getSongCover(){
                 if (this.nowSong) {
-                    this.$store.state.nowSongCover = await myAPI.getSongCover(this.nowSong.path,1)
+                    this.$bus.$emit("changeCover",true)
+                    const nowSongCover = await myAPI.getSongCover(this.nowSong.path,1)
+                    if ('mediaSession' in navigator) {
+                        navigator.mediaSession.metadata = new MediaMetadata({
+                            title: this.$store.getters.nowSong.title,
+                            artist: this.$store.getters.nowSong.artist,
+                            album: this.$store.getters.nowSong.album,
+                            artwork: [
+                                { src: nowSongCover, sizes: '512x512', type: 'image/png' }
+                            ]
+                        });
+                    }
+                    setTimeout(()=>{
+                        this.$store.state.nowSongCover = nowSongCover
+                        this.$bus.$emit("changeCover", false)
+                    },500)
                 }
             },
             saveAndClose(){
@@ -1269,7 +1306,10 @@
                     shortcuts: this.$store.state.shortcuts,
                     dLyricColor: this.$store.state.dLyricColor,
                     usePureColor: this.$store.state.usePureColor,
-                    dLyricColorPure: this.$store.state.dLyricColorPure
+                    dLyricColorPure: this.$store.state.dLyricColorPure,
+                    useEQ: this.$store.state.useEQ,
+                    EQParam: this.$store.state.EQParam,
+                    boldLrc: this.$store.state.boldLrc
                 }
                 myAPI.closeWindow(savingState)
             },
