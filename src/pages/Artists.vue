@@ -165,7 +165,6 @@
         margin-right: 10px;
         margin-left: 3px;
         margin-bottom: 5px;
-        transition: 0.1s;
     }
     .song-row:hover{
         background-color: rgba(255, 255, 255, 0.2); /* 鼠标悬停时的背景颜色 */
@@ -189,7 +188,7 @@
         opacity: 0;
     }
     .song-table-body::-webkit-scrollbar {
-        width: 20px;
+        width: 18px;
         background-color: rgba(0, 0, 0, 0); /* 设置为半透明的背景颜色 */
         border-radius: 10px;
     }

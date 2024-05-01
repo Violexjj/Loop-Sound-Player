@@ -217,7 +217,7 @@ const mutations = {
 
     SET_PLAYING_STATE(state, isPlaying) {
         state.isPlaying = isPlaying;
-        console.log(state.isPlaying?"播放":"暂停")
+        // console.log(state.isPlaying?"播放":"暂停")
     },
     CHANGE_LYRIC_ALIGNMENT_MODE(state, no){
         state.lyricAlignmentMode = no
@@ -354,6 +354,12 @@ const mutations = {
         }
 
     },
+    SET_LYRIC_FONT2(state, value) {
+        if (value !== undefined) {
+            state.lyricFont2 = value;
+        }
+
+    },
     SET_ONLINE_LRC(state, value) {
         if (value !== undefined) {
             state.onlineLrc = value;
@@ -453,6 +459,30 @@ const mutations = {
         }
     },
 
+    SET_SHOW_SPECTRUM(state, value){
+        if (value !== undefined) {
+            state.showSpectrum = value;
+        }
+    },
+
+    SET_PFONT(state, value){
+        if (value !== undefined) {
+            state.pFont = value;
+        }
+    },
+
+    SET_DFONT(state, value){
+        if (value !== undefined) {
+            state.dFont = value;
+        }
+    },
+
+    SET_MATCH_BLANK(state, value){
+        if (value !== undefined) {
+            state.matchBlank = value;
+        }
+    },
+
     SET_CHECK(state, value) {
         if (value !== undefined) {
             state.check = value;
@@ -471,7 +501,7 @@ const mutations = {
 
 const state = {
     check: null,
-    nowVersion: "1.0.4",
+    nowVersion: "1.0.5",
     latestVersion: null,
     latestVersionInfo: "",
     errorMessage:"请开启自动检查更新",
@@ -507,6 +537,7 @@ const state = {
     currentLyricIndex: 0,
     showLyrics : true,
     lyricFont : 20,
+    lyricFont2 : 15,
     biggerLyric : 10,
     showQueue : true,
     nowSongCover : null,
@@ -556,6 +587,11 @@ const state = {
     EQParam: [0,0,0,0,0,0,0,0,0,0],
     useEQ: false,
     boldLrc: true,
+    dataArray:[],
+    matchBlank: true,
+    showSpectrum: false,
+    pFont: "微软雅黑",
+    dFont: "微软雅黑",
     shortcuts: {
         "local": {
             "lExit": "Escape",

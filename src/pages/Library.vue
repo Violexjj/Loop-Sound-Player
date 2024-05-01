@@ -76,7 +76,7 @@
                         ref="songRows"
                 >
                     <div class="cover-container">
-                        <img :data-src="song.path" class="song-cover">
+                        <img :data-src="song.path" class="song-cover" ref="images">
                     </div>
                     <div class=" song-title ellipsis">  {{ song.title }}</div>
                     <div class=" song-artist ellipsis"><span :class="{'display': !selectMode}" @click="displayArtistDetail(song.artist)">{{ song.artist }}</span></div>
@@ -236,7 +236,6 @@
             });
         },
         mounted() {
-            this.$bus.$on('openInLibrary',(index) => this.openInLibrary(index))
             this.$store.state.showContextMenu = false
             this.contextIndex = -1
             // 在导航切换进来时重新计算 filteredSongs
@@ -265,6 +264,12 @@
                     });
                 }
             });
+
+            this.$bus.$on('openInLibrary',(index) => this.openInLibrary(index))
+            this.$bus.$on('updateCoverInLibrary',async () => {
+                const img = this.$refs.images[this.toHandleIndex]
+                img.src = await myAPI.getSongCover(img.getAttribute('data-src'), 2)
+            })
         },
         data(){
             return{
@@ -402,7 +407,7 @@
             },
             async showMoreInfo(){
                 const song = this.filteredSongs[this.toHandleIndex]
-                const result = await myAPI.readFileForMoreInfo(song.path,song.id)
+                const result = await myAPI.readFileForMoreInfo(song.path, song.id)
                 if (!result) {
                     return
                 }
@@ -412,7 +417,7 @@
                     cover: cover,
                     moreInfo: moreInfo,
                     nowSong: song,
-                    netId: result.netId
+                    netId: result.netId,
                 }
                 this.$bus.$emit('showMoreInfo')
             },
@@ -854,7 +859,6 @@
         padding: 5px 0;
         margin-right: 10px;
         margin-bottom: 5px;
-        transition: 0.1s;
     }
 
     .song-row:hover{

@@ -39,7 +39,8 @@
                 paused: true,
                 parsedLyrics: [],
                 webAudioApi: null,
-                analyser: null
+                analyser: null,
+                spectrumInterval: null
             };
         },
         created() {
@@ -84,6 +85,9 @@
                     myAPI.openDeckTopLyric(null, this.$store.state.isPlaying)
                     if(this.howlerInstance){
                         if (isPlaying) {
+                            if (this.$store.state.showSpectrum) {
+                                this.analyseSpectrumData()
+                            }
                             if (this.nowSong.path === this.$store.getters.nowSong.path) {
                                 if (this.paused) {
                                     this.howlerInstance.play();
@@ -96,6 +100,7 @@
                                 }
                             }
                         } else {
+
                             if (this.nowSong.path === this.$store.getters.nowSong.path) {
                                 this.howlerInstance.fade(this.volume / 100, 0, 500);
                                 this.howlerInstance.once('fade', () => {
@@ -124,6 +129,18 @@
                         this.howlerInstance.mute(newIsMute);
                     }
                 },
+            },
+            '$store.state.showSpectrum':{
+                handler(value){
+                    if (!value) {
+                        clearInterval(this.spectrumInterval);
+                        this.$store.state.dataArray = []
+                    }else{
+                        if (this.$store.state.isPlaying) {
+                            this.analyseSpectrumData()
+                        }
+                    }
+                }
             },
             '$store.state.lyricOfNowSong':{
                 handler(newLyricText){
@@ -195,7 +212,13 @@
 
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i];
-                    const matches = line.match(/\[(\d+):(\d+\.\d+)\](.*)/);
+                    let matches
+                    if (this.$store.state.matchBlank) {
+                        matches = line.match(/\[(\d+):(\d+\.\d+)\](.*)/);
+                    }else{
+                        matches = line.match(/\[(\d+):(\d+\.\d+)\](.+)/);
+                    }
+
 
                     if (matches) {
                         const minute = parseInt(matches[1]);
@@ -237,18 +260,18 @@
                 setTimeout(()=>{this.needMagic = false},5000)
             },
             handleFowardAndBack(flag) {
-                if (this.howlerInstance && this.isPlaying) {
+                if (this.howlerInstance && this.isPlaying && !this.$store.state.blockSpace) {
                     const currentTime = this.howlerInstance.seek();
                     const durationInSeconds = this.getDurationInSeconds();
 
                     if (!flag) {
                             const newTime = Math.max(currentTime - 3, 0);
                             this.howlerInstance.seek(newTime);
-                            this.$store.commit('SET_CURRENT_PROGRESS', (newTime / durationInSeconds) * 100);
+                            this.$store.commit('SET_CURRENT_PROGRESS', (newTime / this.howlerInstance.duration()) * 100);
                     } else {
-                            const newTime = Math.min(currentTime + 3, durationInSeconds);
+                            const newTime = Math.min(currentTime + 3, this.howlerInstance.duration());
                             this.howlerInstance.seek(newTime);
-                            this.$store.commit('SET_CURRENT_PROGRESS', (newTime / durationInSeconds) * 100);
+                            this.$store.commit('SET_CURRENT_PROGRESS', (newTime / this.howlerInstance.duration()) * 100);
                     }
                 }
             },
@@ -258,20 +281,18 @@
                     this.howlerInstance.pause();
 
                     // 更新播放进度
-                    const durationInSeconds = this.getDurationInSeconds();
-                    const newCurrentTime = (newProgress / 100) * durationInSeconds;
+                    const newCurrentTime = (newProgress / 100) * this.howlerInstance.duration();
                     this.howlerInstance.seek(newCurrentTime);
 
                     // 继续播放音频
                     this.howlerInstance.play();
+                    this.$store.state.currentProgress = newProgress
                 }else{
                     this.$store.state.isPlaying = true
                     this.howlerInstance.pause();
-                    const durationInSeconds = this.getDurationInSeconds();
-                    const newCurrentTime = (newProgress / 100) * durationInSeconds;
+                    const newCurrentTime = (newProgress / 100) * this.howlerInstance.duration();
                     this.howlerInstance.seek(newCurrentTime);
-
-                    // 继续播放音频
+                    this.$store.state.currentProgress = newProgress
                 }
             },
             getDurationInSeconds() {
@@ -300,9 +321,8 @@
                         if (!this.dragging) {
                             this.$store.commit('SET_CURRENT_PROGRESS', newProgress);
                         }
-
                     }
-                }, 1);
+                }, 200);
             },
             // 根据 歌曲配置好的 id 来搜索歌词
             async getNetLyricByNetId(){
@@ -412,18 +432,19 @@
             },
 
             analyseSpectrumData() {
+                clearInterval(this.spectrumInterval);
                 const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
 
                 const updateDataArray = () => {
                     this.analyser.getByteFrequencyData(dataArray);
                     const array = dataArray.slice(0, 200).filter((_, index) => index % 8 === 0);
-                    const reversedArray = array.slice(1, 24).reverse();
+                    const reversedArray = array.slice(1, 25).reverse();
                     this.$store.state.dataArray = [...reversedArray, ...array];
                 };
 
                 updateDataArray();
 
-                setInterval(updateDataArray, 50);
+                this.spectrumInterval  = setInterval(updateDataArray, 50);
             },
 
             async playAudio(path,songId) {
@@ -498,13 +519,13 @@
                         cover:this.$store.state.nowSongCover,
                         moreInfo: songAudioAndInfos[1],
                         nowSong: this.$store.getters.nowSong,
-                        netId: songAudioAndInfos[3]
+                        netId: songAudioAndInfos[3],
                     }
                     this.$store.state.nowSongDialogInfo={
                         cover:this.$store.state.nowSongCover,
                         moreInfo: songAudioAndInfos[1],
                         nowSong: this.$store.getters.nowSong,
-                        netId: songAudioAndInfos[3]
+                        netId: songAudioAndInfos[3],
                     }
 
                 },1000)
@@ -580,11 +601,11 @@
                                 this.webAudioApi.updateEQ(this.$store.state.EQParam)
                             }
                         },500)
-                        // console.log(123123)
-                        // this.webAudioApi.updateEQ([-12,-12,-12,-12,-12,12,12,12,12,12])
-                        // console.log(this.webAudioApi)
                         this.analyser = this.webAudioApi.analyser
-                        // this.analyseSpectrumData()
+                        this.analyser.smoothingTimeConstant = 0.6
+                        if (this.$store.state.showSpectrum) {
+                            this.analyseSpectrumData()
+                        }
                     }
                     this.isInitializing = false;
                 }

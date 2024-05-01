@@ -63,9 +63,11 @@
                     :height="15"
                     style="width: 100%;margin-top: 25px"
                     class="slider"
-                    :duration="0.18"
                     :lazy="true"
-                    contained="true"
+                    :duration="0"
+                    :contained="true"
+                    :drag-on-click="true"
+                    :useKeyboard="false"
                     :tooltip="'none'"
             >
 
@@ -107,7 +109,7 @@
                         :dot-size="12"
                         :height="10"
                         :duration="0.2"
-                        style="width:100px;margin-left: 5px"
+                        style="width:100px;margin-left: 5px;margin-right: 5px"
                 ></vue-slider>
             <!--音量数值显示-->
             <div v-show="showVolumeValue" class="volume-value">
@@ -122,6 +124,12 @@
              v-show="showMenu"
              ref="menu">
             <div style="display: flex; gap: 5px;">
+                <!--均衡器-->
+                <div class="circle-container" title="可视化频谱（较耗性能）"
+                     @click="changeShowSpectrum();handleMouseLeave(false)" :class="{ 'dlrcActive': showSpectrum }"
+                >
+                    <div class="spectrum-image"></div>
+                </div>
                 <!--桌面歌词-->
                 <div class="circle-container" title="桌面歌词"
                      @click="changeDeskTopLyric();handleMouseLeave(false)" :class="{ 'dlrcActive': deskTopLyric }"
@@ -403,6 +411,7 @@
                 </div>
             </div>
         </div>
+
         <!--       音频文件信息 -------------------------------------------------------------------------------->
         <div class="info-dialog-container" v-if="showInfoDialog">
             <div class="overlay" >
@@ -415,8 +424,9 @@
                     <div class="info-content">
                         <!-- 歌曲封面 -->
                         <div class="cover-container">
-                            <img :src="this.songInfo.cover" alt="Cover" class="cover-image" />
-                            <br>
+                            <img v-if="this.songInfo.cover" :src="this.songInfo.cover" alt="歌曲封面" class="cover-image" />
+                            <img v-else src="../assets/znone.png" alt="默认封面" class="cover-image" />
+                            <div class="custom-button" @click="showEditMetadataModal()"><b>{{"编辑标签信息"}}</b></div>
                         </div>
                         <!-- 歌曲详细信息 -->
                         <div class="info-details">
@@ -484,6 +494,110 @@
             </div>
         </div>
 
+        <!-- 编辑标签信息-->
+        <div class="info-dialog-container" v-if="showEditMetadata">
+            <div class="overlay" >
+                <!--        展示信息框-->
+                <div class="info-dialog2">
+                    <div class="editContent">
+                        <div class="editCover">
+                            <div class="edit-image-container">
+                                <img
+                                        v-if="toEditSongInfo.cover"
+                                        :src="toEditSongInfo.cover"
+                                        alt="无封面"
+                                        class="edit-image"
+                                />
+                                <img
+                                        v-else
+                                        src="../assets/znone.png"
+                                        alt="默认封面"
+                                        class="edit-image"
+                                />
+                            </div>
+                            <div class="twoButtons">
+                                <div class="custom-button" style="width: 100px" @click="chooseCover()"><b>{{"选择图片"}}</b></div>
+                                <div class="custom-button" style="width: 100px" @click="delCover()"><b>{{"删除图片"}}</b></div>
+                            </div>
+                        </div>
+
+                        <div class="editInfos">
+                            <table style="width: 100%;border-collapse: separate;border-spacing: 0 10px;">
+                                <tr>
+                                    <td style="text-align: center;font-weight: bold">标 题</td>
+                                    <td>
+                                        <div class="editingInfo">
+                                            <input class="editingInfoContent" v-model="toEditSongInfo.nowSong.title">
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center;font-weight: bold">艺 术 家</td>
+                                    <td>
+                                        <div class="editingInfo">
+                                            <input class="editingInfoContent" v-model="toEditSongInfo.nowSong.artist">
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center;font-weight: bold">专 辑</td>
+                                    <td>
+                                        <div class="editingInfo">
+                                            <input class="editingInfoContent" v-model="toEditSongInfo.nowSong.album">
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center;font-weight: bold">音 轨 号</td>
+                                    <td>
+                                        <div class="editingInfo">
+                                            <input class="editingInfoContent" v-model="toEditSongInfo.moreInfo.trackNumber">
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center;font-weight: bold">年 份</td>
+                                    <td>
+                                        <div class="editingInfo">
+                                            <input class="editingInfoContent" v-model="toEditSongInfo.moreInfo.year">
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center;font-weight: bold">流 派</td>
+                                    <td>
+                                        <div class="editingInfo">
+                                            <input class="editingInfoContent" v-model="toEditSongInfo.moreInfo.genre">
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center;font-weight: bold">注 释</td>
+                                    <td>
+                                        <div class="editingInfo">
+                                            <input class="editingInfoContent" v-model="toEditSongInfo.moreInfo.comment">
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="editLyrics">
+                            <div class="twoButtons">
+                                <div class="custom-button" style="width: 100px" @click="insertLyrics()"><b>{{insert?"内嵌歌词":"删除内嵌"}}</b></div>
+                                <div class="custom-button" style="width: 100px" title="保存后将内嵌歌词与本地歌词文件一并删除" @click="delLyrics()"><b>{{"删除歌词"}}</b></div>
+                            </div>
+                            <textarea class="lyricsArea" v-model="editingLyrics" placeholder="请输入歌词..."></textarea>
+                        </div>
+                    </div>
+                    <div class="twoButtons">
+                        <div class="custom-button" style="width: 70px" @click="saveEdit()"><b>{{"保存"}}</b></div>
+                        <div class="custom-button" style="width: 70px" @click="closeEdit()"><b>{{"取消"}}</b></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </template>
 
@@ -537,6 +651,13 @@
         background-repeat: no-repeat;
         background-image: url('../assets/dLyric.png')
     }
+    .spectrum-image{
+        height: 60%;
+        width: 60%;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-image: url('../assets/spectrum.png')
+    }
     .dlrcActive{
         background-color: rgba(255, 255, 255, 0.2);
     }
@@ -544,7 +665,7 @@
         backdrop-filter: blur(20px);
         position: fixed;
         bottom: 110px;
-        right: 122px;
+        right: 107px;
         transform: translateY(50px);
         opacity: 0;
         transition: transform 0.3s, opacity 0.3s;
@@ -611,11 +732,145 @@
         z-index: 2;
     }
 
+    .info-dialog2 {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 35%;
+        height: 80%;
+        background-color: rgba(0, 0, 0, 0.3);
+        box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        padding: 20px;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .edit-image-container{
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .edit-image{
+        width: 70%;
+        object-fit: cover;
+        cursor: pointer;
+        border-radius: 10px;
+    }
+    .editCover{
+        margin-top: 10px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+    }
+
+    .editInfos{
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .editingInfo{
+        flex: 1;
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        border-radius: 100px;
+        padding: 4px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .editingInfoContent{
+        border: none;
+        outline: none;
+        background-color: transparent;
+        font-family: inherit;
+        font-size: 15px;
+        color: white;
+        text-align: center;
+        vertical-align: middle;
+        width: 95%;
+        box-sizing: border-box;
+    }
+
+    .editLyrics{
+        width: 100%;
+        padding: 5px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+    }
+    .lyricsArea{
+        font-size: 15px;
+        border: none;
+        outline: none;
+        height: 500px;
+        width: 100%;
+        color: white;
+        background-color: transparent;
+    }
+    .lyricsArea::placeholder {
+        color: white;
+    }
+    .lyricsArea::-webkit-scrollbar {
+        width: 0px;
+    }
+
+    .editContent{
+        flex: 1;
+        width: 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+    }
+    .editContent::-webkit-scrollbar {
+        width: 0px;
+    }
+
+    .twoButtons{
+        width: 100%;
+        height: 50px;
+        display: flex;
+        justify-content: center;
+        gap: 25%;
+    }
+
     .info-content {
         display: flex;
         align-items: center;
         justify-content: space-between;
         width: 100%;
+        height: 100%;
+    }
+
+    .custom-button {
+        border: 3px solid rgba(255,255,255,0.3);
+        padding: 5px;
+        border-radius: 100px;
+        width: 110px;
+        height: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: 0.3s;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .custom-button:hover {
+        border: 3px solid rgba(255,255,255,0.6);
+        background-color: rgba(255,255,255,0.2);
     }
 
     .cover-container {
@@ -625,6 +880,8 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        flex-direction: column;
+        gap: 30px;
     }
 
     .cover-image {
@@ -636,10 +893,26 @@
 
     .info-details {
         width: 50%;
-        height: 100%;
+        height: 85%;
         margin-left: 30px;
-        margin-top: 20px;
-        overflow: hidden;
+        overflow-y: auto;
+        overflow-x: auto;
+        display: flex;
+    }
+    .info-details::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+        background-color: rgba(0, 0, 0, 0);
+        border-radius: 20px;
+    }
+
+    .info-details::-webkit-scrollbar-thumb {
+        background-color: #f0f0f0;
+        border-radius: 20px;
+    }
+
+    .info-details::-webkit-scrollbar-track {
+        background-color: rgba(255, 255, 255, 0);
     }
 
     .info-label {
@@ -1001,27 +1274,31 @@
                 this.$bus.$emit('songOnTop')
             })
             myAPI.onDownVolume((_event) => {
-                if (this.$store.state.volume <= 3) {
-                    this.$store.state.volume = 0
-                }else{
-                    this.$store.state.volume = this.$store.state.volume -3
-                }
-                if (this.$store.state.focusMode) {
-                    this.$bus.$emit('showVolumeFocus')
-                }else{
-                    this.$bus.$emit('showVolume')
+                if (!this.$store.state.blockSpace) {
+                    if (this.$store.state.volume <= 3) {
+                        this.$store.state.volume = 0
+                    }else{
+                        this.$store.state.volume = this.$store.state.volume -3
+                    }
+                    if (this.$store.state.focusMode) {
+                        this.$bus.$emit('showVolumeFocus')
+                    }else{
+                        this.$bus.$emit('showVolume')
+                    }
                 }
             })
             myAPI.onUpVolume((_event) => {
-                if (this.$store.state.volume >= 97) {
-                    this.$store.state.volume = 100
-                }else{
-                    this.$store.state.volume = this.$store.state.volume + 3
-                }
-                if (this.$store.state.focusMode) {
-                    this.$bus.$emit('showVolumeFocus')
-                }else{
-                    this.$bus.$emit('showVolume')
+                if (!this.$store.state.blockSpace) {
+                    if (this.$store.state.volume >= 97) {
+                        this.$store.state.volume = 100
+                    }else{
+                        this.$store.state.volume = this.$store.state.volume + 3
+                    }
+                    if (this.$store.state.focusMode) {
+                        this.$bus.$emit('showVolumeFocus')
+                    }else{
+                        this.$bus.$emit('showVolume')
+                    }
                 }
             })
             myAPI.onChangeMute((_event) => {
@@ -1112,6 +1389,10 @@
                 timer: null,
                 showMenu: false,
                 showEQ: false,
+                showEditMetadata: false,
+                toEditSongInfo: null,
+                insert: null,
+                editingLyrics: null,
                 tenEQ:[
                     [4, 2, 0, -3, -6, -6, -3, 0, 1, 3],
                     [7, 6, 3, 0, 0, -4, -6, -6, 0, 0],
@@ -1152,6 +1433,11 @@
             this.$bus.$on('showMoreInfo',this.showMoreInfo)
         },
         watch : {
+            showEditMetadata:{
+                handler(newVal) {
+                    this.$store.state.blockSpace = newVal
+                },
+            },
             nowSong: {
                 handler(newSong) {
                     this.$store.state.currentProgress = 0
@@ -1171,6 +1457,12 @@
                 immediate: true,
                 handler(newValue) {
                         myAPI.sendBold(this.$store.state.boldLrc)
+                },
+            },
+            '$store.state.dFont': {
+                immediate: true,
+                handler(newValue) {
+                    myAPI.sendFont(this.$store.state.dFont)
                 },
             },
             '$store.state.dLyricColor': {
@@ -1267,16 +1559,123 @@
             },
             currentProgress:{
                 get() {
-                    return this.$store.state.currentProgress;
+                    return this.$store.state.currentProgress>100?100:this.$store.state.currentProgress
                 },
                 set(value) {
-                    this.$bus.$emit('changeProgress', value);
+                    this.$bus.$emit('changeProgress', value>100?100:value);
                 },
             },
             ...mapGetters(['filteredSongs']),
             ...mapState(['currentIndex'])
         },
         methods: {
+            saveEdit(){
+                // 正在播放的歌，立即修改歌词、封面和更多信息
+                if (this.toEditSongInfo.nowSong.id === this.$store.getters.nowSong.id) {
+                    if (this.editingLyrics === null || this.editingLyrics === undefined || this.editingLyrics === "") {
+                        this.$store.state.lyricOfNowSong = "[00:00.00]无本地歌词，请开启在线搜索歌词功能"
+                    }else{
+                        this.$store.state.lyricOfNowSong = this.editingLyrics
+                    }
+                    this.$store.state.nowSongCover = this.toEditSongInfo.cover
+                    this.$store.state.songDialogInfo.cover = this.toEditSongInfo.cover
+
+                    this.$store.state.songDialogInfo.moreInfo.year = this.toEditSongInfo.moreInfo.year
+                    this.$store.state.songDialogInfo.moreInfo.trackNumber = this.toEditSongInfo.moreInfo.trackNumber
+                    this.$store.state.songDialogInfo.moreInfo.genre = [this.toEditSongInfo.moreInfo.genre]
+                    this.$store.state.songDialogInfo.moreInfo.comment = [this.toEditSongInfo.moreInfo.comment]
+                }
+                // 修改队列里的歌
+                const song2 = this.$store.state.queue.find(song => song.id === this.toEditSongInfo.nowSong.id)
+                if (song2) {
+                    song2.title = this.toEditSongInfo.nowSong.title
+                    song2.artist = this.toEditSongInfo.nowSong.artist
+                    song2.album = this.toEditSongInfo.nowSong.album
+                }
+                // 修改音乐库的歌
+                const song = this.$store.state.songs.songs.find(song => song.id === this.toEditSongInfo.nowSong.id)
+                if (song) {
+                    song.title = this.toEditSongInfo.nowSong.title
+                    song.artist = this.toEditSongInfo.nowSong.artist
+                    song.album = this.toEditSongInfo.nowSong.album
+                }
+
+
+                if (this.editingLyrics !== null && this.editingLyrics !== undefined && this.editingLyrics !== "") {
+                    this.toEditSongInfo.lyricsFromLrc = this.editingLyrics
+                    this.toEditSongInfo.lyricsFromAudio = this.editingLyrics
+                }
+                // 修改本地文件
+                myAPI.editMetadata(this.toEditSongInfo, this.$store.state.lyricDirectory)
+
+                // 如果在音乐库、播放列表、文件夹，修改封面
+                setTimeout(()=>{
+                    if (this.$route.path === "/Library") {
+                        this.$bus.$emit("updateCoverInLibrary")
+                    }else if(this.$route.path === "/SongsInPlaylist"){
+                        this.$bus.$emit("updateCoverInPlaylists")
+                    }else if(this.$route.path === "/SongsInFolder"){
+                        this.$bus.$emit("updateCoverInFolder")
+                    }
+                },1000)
+
+                this.showEditMetadata = false
+                this.toEditSongInfo = null
+            },
+            insertLyrics(){
+                if (this.toEditSongInfo.lyricsFromAudio) {
+                //    删除内嵌
+                    this.toEditSongInfo.lyricsFromAudio = null
+                    this.insert = true
+                    this.editingLyrics = this.toEditSongInfo.lyricsFromLrc
+                }else{
+                //      内嵌歌词
+                    this.toEditSongInfo.lyricsFromAudio = this.editingLyrics
+                    this.insert = false
+                }
+            },
+            delLyrics(){
+                this.editingLyrics = null
+                this.toEditSongInfo.lyricsFromAudio = null
+                this.toEditSongInfo.lyricsFromLrc = null
+                this.insert = true
+            },
+            async chooseCover() {
+                const coverData = await myAPI.chooseCover()
+                const coverPath = coverData[1]
+                const cover = coverData[0]
+                this.toEditSongInfo.cover = cover?cover: this.toEditSongInfo.cover
+                this.toEditSongInfo.coverPath = coverPath?coverPath: null
+            },
+            delCover(){
+                this.toEditSongInfo.cover = null
+                this.toEditSongInfo.coverPath = "删除封面"
+            },
+            async showEditMetadataModal() {
+                const result = await myAPI.getLyrics(this.$store.state.songDialogInfo.nowSong.path, this.$store.state.lyricDirectory)
+                this.toEditSongInfo = JSON.parse(JSON.stringify(this.$store.state.songDialogInfo));
+                if (result.lyricsFromAudio === null || result.lyricsFromAudio === undefined) {
+                    this.insert = true
+                    this.editingLyrics = result.lyricsFromLrc
+                }else{
+                    this.insert = false
+                    this.editingLyrics = result.lyricsFromAudio
+                }
+
+                this.toEditSongInfo.lyricsFromAudio = result.lyricsFromAudio
+                this.toEditSongInfo.lyricsFromLrc = result.lyricsFromLrc
+                this.toEditSongInfo.moreInfo.genre = this.$store.state.songDialogInfo.moreInfo.genre[0]
+                this.toEditSongInfo.moreInfo.comment = this.$store.state.songDialogInfo.moreInfo.comment[0]
+                this.toEditSongInfo.coverPath = null
+                this.$store.state.songDialogInfo = this.$store.state.nowSongDialogInfo
+                this.showInfoDialog = false
+                this.showEditMetadata = true
+            },
+            closeEdit(){
+                this.showEditMetadata = false
+                this.toEditSongInfo = null
+            },
+
             changeEQ(flag){
                 if (flag !== -1) {
                     this.$store.state.useEQ = true
@@ -1308,7 +1707,6 @@
                     },100)
                 }, flag?500:10);
             },
-
             changeInfo(){
                 myAPI.changeInfo(this.$store.getters.nowSong.path)
             },
@@ -1455,8 +1853,9 @@
                 this.$bus.$emit('toHome');
             },
             togglePlay() {
-
-                this.$store.dispatch('togglePlay');
+                if (!this.$store.state.blockSpace) {
+                    this.$store.dispatch('togglePlay');
+                }
             },
             playNext() {
                 if (!this.isNextButtonDisabled) {

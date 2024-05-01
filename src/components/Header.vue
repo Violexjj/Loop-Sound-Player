@@ -1,3 +1,4 @@
+<!--霞鹜文楷 GB-->
 <template>
     <div class="image-and-buttons">
         <div class="button-container">
@@ -13,13 +14,19 @@
                 </div>
             </div>
 
-            <div :class="{ 'active': isActive('Home')}" @click="displayHome" class="nav-button unselectable"><b>主 页</b></div>
-            <div :class="{ 'active': isActive('Library') }" @click="displayLibrary()" class="nav-button unselectable"><b>音 乐 库</b></div>
-            <div :class="{ 'active': isActive('Playlists') }" @click="displayPlaylists" class="nav-button unselectable"><b>播 放 列 表</b></div>
-            <div v-show="$store.state.showAlbums" :class="{ 'active': isActive('Albums') }" @click="displayAlbums()" class="nav-button unselectable"><b>专 辑</b></div>
-            <div v-show="$store.state.showArtists" :class="{ 'active': isActive('Artists') }" @click="displayArtists()" class="nav-button unselectable"><b>艺 术 家</b></div>
-            <div v-show="$store.state.showFolders" :class="{ 'active': isActive('Folders') }" @click="displayFolders()" class="nav-button unselectable"><b>文 件 夹</b></div>
-            <div :class="{ 'active': isActive('Settings') }" @click="displaySettings" class="nav-button unselectable"><b>设 置</b></div>
+            <div :class="{ 'active': isActive('Home')}" @click="displayHome" class="nav-button unselectable">
+                <img class="header-img" src="../assets/home.png">
+                <b>主 页</b>
+            </div>
+            <div :class="{ 'active': isActive('Library') }" @click="displayLibrary()" class="nav-button unselectable"><img class="header-img" src="../assets/library.png"><b>音 乐 库</b></div>
+            <div :class="{ 'active': isActive(['Playlists', 'SongsInPlaylist']) }" @click="displayPlaylists" class="nav-button unselectable">
+                <img class="header-img" src="../assets/playlist4.png">
+                <b>播 放 列 表</b>
+            </div>
+            <div v-show="$store.state.showAlbums" :class="{ 'active': isActive(['Albums', 'AlbumDetail']) }" @click="displayAlbums()" class="nav-button unselectable"><img class="header-img" src="../assets/album.png"><b>专 辑</b></div>
+            <div v-show="$store.state.showArtists" :class="{ 'active': isActive(['Artists', 'ArtistDetail']) }" @click="displayArtists()" class="nav-button unselectable"><img class="header-img" src="../assets/artist.png"><b>艺 术 家</b></div>
+            <div v-show="$store.state.showFolders" :class="{ 'active': isActive(['Folders', 'SongsInFolder']) }" @click="displayFolders()" class="nav-button unselectable"><img class="header-img" src="../assets/folder2.png"><b>文 件 夹</b></div>
+            <div :class="{ 'active': isActive('Settings') }" @click="displaySettings" class="nav-button unselectable"><img class="header-img" src="../assets/set.png"><b>设 置</b></div>
         </div>
     </div>
 </template>
@@ -42,6 +49,10 @@
 
     .nav-button {
         flex: 1;
+        display: flex;
+        align-items: center; /* 垂直居中 */
+        justify-content: center; /* 水平居中 */
+        flex-direction: row;
         white-space: nowrap;
         padding: 10px;
         margin: 0 1px;
@@ -51,19 +62,29 @@
         font-size: 16px;
         transition: 0.2s;
         border-radius: 100px;
-        flex-grow: 1;
+        gap: 10px;
     }
     .nav-button:hover{
         background-color: rgba(255, 255, 255, 0.1);
         color: #f0f0f0;
     }
+    .nav-button:hover .header-img {
+        filter: brightness(100%) !important; /* 提高权重 */
+    }
     .nav-button:active {
         transform: scale(0.85);
     }
-
+    .nav-button.active .header-img {
+        filter: brightness(0)
+    }
     .active {
         background-color: rgba(255, 255, 255, 0.9);
         color: #333;
+    }
+    .header-img{
+        width:20px;
+        height: 20px;
+        transition: 0.1s;
     }
 
     /* 调整输入框样式 */
@@ -226,7 +247,7 @@
         computed: {
             // 判断按钮是否激活
             isActive() {
-                return (routeName) => this.$route.name === routeName;
+                return (routeNames) => routeNames.includes(this.$route.name);
             },
         },
     };

@@ -232,7 +232,6 @@
         align-items: center;
         cursor: pointer;
         padding: 5px 0;
-        transition: 0.1s;
     }
     .song-row:hover{
         background-color: rgba(255, 255, 255, 0.2); /* 鼠标悬停时的背景颜色 */

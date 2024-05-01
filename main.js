@@ -52,7 +52,7 @@ const createWindow = () => {
             preload: path.resolve(__dirname, './preload.js')
         }
     });
-    win.setMinimumSize(800, 800);
+    win.setMinimumSize(450, 450);
 
     // win.loadURL('http://localhost:8080');
     win.loadFile(path.join(__dirname, 'dist','index.html'));
@@ -173,7 +173,7 @@ const createWindow = () => {
             setTimeout(()=>{
                 showWelcome.close()
                 win.show();
-            },1000)
+            },1200)
         }
     })
 
@@ -329,6 +329,16 @@ ipcMain.handle('sendBold', async (event,bold) => {
     }
 });
 
+// 更改桌面歌词字体
+ipcMain.handle('sendFont', async (event,font) => {
+    try {
+        deskTopLyric.webContents.send('changeFont', font);
+    } catch (error) {
+        console.error('Error sending bold:', error);
+        throw error;
+    }
+});
+
 // 接收桌面歌词按钮的请求，对播放器进行控制
 ipcMain.handle('deskTopLyricButtons', async (event,buttonNo) => {
     try {
@@ -425,11 +435,6 @@ ipcMain.on('set-ignore-mouse-events', (event) => {
     }
 })
 
-// 修改元数据（测试中）
-ipcMain.handle('changeInfo', async (event, path) => {
-
-});
-
 // 迷你模式
 ipcMain.handle('miniMode', async (event, miniMode) => {
     try {
@@ -448,7 +453,7 @@ ipcMain.handle('miniMode', async (event, miniMode) => {
             win.setSize(270, 70, false)
             win.setPosition(Math.floor((width-270)/2),0)
         }else{
-            win.setMinimumSize(800, 800);
+            win.setMinimumSize(450, 450);
             win.setAlwaysOnTop(false)
             win.setSize(windowState.width, windowState.height,false)
             win.setPosition(Math.floor((width-windowState.width)/2),Math.floor((height-windowState.height)/2))
@@ -459,6 +464,7 @@ ipcMain.handle('miniMode', async (event, miniMode) => {
     }
 });
 
+// 打开文件夹所在位置
 ipcMain.handle('openFolder', (event, folderPath) => {
     try {
         shell.showItemInFolder(folderPath);
@@ -500,31 +506,6 @@ ipcMain.handle('openFile', (event, filePath, lyricDirectory) => {
 
 //读取音频、更多信息和歌词
 ipcMain.handle('read-file', async (event, filePath,lyricDirectory,songId) => {
-    // const NodeID3 = require('node-id3')
-    // var tags = NodeID3.read(filePath);
-    // console.log(tags)
-    // tags.unsynchronisedLyrics = {
-    //     language: "Eng",
-    //     shortText: '',
-    //     text: '[00:00.00]新修改的歌词哦'
-    // }
-    // // tags.trackNumber = '1'
-    // tags.year = '0'
-    // tags.title = 'Fine'
-    // tags.artist = 'Fine'
-    // tags.genre = "ure"
-    // tags.comment = {
-    //     language: "eng",
-    //     text: "纯音乐"
-    // }
-    // const success  = NodeID3.update(tags,filePath);
-    // console.log(success)
-
-    // const Metaflac = require('metaflac-js');
-    // const flac = new Metaflac(fileBuffer);
-    // console.log(flac.getAllTags());
-    // flac.save();
-
     try {
         const mm = await import('music-metadata');
         if (filePath === null || filePath === "") {
@@ -542,8 +523,8 @@ ipcMain.handle('read-file', async (event, filePath,lyricDirectory,songId) => {
         // console.log(metadata)
         //更多的音频信息：格式、音轨号、年份、流派、注释
         const format = metadata.format.container
-        const trackNumber = metadata.common.track.no || "无"
-        const year = metadata.common.year || "无"
+        const trackNumber = metadata.common.track.no || 0
+        const year = metadata.common.year || 0
         const genre = metadata.common.genre || "无"
         const comment = metadata.common.comment || "无"
         const moreInfo = {
@@ -674,7 +655,7 @@ ipcMain.handle('read-file', async (event, filePath,lyricDirectory,songId) => {
 });
 
 //读取更多信息和netId
-ipcMain.handle('readFileForMoreInfo', async (event, filePath,songId) => {
+ipcMain.handle('readFileForMoreInfo', async (event, filePath,songId,lyricDirectory) => {
     try {
         const mm = await import('music-metadata');
         if (filePath === null || filePath === "") {
@@ -684,8 +665,8 @@ ipcMain.handle('readFileForMoreInfo', async (event, filePath,songId) => {
         const metadata = await mm.parseFile(filePath);
         //更多的音频信息：格式、音轨号、年份、流派、注释
         const format = metadata.format.container
-        const trackNumber = metadata.common.track.no || "无"
-        const year = metadata.common.year || "无"
+        const trackNumber = metadata.common.track.no || 0
+        const year = metadata.common.year || 0
         const genre = metadata.common.genre || "无"
         const comment = metadata.common.comment || "无"
         const moreInfo = {
@@ -694,7 +675,6 @@ ipcMain.handle('readFileForMoreInfo', async (event, filePath,songId) => {
             "year" : year,
             "genre" : genre,
             "comment" : comment,
-            "fileSize" : 100
         }
 
         //网易云id
@@ -717,6 +697,50 @@ ipcMain.handle('readFileForMoreInfo', async (event, filePath,songId) => {
         return {
             moreInfo: moreInfo,
             netId: netId
+        }
+
+    } catch (error) {
+        console.error('Error reading file in main process:', error);
+        throw error;
+    }
+});
+
+//读取歌词
+ipcMain.handle('getLyrics', async (event, filePath,lyricDirectory) => {
+    try {
+        let lyricsFromAudio
+        let lyricsFromLrc
+        // 首先获取内嵌歌词
+        const nodeTagLibSharp = await import('node-taglib-sharp');
+        const File = nodeTagLibSharp.File
+        const myFile = File.createFromPath(filePath)
+
+        lyricsFromAudio = myFile.tag.lyrics
+        myFile.dispose()
+
+            // 获取歌词文件的歌词
+            const songDirectory = path.dirname(filePath);
+            const songFileName = path.basename(filePath, path.extname(filePath));
+
+            let lrcFilePath
+            if (lyricDirectory !== "未设置") {
+                lrcFilePath = path.join(lyricDirectory, `${songFileName}.lrc`);
+            }else{
+                lrcFilePath = path.join(songDirectory, `${songFileName}.lrc`);
+            }
+
+            if (fs.existsSync(lrcFilePath)) {
+                // 读取歌词文件的歌词
+                lyricsFromLrc = fs.readFileSync(lrcFilePath, 'utf-8');
+            } else {
+                // 没有歌词文件，返回没有找到本地歌词
+                lyricsFromLrc = null
+                console.log(`File not found: ${lrcFilePath}`);
+            }
+
+        return {
+            lyricsFromAudio: lyricsFromAudio,
+            lyricsFromLrc: lyricsFromLrc,
         }
 
     } catch (error) {
@@ -850,10 +874,12 @@ ipcMain.handle('getSavingState', async (event) => {
                 "\"otherBlur\":false," +
                 "\"boldLrc\":true," +
                 "\"showFormat\":true," +
+                "\"matchBlank\":true," +
                 "\"showFolders\":true," +
                 "\"showAlbums\":true," +
                 "\"showArtists\":true," +
                 "\"queueModal\":true," +
+                "\"showSpectrum\":false," +
                 "\"lyricsModal\":false," +
                 "\"infoModal\":false," +
                 "\"exit\":false," +
@@ -864,6 +890,8 @@ ipcMain.handle('getSavingState', async (event) => {
                 "\"onlineLrc\":true," +
                 "\"savedCurrentPlaytime\":0," +
                 "\"lyricDirectory\":\"未设置\"," +
+                "\"pFont\":\"微软雅黑\"," +
+                "\"dFont\":\"微软雅黑\"," +
                 "\"dLyricColorPure\": \"#03A9F4\","+
                 "\"dLyricColor\": [\"#FFA6B7\",\"#1E2AD2\"]," +
                 "\"EQParam\": [0,0,0,0,0,0,0,0,0,0]," +
@@ -907,6 +935,7 @@ ipcMain.handle('getSavingState', async (event) => {
                 "        }\n" +
                 "    }," +
                 "\"bright\":100," +
+                "\"lyricFont2\":20," +
                 "\"lyricFont\":20}}"
             fs.writeFileSync(filePath, rawDate, 'utf-8');
         }
@@ -1178,6 +1207,131 @@ ipcMain.handle('setPlaylistCover', async (event, playlistName) => {
     }
 });
 
+// 选择一个临时封面
+ipcMain.handle('chooseCover', async (event) => {
+    try {
+        // 打开文件选择对话框，限制选择的文件为图片格式（png 或 jpg）
+        const fileFilters = [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg'] }];
+        const filePaths = dialog.showOpenDialogSync({
+            properties: ['openFile'],
+            filters: fileFilters,
+            title: 'Select Cover Image',
+        });
+
+        if (filePaths && filePaths.length > 0) {
+            const selectedFilePath = filePaths[0];
+            const imageBuffer = fs.readFileSync(selectedFilePath);
+            const imageBuffer2 = await sharp(imageBuffer)
+                .resize(800, 800)
+                .toBuffer()
+            // const imageBuffer2 = metadata.common.picture[0].data
+            return [nativeImage.createFromBuffer(imageBuffer2).toDataURL(),selectedFilePath]
+        } else {
+            return null; // 如果用户取消了选择，则返回 null
+        }
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+});
+
+//修改元信息
+ipcMain.handle('editMetadata', async (event, data, lyricDirectory) => {
+    try {
+        const nodeTagLibSharp = await import('node-taglib-sharp');
+        const File = nodeTagLibSharp.File
+        const filePath = data.nowSong.path
+        const myFile = File.createFromPath(filePath)
+        const oldTitle = myFile.tag.title
+        const oldArtist = myFile.tag.performers[0]
+        const oldAlbum = myFile.tag.album
+
+        // 修改标题、艺术家、专辑
+        myFile.tag.title = data.nowSong.title
+        myFile.tag.performers = [data.nowSong.artist]
+        myFile.tag.album = data.nowSong.album
+
+        // 修改音轨号、年份、注释、流派
+        myFile.tag.genres = [data.moreInfo.genre]
+        myFile.tag.track = parseInt(data.moreInfo.trackNumber, 10)
+        myFile.tag.year = parseInt(data.moreInfo.year, 10)
+        myFile.tag.comment = data.moreInfo.comment
+
+        // 修改内嵌歌词
+        if (data.lyricsFromAudio === null || data.lyricsFromAudio === undefined || data.lyricsFromAudio === "") {
+            myFile.tag.lyrics = undefined
+        }else{
+            myFile.tag.lyrics = data.lyricsFromAudio
+        }
+        // 修改歌词文件
+        const songDirectory = path.dirname(data.nowSong.path);
+        const songFileName = path.basename(data.nowSong.path, path.extname(data.nowSong.path));
+
+        let lrcFilePath
+        if (lyricDirectory !== "未设置") {
+            lrcFilePath = path.join(lyricDirectory, `${songFileName}.lrc`);
+        }else{
+            lrcFilePath = path.join(songDirectory, `${songFileName}.lrc`);
+        }
+
+        if (fs.existsSync(lrcFilePath)) {
+            if (!data.lyricsFromLrc) {
+                fs.unlinkSync(lrcFilePath);
+                console.log(`Deleted file: ${lrcFilePath}`);
+            } else {
+                fs.writeFileSync(lrcFilePath, data.lyricsFromLrc, "utf-8");
+                console.log(`Updated file: ${lrcFilePath}`);
+            }
+        } else if (data.lyricsFromLrc) {
+            fs.writeFileSync(lrcFilePath, data.lyricsFromLrc, "utf-8");
+            console.log(`Created file: ${lrcFilePath}`);
+        } else {
+            console.log(`File not found: ${lrcFilePath}`);
+        }
+
+
+        // 修改封面
+        if (data.coverPath) {
+            if (data.coverPath === "删除封面") {
+                console.log("delete cover")
+                myFile.tag.pictures = []
+            }else{
+                console.log("set cover: "+data.coverPath)
+                const pic = {
+                    data: nodeTagLibSharp.ByteVector.fromPath(data.coverPath),
+                    mimeType: 'image/png',
+                    type: nodeTagLibSharp.PictureType.FrontCover
+                }
+                myFile.tag.pictures = [pic]
+            }
+        }
+
+        // 保存
+        myFile.save()
+        myFile.dispose()
+
+        // 修改音乐库，如果标题、艺术家或者专辑被改变
+        if (oldTitle !== data.nowSong.title || oldArtist !== data.nowSong.artist || oldAlbum !== data.nowSong.album) {
+            console.log("title or artist or album changed")
+            const libraryFilePath = path.join(app.getPath('appData'), 'Sonorbit', 'songsNoSameId.json');
+            const libraryData = fs.readFileSync(libraryFilePath, 'utf8');
+            const libraryObject = JSON.parse(libraryData);
+
+            const songIndexToUpdate = libraryObject.songs.findIndex(song => song.id === data.nowSong.id);
+            if (songIndexToUpdate !== -1) {
+                libraryObject.songs[songIndexToUpdate].title = data.nowSong.title;
+                libraryObject.songs[songIndexToUpdate].artist = data.nowSong.artist;
+                libraryObject.songs[songIndexToUpdate].album = data.nowSong.album;
+            }
+            const updatedLibraryData = JSON.stringify(libraryObject, null, 2);
+            fs.writeFileSync(libraryFilePath, updatedLibraryData, 'utf8');
+        }
+
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+});
 
 //对歌曲排序
 ipcMain.handle('sort-songs', async (event,orderType, newArray,playlistName) => {

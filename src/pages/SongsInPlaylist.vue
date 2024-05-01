@@ -77,7 +77,7 @@
                         <span class="index-style">{{ index+1 }}</span>
                     </div>
                     <div class="cover-container">
-                        <img :data-src="song.path" class="song-cover">
+                        <img :data-src="song.path" class="song-cover" ref="images">
                     </div>
                     <div class=" song-title ellipsis">  {{ song.title }}</div>
                     <div class=" song-artist ellipsis"><span :class="{'display': !selectMode}" @click="displayArtistDetail(song.artist)">{{ song.artist }}</span></div>
@@ -210,6 +210,10 @@
     export default {
         name: 'SongsInPlaylist',
         mounted() {
+            this.$bus.$on('updateCoverInPlaylists',async () => {
+                const img = this.$refs.images[this.toHandleIndex]
+                img.src = await myAPI.getSongCover(img.getAttribute('data-src'), 2)
+            })
             this.$store.state.showContextMenu = false
             this.contextIndex = -1
             // 在导航切换进来时重新计算 filteredSongs
@@ -392,7 +396,7 @@
                     cover: cover,
                     moreInfo: moreInfo,
                     nowSong: song,
-                    netId: result.netId
+                    netId: result.netId,
                 }
                 this.$bus.$emit('showMoreInfo')
             },
@@ -883,7 +887,6 @@
         padding: 5px 0;
         margin-right: 10px;
         margin-bottom: 5px;
-        transition: 0.1s;
     }
     .song-row:hover{
         background-color: rgba(255, 255, 255, 0.2); /* 鼠标悬停时的背景颜色 */
@@ -1030,7 +1033,8 @@
         bottom: 120px;
         left: 15%;
         width: 70%;
-        background-color: rgba(0, 0, 0, 0.9);
+        background-color: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(20px);
         display: flex;
         justify-content: space-between;
         padding: 10px;

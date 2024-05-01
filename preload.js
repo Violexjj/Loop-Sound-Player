@@ -64,6 +64,7 @@ contextBridge.exposeInMainWorld('myAPI', {
     onCloseDeskTopLyric: (callback) => ipcRenderer.on('closeDeskTopLyric', callback),
     onSendIsPlaying: (callback,arg) => ipcRenderer.on('sendIsPlaying', callback, arg),
     onChangeBold: (callback,arg) => ipcRenderer.on('changeBold', callback, arg),
+    onChangeFont: (callback,arg) => ipcRenderer.on('changeFont', callback, arg),
     onChangeColor: (callback,arg1,arg2) => ipcRenderer.on('changeColor', callback, arg1, arg2),
 
 
@@ -110,15 +111,26 @@ contextBridge.exposeInMainWorld('myAPI', {
             return "未知错误"
         }
     },
-    readFileForMoreInfo: async (filePath,songId) => {
+    readFileForMoreInfo: async (filePath,songId,lyricDirectory) => {
         try {
-            const response = await ipcRenderer.invoke('readFileForMoreInfo', filePath,songId);
-
+            const response = await ipcRenderer.invoke('readFileForMoreInfo', filePath,songId,lyricDirectory);
             return response;
         } catch (error) {
             console.error('Error reading file:', error);
             throw error;
         }
+    },
+    getLyrics: async (filePath,lyricDirectory) => {
+        try {
+            const response = await ipcRenderer.invoke('getLyrics', filePath,lyricDirectory);
+            return response;
+        } catch (error) {
+            console.error('Error reading file:', error);
+            throw error;
+        }
+    },
+    editMetadata:(data, lyricDirectory)=>{
+        ipcRenderer.invoke('editMetadata',data, lyricDirectory)
     },
     changeInfo:(filePath)=>{
         ipcRenderer.invoke('changeInfo',filePath)
@@ -209,6 +221,16 @@ contextBridge.exposeInMainWorld('myAPI', {
         }
     },
 
+    chooseCover: async () => {
+        try {
+            const response = await ipcRenderer.invoke('chooseCover');
+            return response;
+        } catch (error) {
+            console.error('Error reading file:', error);
+            throw error;
+        }
+    },
+
     addNewPlaylistOrDelete:(newPlaylist, addOrDelete) =>{
         ipcRenderer.invoke('add-new-playlist-or-delete',newPlaylist,addOrDelete)
     },
@@ -223,6 +245,10 @@ contextBridge.exposeInMainWorld('myAPI', {
 
     sendBold:(bold) =>{
         ipcRenderer.invoke('sendBold',bold)
+    },
+
+    sendFont:(font) =>{
+        ipcRenderer.invoke('sendFont',font)
     },
 
     deskTopLyricButtons:(buttonNo) =>{

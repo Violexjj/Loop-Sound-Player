@@ -1,9 +1,11 @@
 <template>
-    <div class="unselectable winHidden" tabindex="0"
+    <div class="unselectable winHidden"
+         :style="{fontFamily:pFont}" tabindex="0"
 
          @click="closeContext()"
          @blur="closeContext"
     >
+
         <div class="app" v-show="!this.$store.state.miniMode">
             <div v-if="!focusMode" class="logo-and-control draggable-area" id="draggable-area">
                 <!--                logo部分-->
@@ -54,7 +56,7 @@
 
 <!--            全局背景-->
             <div class="background">
-                <img :src="this.$store.state.nowSongCover" alt="Background Image" class="background-image"
+                <img :src="this.$store.state.nowSongCover"  ref="backCover" alt="Background Image" class="background-image"
                      :style="{ filter: 'blur(' + $store.state.blur + 'px) saturate(120%) brightness(' + $store.state.bright + '%)' }">
             </div>
 
@@ -129,9 +131,11 @@
                             :interval="0.1"
                             :dot-size="20"
                             :height="15"
-                            style="min-width: 450px;width: 90%;transition: 0.5s"
+                            style="min-width: 280px;width: 90%"
                             class="slider"
-                            :duration="0.18"
+                            :duration="0"
+                            :drag-on-click="true"
+                            :useKeyboard="false"
                             :lazy="true"
                             :tooltip="'none'"
                     ></vue-slider>
@@ -194,6 +198,9 @@
 
         <div v-show="showUpdate" class="showIsExist">
             {{ `有新版本可用，请前往设置查看更新信息。` }}
+        </div>
+        <div v-show="showUpdateError" class="showIsExist">
+            {{ `获取新版本失败，请前往设置查看错误信息。` }}
         </div>
         <!--        显示文件扫描情况-->
         <div v-show="showReboot" class="showReboot">
@@ -344,7 +351,7 @@
         border-radius: 50%;
         cursor: pointer;
         margin: 0 4px;
-        transition: background-color 0.2s ease; /* 添加过渡效果 */
+        transition: 0.2s ease; /* 添加过渡效果 */
     }
     .large {
         width: 50px;
@@ -353,6 +360,9 @@
     }
     .control-button-2:hover{
         background-color: rgba(255, 255, 255, 0.1);
+    }
+    .control-button-2:active{
+        transform: scale(0.85);
     }
     .showReboot {
         position: fixed;
@@ -568,9 +578,13 @@
         height: 30px; /* Adjust the height as needed */
         margin-left: 10px;
         cursor: pointer;
-        border-radius: 10px;
+        border-radius: 100px;
+        transition: 0.2s;
         background-color: rgba(0, 0, 0, 0.2);
         -webkit-app-region: no-drag;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
     .close-button:hover {
@@ -582,8 +596,8 @@
     }
 
     .control-button img {
-        width: 100%;
-        height: 100%;
+        width: 90%;
+        height: 90%;
     }
     .app {
         overflow-y: hidden;
@@ -738,6 +752,7 @@
         data(){
             return{
                 showUpdate: false,
+                showUpdateError: false,
                 playlistInitial: true,
                 info : "",
                 showReboot : false,
@@ -837,6 +852,9 @@
             SongsInFolder
         },
         computed: {
+            pFont(){
+                return this.$store.state.pFont
+            },
             nowSongTitle(){
                 return this.$store.getters.nowSong !== null ? this.$store.getters.nowSong.title : "无"
             },
@@ -1147,6 +1165,10 @@
                         }
                     }
                 } catch (error) {
+                    this.showUpdateError = true
+                    setTimeout(()=>{
+                        this.showUpdateError = false
+                    },3000)
                     this.$store.state.errorMessage = error.message
                     console.log('获取最新版本信息失败，错误信息：');
                     console.log(error)
@@ -1252,7 +1274,19 @@
             async getSongCover(){
                 if (this.nowSong) {
                     this.$bus.$emit("changeCover",true)
+                    // if (this.$refs.backCover) {
+                    //     this.$refs.backCover.style.opacity = 0.5
+                    // }
                     const nowSongCover = await myAPI.getSongCover(this.nowSong.path,1)
+
+                    setTimeout(()=>{
+                        this.$store.state.nowSongCover = nowSongCover
+                        this.$bus.$emit("changeCover", false)
+                        // if (this.$refs.backCover) {
+                        //     this.$refs.backCover.style.opacity = 1
+                        // }
+                    },500)
+
                     if ('mediaSession' in navigator) {
                         navigator.mediaSession.metadata = new MediaMetadata({
                             title: this.$store.getters.nowSong.title,
@@ -1263,10 +1297,6 @@
                             ]
                         });
                     }
-                    setTimeout(()=>{
-                        this.$store.state.nowSongCover = nowSongCover
-                        this.$bus.$emit("changeCover", false)
-                    },500)
                 }
             },
             saveAndClose(){
@@ -1291,6 +1321,7 @@
                     deleteLocalFile : this.$store.state.deleteLocalFile,
                     savedCurrentPlaytime :this.$store.state.savedCurrentPlaytime,
                     lyricFont : this.$store.state.lyricFont,
+                    lyricFont2 : this.$store.state.lyricFont2,
                     onlineLrc: this.$store.state.onlineLrc,
                     lyricDirectory : this.$store.state.lyricDirectory,
                     biggerLyric: this.$store.state.biggerLyric,
@@ -1308,7 +1339,11 @@
                     dLyricColorPure: this.$store.state.dLyricColorPure,
                     useEQ: this.$store.state.useEQ,
                     EQParam: this.$store.state.EQParam,
-                    boldLrc: this.$store.state.boldLrc
+                    boldLrc: this.$store.state.boldLrc,
+                    showSpectrum: this.$store.state.showSpectrum,
+                    matchBlank: this.$store.state.matchBlank,
+                    pFont: this.$store.state.pFont,
+                    dFont: this.$store.state.dFont
                 }
                 myAPI.closeWindow(savingState)
             },

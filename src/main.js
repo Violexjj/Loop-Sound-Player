@@ -52,6 +52,7 @@ new Vue({
                     this.$store.commit('SET_GLOBAL_SHORTCUT',savingState.globalShortcut)
                     this.$store.commit('SET_SAVED_CURRENT_PLAYTIME',savingState.savedCurrentPlaytime)
                     this.$store.commit('SET_LYRIC_FONT',savingState.lyricFont)
+                    this.$store.commit('SET_LYRIC_FONT2',savingState.lyricFont2)
                     this.$store.commit('SET_ONLINE_LRC',savingState.onlineLrc)
                     this.$store.commit('SET_LYRIC_DIRECTORY',savingState.lyricDirectory)
                     this.$store.commit('SET_BIGGER_LYRIC',savingState.biggerLyric)
@@ -70,6 +71,10 @@ new Vue({
                     this.$store.commit('SET_UseEQ',savingState.useEQ)
                     this.$store.commit('SET_EQPARAM',savingState.EQParam)
                     this.$store.commit('SET_BOLD_LRC',savingState.boldLrc)
+                    this.$store.commit('SET_SHOW_SPECTRUM',savingState.showSpectrum)
+                    this.$store.commit('SET_PFONT',savingState.pFont)
+                    this.$store.commit('SET_DFONT',savingState.dFont)
+                    this.$store.commit('SET_MATCH_BLANK',savingState.matchBlank)
                     console.log("读取设置：成功")
                 if (this.$store.state.queue[0] !== undefined) {
                     if (this.$store.state.queue[0].id === "") {

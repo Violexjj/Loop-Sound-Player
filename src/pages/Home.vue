@@ -7,7 +7,8 @@
                           'route-container-noFocus': !focusMode
                         }">
         <transition name="slide-right-left">
-            <div class="song-info" v-if="showInfo" :class="{ 'add-background-modal': infoModal }">
+            <div class="song-info" v-if="showInfo"
+                 :class="{ 'add-background-modal': infoModal }">
                 <div class="cover-container">
                     <img v-if="this.$store.state.nowSongCover"
                          :src="this.$store.state.nowSongCover" alt="cover" class="cover"
@@ -20,14 +21,14 @@
                 </div>
 
                 <div class="threeInfo-container" ref="spectrum">
-                    <!--频谱-->
-<!--                    <div class="spectrum" v-if="showSpectrum">-->
-<!--                        <div v-for="(item, index) in spectrumData"-->
-<!--                             :key="index"-->
-<!--                             style="width: 10px;background-color: rgba(255,255,255,0.2);margin-right: 3px;border-radius: 100px;transition: 0.1s"-->
-<!--                             :style="{ height: Math.min((item + 15)/1.5, spectrumHeight-10) + 'px' }">-->
-<!--                        </div>-->
-<!--                    </div>-->
+<!--                    频谱-->
+                    <div class="spectrum" v-if="showSpectrum">
+                        <div v-for="(item, index) in spectrumData"
+                             :key="index"
+                             style="width: 8px;background-color: rgba(255,255,255,0.2);border-radius: 100px;transition: 0.1s"
+                             :style="{ height: item/1.5+ 'px' }">
+                        </div>
+                    </div>
 
                     <b class="info title" v-if="nowSong">{{nowSong.title}}</b>
                     <b :class="{
@@ -77,7 +78,7 @@
                         </div>
                         <div :class="{'notAllowWrap':index !== currentLyricIndex}"
                              style="margin-top: 5px;transition: 0.5s"
-                             :style="{ fontSize: (index === currentLyricIndex) ? ($store.state.lyricFont + $store.state.biggerLyric-3) + 'px' : $store.state.lyricFont-3 + 'px',
+                             :style="{ fontSize: (index === currentLyricIndex) ? ($store.state.lyricFont2 + $store.state.biggerLyric-2) + 'px' : $store.state.lyricFont2 + 'px',
                              filter: nowOtherBlur && index !== currentLyricIndex ? 'blur(' + Math.min(Math.abs((index - currentLyricIndex)/1.5), 5) + 'px)' : 'none'}"
                              v-if="line.hasTranslation && line.text2!=='' && $store.state.showTlyric"
                              ref="text">{{line.text2}}
@@ -115,6 +116,8 @@
 <script>
     import {mix3, textTruncateMixin} from "@/mixin";
     import {mapGetters, mapMutations, mapState} from "vuex";
+    var scrollIntoView = require('scroll-into-view');
+
 
     export default {
         name: "Home",
@@ -130,15 +133,12 @@
             };
         },
         computed: {
-            // showSpectrum(){
-            //     return this.$store.state.showSpectrum
-            // },
-            // spectrumHeight(){
-            //     return this.$refs.spectrum?this.$refs.spectrum.clientHeight:20
-            // },
-            // spectrumData(){
-            //     return this.$store.state.dataArray
-            // },
+            showSpectrum(){
+                return this.$store.state.showSpectrum
+            },
+            spectrumData(){
+                return this.$store.state.dataArray
+            },
             boldLrc(){
                 return this.$store.state.boldLrc
             },
@@ -348,7 +348,10 @@
             },
             changeProgress(time){
                 if (this.initial && this.$store.state.isPlaying === false) {
-                    this.$store.state.isPlaying = true
+                    setTimeout(()=>{
+                        this.$store.state.isPlaying = true
+                    },50)
+
                     this.initial = false
                 }
                 if (this.otherBlur) {
@@ -434,10 +437,11 @@
                     const currentLine = lyricsLines[this.$store.state.currentLyricIndex];
                     if (currentLine) {
                         setTimeout(()=>{
-                            currentLine.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'center',
-                            });
+                            // currentLine.scrollIntoView({
+                            //     behavior: 'smooth',
+                            //     block: 'center',
+                            // });
+                            scrollIntoView(currentLine,{time:500})
                         },this.smoothSpeed)
 
                     }
@@ -481,7 +485,7 @@
         justify-content: space-between; /* 元素之间平均分布 */
         align-items: center; /* 垂直居中 */
         position: absolute;
-        margin-top: 25px;
+        gap: 4px;
         z-index: -1;
     }
     /* 自定义 slide-right-left 过渡效果 */
@@ -605,6 +609,10 @@
         scroll-behavior: smooth;
         transition: 0.2s;
     }
+    .lyrics-line:active{
+        transform: scale(0.97);
+    }
+
     .lyrics-line:not(.divide):hover{
         background-color: rgba(255, 255, 255, 0.1);
         cursor: pointer;

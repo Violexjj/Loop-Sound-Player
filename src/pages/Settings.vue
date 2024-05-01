@@ -148,6 +148,17 @@
             </tr>
             <tr style="height: 60px;">
                 <td>
+                    <b style="font-size: 20px">歌词匹配空白行（换歌生效）：</b>
+                </td>
+                <td>
+                    <div class="custom-switch" @click="setMatchBlank">
+                        <input type="checkbox" v-model="matchBlank" />
+                        <label ></label>
+                    </div>
+                </td>
+            </tr>
+            <tr style="height: 60px;">
+                <td>
                     <b style="font-size: 20px">当前歌词背景高亮：</b>
                 </td>
                 <td>
@@ -276,6 +287,26 @@
             </tr>
             <tr style="height: 60px;" >
                 <td>
+                    <b style="font-size: 20px">播放器字体：</b>
+                </td>
+                <td colspan="3">
+                    <div class="fontTypeContainer">
+                        <input class="fontType" v-model="pFont" @focus="blockSpace(true)" @blur="blockSpace(false)">
+                    </div>
+                </td>
+            </tr>
+            <tr style="height: 60px;" >
+                <td>
+                    <b style="font-size: 20px">桌面歌词字体：</b>
+                </td>
+                <td colspan="3">
+                    <div class="fontTypeContainer">
+                        <input class="fontType" v-model="dFont" @focus="blockSpace(true)" @blur="blockSpace(false)">
+                    </div>
+                </td>
+            </tr>
+            <tr style="height: 60px;" >
+                <td>
                     <b style="font-size: 20px">所有歌词字体大小：</b>
                 </td>
                 <td colspan="2">
@@ -297,7 +328,28 @@
             </tr>
             <tr style="height: 60px;" >
                 <td>
-                    <b style="font-size: 20px">当前歌词字体放大：</b>
+                    <b style="font-size: 20px">歌词翻译字体大小：</b>
+                </td>
+                <td colspan="2">
+                    <div style="padding-left: 15px;padding-right: 10px;padding-top: 5px">
+                        <vue-slider
+                                v-model="fontSize2"
+                                :min="0"
+                                :max="15"
+                                :interval="1"
+                                :dot-size="12"
+                                :height="10"
+                                :duration="0.2"
+                        ></vue-slider>
+                    </div>
+                </td>
+                <td>
+                    <div class="custom-button-font align"><b style="font-size: 25px">{{ this.$store.state.lyricFont2-15 }}</b></div>
+                </td>
+            </tr>
+            <tr style="height: 60px;" >
+                <td>
+                    <b style="font-size: 20px">当前播放歌词字体放大：</b>
                 </td>
                 <td colspan="2">
                     <div style="padding-left: 15px;padding-right: 10px;padding-top: 5px">
@@ -613,6 +665,29 @@
 </template>
 
 <style scoped>
+    .fontTypeContainer {
+        width: 210px;
+        margin-left: 10px;
+        border: 3px solid rgba(255, 255, 255, 0.8);
+        border-radius: 100px;
+        padding: 5px;
+    }
+
+    .fontType {
+        border: none;
+        outline: none;
+        background-color: transparent;
+        font-family: inherit;
+        font-size: 17px;
+        font-weight: bold;
+        color: white;
+        text-align: center;
+        vertical-align: middle;
+        padding: 5px;
+        width: 200px;
+        box-sizing: border-box;
+    }
+
     .color-circle1 {
         width: 40px;
         height: 40px;
@@ -820,7 +895,7 @@
         padding: 6px;
     }
     .shortcut-button {
-        border: 3px solid #f0f0f0;
+        border: 3px solid rgba(255,255,255,0.3);
         padding: 5px;
         border-radius: 100px;
         display: inline-block;
@@ -830,10 +905,11 @@
         transition: 0.3s;
     }
     .shortcut-button:hover{
-        background-color: rgba(255,255,255,0.3);
+        border: 3px solid rgba(255,255,255,0.6);
+        background-color: rgba(255,255,255,0.2);
     }
     .shortcut-button2 {
-        border: 3px solid #f0f0f0;
+        border: 3px solid rgba(255,255,255,0.2);
         padding: 5px;
         border-radius: 100px;
         display: inline-block;
@@ -845,7 +921,7 @@
 
 
     .settings::-webkit-scrollbar {
-        width: 20px;
+        width: 18px;
         background-color: rgba(0, 0, 0, 0); /* 设置为半透明的背景颜色 */
         border-radius: 10px;
     }
@@ -971,6 +1047,25 @@
             }
         },
         computed:{
+            pFont:{
+                get(){
+                    return this.$store.state.pFont
+                },
+                set(value){
+                    this.$store.state.pFont = value
+                }
+            },
+            dFont:{
+                get(){
+                    return this.$store.state.dFont
+                },
+                set(value){
+                    this.$store.state.dFont = value
+                }
+            },
+            matchBlank(){
+                return this.$store.state.matchBlank
+            },
             boldLrc(){
                 return this.$store.state.boldLrc
             },
@@ -1008,6 +1103,14 @@
                     this.$store.state.lyricFont = val+15
                 }
             },
+            fontSize2:{
+                get(){
+                    return this.$store.state.lyricFont2 -15
+                },
+                set(val){
+                    this.$store.state.lyricFont2 = val+15
+                }
+            },
             check(){
               return this.$store.state.check
             },
@@ -1034,6 +1137,20 @@
             }
         },
         methods : {
+            blockSpace(isBlock){
+                this.$store.state.blockSpace = isBlock
+                if (!isBlock) {
+                    if (this.$store.state.pFont === "") {
+                        this.$store.state.pFont = "微软雅黑"
+                    }
+                    if (this.$store.state.dFont === "") {
+                        this.$store.state.pFont = "微软雅黑"
+                    }
+                }
+            },
+            handleChange(){
+                console.log(123123)
+            },
             changeColor(color){
                 this.$store.state.dLyricColor = color
             },
@@ -1252,6 +1369,9 @@
             },
             setLyricsModal(){
                 this.$store.state.lyricsModal = !this.$store.state.lyricsModal
+            },
+            setMatchBlank(){
+                this.$store.state.matchBlank = !this.$store.state.matchBlank
             },
             setQueueModal(){
                 this.$store.state.queueModal = !this.$store.state.queueModal
