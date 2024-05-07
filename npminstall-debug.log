@@ -3,7 +3,7 @@
   registry: 'https://registry.npm.taobao.org',
   pkgs: [
     {
-      name: 'NeteaseCloudMusicAPI',
+      name: 'flac-metadata',
       version: 'latest',
       type: 'tag',
       alias: undefined,
@@ -15,7 +15,7 @@
   cacheDir: 'C:\\Users\\30595\\.npminstall_tarball',
   env: {
     npm_config_registry: 'https://registry.npm.taobao.org',
-    npm_config_argv: '{"remain":[],"cooked":["--fix-bug-versions","--china","--userconfig=C:\\\\Users\\\\30595\\\\.cnpmrc","--disturl=https://cdn.npmmirror.com/binaries/node","--registry=https://registry.npm.taobao.org","NeteaseCloudMusicAPI"],"original":["--fix-bug-versions","--china","--userconfig=C:\\\\Users\\\\30595\\\\.cnpmrc","--disturl=https://cdn.npmmirror.com/binaries/node","--registry=https://registry.npm.taobao.org","NeteaseCloudMusicAPI"]}',
+    npm_config_argv: '{"remain":[],"cooked":["--fix-bug-versions","--china","--userconfig=C:\\\\Users\\\\30595\\\\.cnpmrc","--disturl=https://cdn.npmmirror.com/binaries/node","--registry=https://registry.npm.taobao.org","flac-metadata"],"original":["--fix-bug-versions","--china","--userconfig=C:\\\\Users\\\\30595\\\\.cnpmrc","--disturl=https://cdn.npmmirror.com/binaries/node","--registry=https://registry.npm.taobao.org","flac-metadata"]}',
     npm_config_user_agent: 'npminstall/7.9.0 npm/? node/v18.17.1 win32 x64',
     npm_config_cache: 'C:\\Users\\30595\\.npminstall_tarball',
     NODE: 'C:\\Program Files\\nodejs\\node.exe',

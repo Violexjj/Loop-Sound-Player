@@ -1262,6 +1262,12 @@
             myAPI.onChangeShowDLyric((_event) => {
                 this.changeDeskTopLyric()
             })
+            myAPI.onChangeShowDLyricG((_event) => {
+                if (!this.globalShortcut) {
+                    return
+                }
+                this.changeDeskTopLyric()
+            })
             myAPI.onPlayLast((_event) => {
                 this.playLast()
                 this.$bus.$emit('songOnTop')

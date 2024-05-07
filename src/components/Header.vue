@@ -1,14 +1,13 @@
-<!--霞鹜文楷 GB-->
 <template>
     <div class="image-and-buttons">
         <div class="button-container">
-            <div :class="{ 'active': isActive('Search') }" @click="displaySearch" class="search-button">
+            <div :class="{ 'active': isActive('Search'), 'search-focus': searchFocus }" @click="displaySearch" class="search-button">
                 <div class="horizontal-container">
                     <img src="../assets/search.png" alt="Logo" class="searchIco">
                     <input type="text" v-model="search"
                            @keyup.enter="sendSearchKeyword();displaySearch();setFilterType('bySearch')"
-                           @focus="blockSpace(true)"
-                           @blur="search = '';blockSpace(false)"
+                           @focus="blockSpace(true);searchFocus = true"
+                           @blur="search = '';blockSpace(false);searchFocus = false"
                             ref="search"
                     >
                 </div>
@@ -75,9 +74,10 @@
         transform: scale(0.85);
     }
     .nav-button.active .header-img {
-        filter: brightness(0)
+        filter: brightness(20%)
     }
     .active {
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
         background-color: rgba(255, 255, 255, 0.9);
         color: #333;
     }
@@ -113,10 +113,15 @@
         color: #f0f0f0;
         text-align: center;
         font-size: 15px;
-        transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+        transition: 0.3s;
         border-radius: 100px;
-        flex-grow: 1; /* 均匀填充剩余空间 */
-        background-color: rgba(240, 240, 240, 0); /* 初始状态下背景全透明 */
+        flex-grow: 1;
+        background-color: transparent;
+    }
+    .search-button.search-focus {
+        border: 2px solid rgba(255,255,255,1);
+        box-shadow: 0 0 7px rgba(255, 255, 255, 0.7);
+        background-color: rgba(255,255,255,0.15);
     }
 
     /* 调整输入框样式 */
@@ -143,6 +148,7 @@
         data() {
             return {
                 search: "",
+                searchFocus: false
             };
         },
 

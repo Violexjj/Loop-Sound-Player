@@ -20,7 +20,11 @@
                 return this.$store.state.currentPlayTime
             },
             keywords(){
-                return this.nowSong.title+this.nowSong.artist
+                if (this.nowSong.title !== "未知标题[ERROR]" && this.nowSong.title !== "" && this.nowSong.artist !== "未知艺术家[ERROR]" && this.nowSong.artist !== "") {
+                    return this.nowSong.title + this.nowSong.artist;
+                } else {
+                    return this.nowSong.path.split(/[\\/]/).pop().split(".")[0];
+                }
             },
             ...mapState(['playNextSongs','nextSongs','nextSongsIndex','lyricOfNowSong','isPlaying', 'volume','modeType','nowMode','isMute','savedCurrentPlaytime']),
             ...mapGetters(['nowSong']),
@@ -316,7 +320,7 @@
                 this.progressUpdateInterval = setInterval(() => {
                     if (this.howlerInstance) {
                         const currentTime = this.howlerInstance.seek();
-                        const durationInSeconds = this.getDurationInSeconds();
+                        const durationInSeconds = this.howlerInstance.duration();
                         const newProgress = (currentTime / durationInSeconds) * 100;
                         if (!this.dragging) {
                             this.$store.commit('SET_CURRENT_PROGRESS', newProgress);
@@ -350,6 +354,7 @@
             //根据标题艺术家获取在线歌词
             async getNetLyric(){
                 try {
+                    console.log("在线搜索歌词关键词："+this.keywords)
                     const searchResult = await myAPI.searchSong(this.keywords)
                     console.log(searchResult);
                     if (searchResult.body.code === 200&&searchResult.body.result.songCount>0) {
@@ -473,14 +478,10 @@
                             if (songAudioAndInfos[2].lyrics[0].includes("没有找到本地歌词")) {
                                 console.log("没有找到本地歌词")
                                 if (this.$store.state.onlineLrc) {
-                                    if (this.nowSong.title === "未知标题[ERROR]") {
-                                        this.$store.state.lyricOfNowSong = "[00:00.00]未知标题，无法在线搜索歌词"
+                                    if (this.$store.state.nowSongNetId === -1) {
+                                        await this.getNetLyric()
                                     }else{
-                                        if (this.$store.state.nowSongNetId === -1) {
-                                            await this.getNetLyric()
-                                        }else{
-                                            await this.getNetLyricByNetId()
-                                        }
+                                        await this.getNetLyricByNetId()
                                     }
                                 }else{
                                     this.$store.state.lyricOfNowSong = "[00:00.00]无本地歌词，请开启在线搜索歌词功能"
@@ -495,15 +496,11 @@
                             if (songAudioAndInfos[2].lyrics.includes("没有找到本地歌词")) {
                                 console.log("没有找到本地歌词")
                                 if (this.$store.state.onlineLrc) {
-                                    if (this.nowSong.title === "未知标题[ERROR]") {
-                                        this.$store.state.lyricOfNowSong = "[00:00.00]未知标题，无法在线搜索歌词"
-                                    }else{
                                         if (this.$store.state.nowSongNetId === -1) {
                                             await this.getNetLyric()
                                         }else{
                                             await this.getNetLyricByNetId()
                                         }
-                                    }
                                 }else{
                                     this.$store.state.lyricOfNowSong = "[00:00.00]无本地歌词，请开启在线搜索歌词功能"
                                 }
@@ -512,22 +509,31 @@
                                 console.log("找到了本地歌词")
                             }
                 }
-                myAPI.closeWelcome()
 
-                setTimeout(()=>{
-                    this.$store.state.songDialogInfo= {
-                        cover:this.$store.state.nowSongCover,
+                setTimeout(async () => {
+                    if (!this.$store.state.nowSongCover) {
+                        console.log("歌曲无封面，将自动下载。网易云 id："+songAudioAndInfos[3]+"，搜索关键词："+this.keywords)
+                        const nowSongCover = await myAPI.getSongCoverFromNet(this.nowSong.path, songAudioAndInfos[3], this.keywords)
+
+                        if (nowSongCover) {
+                            console.log("下载封面：成功")
+                            this.$store.state.nowSongCover = nowSongCover
+                        }else{
+                            console.log("下载封面：失败")
+                        }
+                    }
+                    this.$store.state.songDialogInfo = {
+                        cover: this.$store.state.nowSongCover,
                         moreInfo: songAudioAndInfos[1],
                         nowSong: this.$store.getters.nowSong,
                         netId: songAudioAndInfos[3],
                     }
-                    this.$store.state.nowSongDialogInfo={
-                        cover:this.$store.state.nowSongCover,
+                    this.$store.state.nowSongDialogInfo = {
+                        cover: this.$store.state.nowSongCover,
                         moreInfo: songAudioAndInfos[1],
                         nowSong: this.$store.getters.nowSong,
                         netId: songAudioAndInfos[3],
                     }
-
                 },1000)
 
 
@@ -585,7 +591,7 @@
 
                 this.howlerInstance.once('play', () => {
                     this.startUpdatingProgress();
-                    this.startProgressUpdate(); // Add this line
+                    this.startProgressUpdate();
                 });
 
                 if (this.isInitializing) {
@@ -608,6 +614,7 @@
                         }
                     }
                     this.isInitializing = false;
+                    myAPI.closeWelcome()
                 }
             },
 

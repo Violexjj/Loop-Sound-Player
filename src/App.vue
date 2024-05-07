@@ -1274,17 +1274,11 @@
             async getSongCover(){
                 if (this.nowSong) {
                     this.$bus.$emit("changeCover",true)
-                    // if (this.$refs.backCover) {
-                    //     this.$refs.backCover.style.opacity = 0.5
-                    // }
                     const nowSongCover = await myAPI.getSongCover(this.nowSong.path,1)
 
                     setTimeout(()=>{
                         this.$store.state.nowSongCover = nowSongCover
                         this.$bus.$emit("changeCover", false)
-                        // if (this.$refs.backCover) {
-                        //     this.$refs.backCover.style.opacity = 1
-                        // }
                     },500)
 
                     if ('mediaSession' in navigator) {

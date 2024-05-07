@@ -12,6 +12,10 @@
                 <div class="cover-container">
                     <img v-if="this.$store.state.nowSongCover"
                          :src="this.$store.state.nowSongCover" alt="cover" class="cover"
+                         :style="{
+                            'max-width': $store.state.isPlaying ? '95%' : '92%',
+                            'max-height': $store.state.isPlaying ? '95%' : '92%'
+                         }"
                          title="左键半沉浸，右键全沉浸"
                            @click="openFocusMode(1)"
                          @contextmenu="openFocusMode(2)"
@@ -55,7 +59,7 @@
                             :key="index"
                             ref="lyricLine"
                             @click="changeProgress(line.time)"
-                            :style="{marginBottom: (index < homeLyric.length - 1) ? '5px' : '0', fontWeight: boldLrc ? 'bold' : 'normal' }"
+                            :style="{fontWeight: boldLrc ? 'bold' : 'normal' }"
                             :class="[
           'lyrics-line',
           {
@@ -78,7 +82,7 @@
                         </div>
                         <div :class="{'notAllowWrap':index !== currentLyricIndex}"
                              style="margin-top: 5px;transition: 0.5s"
-                             :style="{ fontSize: (index === currentLyricIndex) ? ($store.state.lyricFont2 + $store.state.biggerLyric-2) + 'px' : $store.state.lyricFont2 + 'px',
+                             :style="{ fontSize: (index === currentLyricIndex) ? ($store.state.lyricFont2 + $store.state.biggerLyric) + 'px' : $store.state.lyricFont2 + 'px',
                              filter: nowOtherBlur && index !== currentLyricIndex ? 'blur(' + Math.min(Math.abs((index - currentLyricIndex)/1.5), 5) + 'px)' : 'none'}"
                              v-if="line.hasTranslation && line.text2!=='' && $store.state.showTlyric"
                              ref="text">{{line.text2}}
@@ -198,10 +202,6 @@
             },
             nowQueue(){
                 return this.$store.state.queue
-            },
-            currentPlayTime() {
-                // 获取当前播放时间，可以从你的 state 中获取
-                return this.$store.state.currentPlayTime; // 假设为秒数
             },
         },
         mounted(){
@@ -689,8 +689,6 @@
 
     .cover {
         transition: 0.5s;
-        max-width: 95%;
-        max-height: 95%;
         object-fit: contain;
         border-radius: 18px;
         cursor: pointer;

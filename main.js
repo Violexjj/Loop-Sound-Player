@@ -6,6 +6,8 @@
 
 
 
+
+
 const path = require('path');
 const { shell, app, BrowserWindow, ipcMain,nativeImage,dialog, Tray,Menu, globalShortcut,screen} = require('electron');
 const fs = require('fs');
@@ -14,6 +16,8 @@ const jsmediatags = require('jsmediatags');
 const Store = require('electron-store');
 const sharp = require('sharp');
 const localShortcut = require('electron-localshortcut');
+const axios = require('axios');
+
 
 let tray = null
 const store = new Store();
@@ -54,8 +58,8 @@ const createWindow = () => {
     });
     win.setMinimumSize(450, 450);
 
-    // win.loadURL('http://localhost:8080');
-    win.loadFile(path.join(__dirname, 'dist','index.html'));
+    win.loadURL('http://localhost:8080');
+    // win.loadFile(path.join(__dirname, 'dist','index.html'));
     //win.loadURL('https://music.163.com/');
     //  win.loadFile('./test.html');
 
@@ -94,8 +98,8 @@ const createWindow = () => {
 
     // 加载好页面内容再打开界面
     win.on("ready-to-show", () => {
-        showWelcome.show();
-        // win.show()
+        // showWelcome.show();
+        win.show()
     });
 
     win.on('close', (event) => {
@@ -173,7 +177,7 @@ const createWindow = () => {
             setTimeout(()=>{
                 showWelcome.close()
                 win.show();
-            },1200)
+            },1000)
         }
     })
 
@@ -1140,6 +1144,56 @@ ipcMain.handle('getSongCover', async (event, filePath,type) => {
     }
 });
 
+//从网易云下载封面
+ipcMain.handle('getSongCoverFromNet', async (event, filePath, netId, keywords) => {
+    try {
+        const { cloudsearch } = require('NeteaseCloudMusicApi');
+        const searchResult = await cloudsearch({ keywords: keywords });
+        if (searchResult.body.code === 200 && searchResult.body.result.songCount > 0) {
+            return new Promise((resolve, reject) => {
+                let songIndex = 0
+                if (netId !== -1 && netId !== null && netId !== undefined) {
+                    const index = searchResult.body.result.songs.findIndex(song => song.id == netId);
+                    if (index !== -1) {
+                        songIndex = index
+                    }
+                }
+                console.log("Found Song Index: "+songIndex)
+                axios.get(searchResult.body.result.songs[songIndex].al.picUrl, { responseType: 'arraybuffer' })
+                    .then(async response => {
+                        const picData = await sharp(Buffer.from(response.data, 'binary'))
+                            .resize(800, 800)
+                            .toBuffer()
+                        const nodeTagLibSharp = await import('node-taglib-sharp');
+                        const File = nodeTagLibSharp.File;
+                        const myFile = File.createFromPath(filePath);
+                        const pic = {
+                            data: nodeTagLibSharp.ByteVector.fromByteArray(picData),
+                            mimeType: 'image/png',
+                            type: nodeTagLibSharp.PictureType.FrontCover
+                        };
+                        myFile.tag.pictures = [pic];
+                        myFile.save();
+                        myFile.dispose();
+                        console.log("Downloaded song cover successfully");
+                        resolve(nativeImage.createFromBuffer(picData).toDataURL());
+                    })
+                    .catch(error => {
+                        console.error('Error downloading song cover:', error);
+                        reject(error);
+                    });
+            });
+        } else {
+            // 没有搜索结果时返回 null
+            return null;
+        }
+    } catch (error) {
+        console.error('Error downloading song cover:', error);
+        return null;
+    }
+});
+
+
 //获取播放列表的封面base64数据
 ipcMain.handle('getPlaylistCover', async (event, playlistName) => {
     try {
@@ -1325,6 +1379,8 @@ ipcMain.handle('editMetadata', async (event, data, lyricDirectory) => {
             }
             const updatedLibraryData = JSON.stringify(libraryObject, null, 2);
             fs.writeFileSync(libraryFilePath, updatedLibraryData, 'utf8');
+        }else{
+            console.log("Will not change song in Library")
         }
 
     } catch (error) {
@@ -1396,15 +1452,15 @@ ipcMain.handle('changeShortcuts', async (event,type, whichKey, oldVal, newVal) =
                     });
                 }else if(whichKey === "lToggle"){
                     localShortcut.register(win, newVal, () => {
-                        win.webContents.send('toggleG');
+                        win.webContents.send('toggle');
                     });
                 }else if(whichKey === "lLast"){
                     localShortcut.register(win, newVal, () => {
-                        win.webContents.send('playLastG');
+                        win.webContents.send('playLast');
                     });
                 }else if(whichKey === "lNext"){
                     localShortcut.register(win, newVal, () => {
-                        win.webContents.send('playNextG');
+                        win.webContents.send('playNext');
                     });
                 }else if(whichKey === "lBack3"){
                     localShortcut.register(win, newVal, () => {
@@ -1517,7 +1573,7 @@ ipcMain.handle('changeShortcuts', async (event,type, whichKey, oldVal, newVal) =
                     });
                 }else if(whichKey === "gDesktopLyric"){
                     globalShortcut.register(newVal, () => {
-                        win.webContents.send('changeShowDLyric');
+                        win.webContents.send('changeShowDLyricG');
                     });
                 }else if(whichKey === "gExit"){
                     globalShortcut.register(newVal, () => {
@@ -1546,11 +1602,11 @@ ipcMain.handle('initializeShortcuts', async (event,shortcuts) => {
                     if (key === "lExit") {
                         win.webContents.send('closeFromBottom');
                     }else if(key === "lToggle"){
-                        win.webContents.send('toggleG');
+                        win.webContents.send('toggle');
                     }else if(key === "lLast"){
-                        win.webContents.send('playLastG');
+                        win.webContents.send('playLast');
                     }else if(key === "lNext"){
-                        win.webContents.send('playNextG');
+                        win.webContents.send('playNext');
                     }else if(key === "lBack3"){
                         win.webContents.send('forwardBack',false);
                     }else if(key === "lForward3"){
@@ -1605,7 +1661,7 @@ ipcMain.handle('initializeShortcuts', async (event,shortcuts) => {
                     }else if(key === "gMute"){
                         win.webContents.send('changeMuteG');
                     }else if(key === "gDesktopLyric"){
-                        win.webContents.send('changeShowDLyric');
+                        win.webContents.send('changeShowDLyricG');
                     }else if(key === "gExit"){
                         win.webContents.send('saveBeforeQuit',2);
                     }else if(key === "gOpen"){

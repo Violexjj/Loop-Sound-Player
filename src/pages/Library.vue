@@ -1013,7 +1013,8 @@
         bottom: 120px;
         left: 15%;
         width: 70%;
-        background-color: rgba(0, 0, 0, 0.9);
+        background-color: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(20px);
         display: flex;
         justify-content: space-between;
         padding: 10px;

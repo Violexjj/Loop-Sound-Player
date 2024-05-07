@@ -328,7 +328,7 @@
             </tr>
             <tr style="height: 60px;" >
                 <td>
-                    <b style="font-size: 20px">歌词翻译字体大小：</b>
+                    <b style="font-size: 20px">翻译歌词字体大小：</b>
                 </td>
                 <td colspan="2">
                     <div style="padding-left: 15px;padding-right: 10px;padding-top: 5px">
@@ -420,7 +420,7 @@
         <span><b>• 本播放器仅为实践小项目，如若出现问题（页面爆红、白屏、无法播放）请联系我，QQ：3059557534。</b></span><br><br>
         <span><b>• 技术栈为 Vue2 + Electron。</b></span><br><br>
         <span><b>• 仅支持 FLAC、MP3、WAV 格式的音频文件。</b></span><br><br>
-        <span><b>• 若歌曲出现“未知标题[ERROR]”等字样，是歌曲标签有问题，请编辑好标题。视频简介里有可以批量匹配标签的软件。</b></span><br><br>
+        <span><b>• 若歌曲出现“未知标题[ERROR]”等字样，是歌曲标签有问题，请在属性信息功能中编辑完整标签。视频简介里也有可以批量匹配标签的工具。</b></span><br><br>
         <span><b>• WAV 格式所有播放器默认都是缺少很多信息的，可以去操作说明第 4 点的文件夹里的“songsNoSameId.json”文件手动编辑信息。</b></span><br><br>
         <span><b>• 目前由于性能问题，时间过长的歌曲（超过 1 小时）大概率会卡死，歌曲时长计算也会出错，请谅解。</b></span><br><br>
         <hr style="border-top: 3px solid #ccc;margin-right: 30px">
@@ -455,8 +455,9 @@
         <span><b>• 三秒之内只能修改一个快捷键，修改多个会变成一样。</b></span><br><br>
         <span><b>• 组合按键只允许 Ctrl / Shift / Alt 加上一个其他按键，不允许用 fn 键。</b></span><br><br>
         <span><b>• 组合按键必须以 Ctrl / Shift / Alt 开始。</b></span><br><br>
-        <span><b>• 局部快捷键的【全屏】和【最小化】为系统自带，不可修改。</b></span><br><br>
+        <span><b>• 局部快捷键的【全屏】、【最小化】、【强制刷新恢复】为软件系统自带，不可修改。</b></span><br><br>
         <span><b>• 若按键冲突，只有最先设置的有效，建议先将其他按键重置。</b></span><br><br>
+        <span><b>• 若修改了快捷键无效，请重启播放器。</b></span><br><br>
         <div class="custom-button-shortcuts" @click="recoveryShortcuts"><b>恢复默认快捷键</b></div>
 
         <div class="shortcuts-container">
@@ -522,6 +523,12 @@
                         <td class="table-cell-num">窗口最小化</td>
                         <td class="table-cell-num">
                             <span class="shortcut-button2">{{ shortcuts.local.lMiniSize }}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="table-cell-num">强制刷新恢复</td>
+                        <td class="table-cell-num">
+                            <span class="shortcut-button2">Ctrl+R</span>
                         </td>
                     </tr>
                     <tr>
@@ -953,7 +960,7 @@
         width: 100px;
         height: 40px;
         background: transparent;
-        border: 3px solid #f0f0f0;
+        border: 3px solid rgba(255,255,255,0.2);
         border-radius: 50px;
         text-align: center;
         line-height: 40px;
@@ -962,14 +969,15 @@
         transition: 0.3s;
     }
     .custom-button:hover {
-        background-color: rgba(255, 255, 255, 0.3);
+        border: 3px solid rgba(255,255,255,0.6);
+        background-color: rgba(255,255,255,0.2);
     }
     .custom-button-shortcuts {
         position: relative;
         width: 130px;
         height: 40px;
         background: transparent;
-        border: 3px solid #f0f0f0;
+        border: 3px solid rgba(255,255,255,0.2);
         border-radius: 50px;
         text-align: center;
         line-height: 40px;
@@ -978,7 +986,8 @@
         transition: 0.3s;
     }
     .custom-button-shortcuts:hover {
-        background-color: rgba(255, 255, 255, 0.3);
+        border: 3px solid rgba(255,255,255,0.6);
+        background-color: rgba(255,255,255,0.2);
     }
     .centered-content {
         position: absolute;
@@ -1003,7 +1012,8 @@
         color: #f0f0f0;
     }
     .activee{
-        background-color: rgba(255, 255, 255, 0.5);
+        border: 3px solid rgba(255,255,255,0.6);
+        background-color: rgba(255, 255, 255, 0.2);
     }
 </style>
 
@@ -1144,7 +1154,7 @@
                         this.$store.state.pFont = "微软雅黑"
                     }
                     if (this.$store.state.dFont === "") {
-                        this.$store.state.pFont = "微软雅黑"
+                        this.$store.state.dFont = "微软雅黑"
                     }
                 }
             },

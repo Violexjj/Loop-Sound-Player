@@ -39,6 +39,7 @@ contextBridge.exposeInMainWorld('myAPI', {
     onChangeMuteG: (callback) => ipcRenderer.on('changeMuteG', callback),
     onChangeModeG: (callback) => ipcRenderer.on('changeModeG', callback),
     onChangeShowDLyric: (callback) => ipcRenderer.on('changeShowDLyric', callback),
+    onChangeShowDLyricG: (callback) => ipcRenderer.on('changeShowDLyricG', callback),
 
     onSaveBeforeQuit: (callback,arg) => ipcRenderer.on('saveBeforeQuit', callback, arg),
     onForwardBack: (callback,arg) => ipcRenderer.on('forwardBack', callback, arg),
@@ -195,6 +196,15 @@ contextBridge.exposeInMainWorld('myAPI', {
     getSongCover: async (filePath,type) => {
         try {
             const response = await ipcRenderer.invoke('getSongCover',filePath,type);
+            return response;
+        } catch (error) {
+            console.error('Error reading file:', error);
+            throw error;
+        }
+    },
+    getSongCoverFromNet: async (filePath,netId, keywords) => {
+        try {
+            const response = await ipcRenderer.invoke('getSongCoverFromNet',filePath,netId, keywords);
             return response;
         } catch (error) {
             console.error('Error reading file:', error);
