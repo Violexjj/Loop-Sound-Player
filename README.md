@@ -1,4 +1,4 @@
-# Sonorbit - 基于 Electron 和 Vue 的本地音乐播放器。
+# Sonorbit - 基于 Electron 和 Vue2 的本地音乐播放器。
 
 ## 特点
 
