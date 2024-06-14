@@ -1,6 +1,6 @@
 {
   "name": "vue_pro",
-  "version": "1.0.5",
+  "version": "1.0.8",
   "private": true,
   "main": "main.js",
   "description": "An exquisite local music player",
@@ -17,8 +17,7 @@
   "build": {
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": true
+      "allowToChangeInstallationDirectory": true
     },
     "electronDownload": {
       "mirror": "https://npm.taobao.org/mirrors/electron/"
@@ -50,7 +49,7 @@
     "electron-window-state": "^5.0.3",
     "fs": "^0.0.1-security",
     "howler": "^2.2.3",
-    "jsmediatags": "^3.9.7",
+    "microtip": "^0.2.2",
     "mime-types": "^2.1.35",
     "music-metadata": "^8.1.4",
     "NeteaseCloudMusicApi": "^4.8.7",

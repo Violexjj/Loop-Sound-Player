@@ -11,7 +11,7 @@
                 <!--                logo部分-->
                 <div class="logo">
                     <img src="./assets/logoImg.png" alt="Logo" class="logo-image"
-                         :class="{ breathing: isPlaying }">
+                         >
                     <span class="playerName">Sonorbit</span>
                 </div>
                 <!--                歌曲信息部分-->
@@ -56,7 +56,7 @@
 
 <!--            全局背景-->
             <div class="background">
-                <img :src="this.$store.state.nowSongCover"  ref="backCover" alt="Background Image" class="background-image"
+                <img :src="backgroundSrc"  ref="backCover" alt="Background Image" class="background-image"
                      :style="{ filter: 'blur(' + $store.state.blur + 'px) saturate(120%) brightness(' + $store.state.bright + '%)' }">
             </div>
 
@@ -128,7 +128,7 @@
                             v-model="currentProgress"
                             :min="0"
                             :max="100"
-                            :interval="0.1"
+                            :interval="1"
                             :dot-size="20"
                             :height="15"
                             style="min-width: 280px;width: 90%"
@@ -588,7 +588,7 @@
     }
 
     .close-button:hover {
-        background-color: red; /* Change to the desired hover color */
+        background-color: #FF3333;
     }
     .maximize-button:hover,
     .minimize-button:hover{
@@ -684,8 +684,8 @@
     }
 
     .main-with-background {
-        margin-right: 5px;
-        margin-left: 5px;
+        margin-right: 3px;
+        margin-left: 3px;
         background-color: rgba(0, 0, 0, 0.2); /* 半透明黑色背景 */
         border-radius: 15px; /* 圆角 */
         padding: 15px; /* 调整内边距以使内容与圆角保持一致 */
@@ -792,8 +792,8 @@
                     this.showReboot = false
                 },2000)
             })
-            myAPI.onFinishScan((_event) => {
-                this.finishScan(true)
+            myAPI.onFinishScan((_event, arg, arg2) => {
+                this.finishScan(true,arg,arg2)
             })
             myAPI.onFinishScanErrorMix((_event) => {
                 this.finishScan(false)
@@ -852,6 +852,9 @@
             SongsInFolder
         },
         computed: {
+            backgroundSrc(){
+                return this.$store.state.useBackCover ? this.$store.state.backCover : this.$store.state.nowSongCover
+            },
             pFont(){
                 return this.$store.state.pFont
             },
@@ -907,10 +910,11 @@
             },
             currentProgress:{
                 get() {
-                    return this.$store.state.currentProgress;
+                    return this.$store.state.currentProgress>100?100:this.$store.state.currentProgress
                 },
                 set(value) {
-                    this.$bus.$emit('changeProgress', value);
+                    this.$bus.$emit('changeProgress', value>100?100:value);
+                    this.$store.state.currentPlayTime = (value/100) * this.$store.state.nowSongTime
                 },
             },
             focusMode(){
@@ -1107,28 +1111,39 @@
                     }, 500);
                 }
             },
-            finishScan(success){
+            finishScan(success,redirect,filePath){
                 if (success) {
                     this.info = "扫描结束，音乐库已更新，即将跳转至音乐库"
                     myAPI.getAllSongs().then(songs => {
                         this.$store.commit('SET_SONGS', songs);
-                    });
-                    setTimeout(()=>{
-                        this.showReboot = false
-                        if (this.$route.path !== "/Library") {
-                            this.$router.push({
-                                name: "Library",
-                            });
+                        if (redirect) {
+                            setTimeout(()=>{
+                                this.showReboot = false
+                                if (this.$route.path !== "/Library") {
+                                    this.$router.push({
+                                        name: "Library",
+                                    });
+                                }
+                            },500)
+                        }else{
+                            this.$store.state.queue.unshift(songs.find(song => song.path === filePath))
+                            this.$store.state.currentIndex = 0
+                            setTimeout(()=>{
+                                this.$store.state.isPlaying = true
+                                if (this.$route.path !== "/") {
+                                    this.$router.push({
+                                        name: "Home",
+                                    });
+                                }
+                            },500)
                         }
-                    },2000)
+                    });
                 }else{
                     this.info = "扫描失败，请不要同时扫描文件和文件夹"
                     setTimeout(()=>{
                         this.showReboot = false
                     },2000)
                 }
-
-
             },
             getFolderName(folderPath) {
                 return folderPath.substring(folderPath.lastIndexOf('\\') + 1);
@@ -1154,21 +1169,20 @@
                 try {
                     const x = await axios.get(`https://api.github.com/repos/Violexjj/Loop-Sound-Player/releases/latest`)
                     this.$store.state.latestVersion = x.data.tag_name.slice(1)
-                    // this.$store.state.latestVersion = "0.9.1"
                     this.$store.state.latestVersionInfo = x.data.body
                     if (this.$store.state.latestVersion) {
                         if (this.$store.state.latestVersion !== this.$store.state.nowVersion) {
                             this.showUpdate = true
                             setTimeout(()=>{
                                 this.showUpdate = false
-                            },3000)
+                            },5000)
                         }
                     }
                 } catch (error) {
                     this.showUpdateError = true
                     setTimeout(()=>{
                         this.showUpdateError = false
-                    },3000)
+                    },5000)
                     this.$store.state.errorMessage = error.message
                     console.log('获取最新版本信息失败，错误信息：');
                     console.log(error)
@@ -1191,17 +1205,17 @@
                 this.$bus.$emit('playNextSong')
             },
             upVolume(){
-                if (this.$store.state.volume >= 97) {
+                if (this.$store.state.volume >= (100-this.$store.state.volume)) {
                     this.$store.state.volume = 100
                 }else{
-                    this.$store.state.volume = this.$store.state.volume + 3
+                    this.$store.state.volume = this.$store.state.volume + this.$store.state.volume
                 }
             },
             downVolume(){
-                if (this.$store.state.volume <= 3) {
+                if (this.$store.state.volume <= this.$store.state.volume) {
                     this.$store.state.volume = 0
                 }else{
-                    this.$store.state.volume = this.$store.state.volume -3
+                    this.$store.state.volume = this.$store.state.volume -this.$store.state.volume
                 }
             },
             emitShowVolume(){
@@ -1245,9 +1259,8 @@
                 event.preventDefault(); // 阻止滚轮默认行为
 
                 const delta = -Math.sign(event.deltaY); // 获取滚轮滚动方向，1 表示上滚，-1 表示下滚
-                const step = 3; // 调整音量的步长
 
-                let newVolume = this.volume + delta * step;
+                let newVolume = this.volume + delta * this.$store.state.volumeChange;
                 newVolume = Math.max(0, Math.min(100, newVolume)); // 确保音量在合法范围内
 
                 this.$store.commit('SET_VOLUME', newVolume);
@@ -1335,9 +1348,16 @@
                     EQParam: this.$store.state.EQParam,
                     boldLrc: this.$store.state.boldLrc,
                     showSpectrum: this.$store.state.showSpectrum,
+                    spectrumSpeed: this.$store.state.spectrumSpeed,
                     matchBlank: this.$store.state.matchBlank,
                     pFont: this.$store.state.pFont,
-                    dFont: this.$store.state.dFont
+                    dFont: this.$store.state.dFont,
+                    showSongInfo: this.$store.state.showSongInfo,
+                    backCoverPath: this.$store.state.backCoverPath,
+                    useBackCover: this.$store.state.useBackCover,
+                    rotateCover: this.$store.state.rotateCover,
+                    downloadOnlineImg: this.$store.state.downloadOnlineImg,
+                    volumeChange: this.$store.state.volumeChange
                 }
                 myAPI.closeWindow(savingState)
             },

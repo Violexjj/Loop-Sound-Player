@@ -3,21 +3,14 @@
 // 打包vue为dist，npm run build
 // 打包electron，cnpm run dist
 
-
-
-
-
-
 const path = require('path');
-const { shell, app, BrowserWindow, ipcMain,nativeImage,dialog, Tray,Menu, globalShortcut,screen} = require('electron');
+const { protocol,shell, app, BrowserWindow, ipcMain,nativeImage,dialog, Tray,Menu, globalShortcut,screen} = require('electron');
 const fs = require('fs');
 const mime = require('mime-types');
-const jsmediatags = require('jsmediatags');
 const Store = require('electron-store');
 const sharp = require('sharp');
 const localShortcut = require('electron-localshortcut');
 const axios = require('axios');
-
 
 let tray = null
 const store = new Store();
@@ -28,6 +21,7 @@ let deskTopLyric = null
 
 let windowState = null;
 let deskTopLyricState = null;
+
 
 // 基本配置
 const createWindow = () => {
@@ -98,8 +92,8 @@ const createWindow = () => {
 
     // 加载好页面内容再打开界面
     win.on("ready-to-show", () => {
-        // showWelcome.show();
-        win.show()
+        showWelcome.show();
+        // win.show()
     });
 
     win.on('close', (event) => {
@@ -199,12 +193,12 @@ const createWindow = () => {
                 }
             } },
         { type: 'separator' },
-        { label: '音量 + 3', click: () => {
+        { label: '音量 - 加', click: () => {
                 if (win) {
                     win.webContents.send('upVolume');
                 }
             }},
-        { label: '音量 - 3', click: () => {
+        { label: '音量 - 减', click: () => {
                 if (win) {
                     win.webContents.send('downVolume');
                 }
@@ -275,7 +269,8 @@ const singleInstanceLock = app.requestSingleInstanceLock();
 if (!singleInstanceLock) {
     app.quit();
 }else {
-    app.on('second-instance', () => {
+    app.on('second-instance', (event, commandLine) => {
+        const initialFilePath = commandLine.slice(1).find(arg => /\.(mp3|flac|ogg|wav|m4a)$/i.test(arg));
         if (win) {
             if (win.isMinimized()) {
                 win.restore();
@@ -283,16 +278,43 @@ if (!singleInstanceLock) {
                 win.show();
             }
         }
+        if (win) {
+            if (initialFilePath) {
+                handleMetadata('file', initialFilePath).then(() => {
+                    win.webContents.send('finishScan',false, initialFilePath);
+                }).catch(error => {
+                    win.webContents.send('errorFile')
+                    console.error('处理元数据时出错:', error);
+                });
+            }
+        }
     });
 
     // Electron 应用准备就绪后创建主窗口
     app.whenReady().then(() => {
+        const initialFilePath = process.argv.slice(1).find(arg => /\.(mp3|flac|ogg|wav|m4a)$/i.test(arg));
+        // 自定义协议
+        protocol.registerFileProtocol('audio', (request, callback) => {
+            const url = request.url.substr(8);
+            callback(decodeURIComponent(url));
+        });
         createWindow();
+        if (win) {
+            if (initialFilePath) {
+                handleMetadata('file', initialFilePath).then(() => {
+                    win.webContents.send('finishScan',false, initialFilePath);
+                }).catch(error => {
+                    win.webContents.send('errorFile')
+                    console.error('处理元数据时出错:', error);
+                });
+            }
+        }
         app.on('activate', () => {
             if (BrowserWindow.getAllWindows().length === 0) {
                 createWindow();
             }
         });
+
     });
 
     // 程序的关闭
@@ -515,13 +537,13 @@ ipcMain.handle('read-file', async (event, filePath,lyricDirectory,songId) => {
         if (filePath === null || filePath === "") {
             return []
         }
-        const fileBuffer = await fs.promises.readFile(filePath)
 
-        const audioDir = path.dirname(filePath); // 音频文件所在的文件夹路径
-        const audioName = path.basename(filePath, path.extname(filePath)); // 音频文件的文件名（不包括扩展名）
-        const lrcPath = path.join(audioDir, audioName + '.lrc'); // 构建LRC文件的路径
+
+        await fs.promises.access(filePath, fs.constants.F_OK)
         //音频文件
-        const songAudio = (fileBuffer).buffer;
+        // const fileBuffer = await fs.promises.readFile(filePath)
+        // const songAudio = (fileBuffer).buffer;
+        const songAudio = null
 
         const metadata = await mm.parseFile(filePath);
         // console.log(metadata)
@@ -557,101 +579,38 @@ ipcMain.handle('read-file', async (event, filePath,lyricDirectory,songId) => {
             netId = data[index].netId
         }
 
-        //歌词文本
-        if (metadata.format.container === "MPEG") {
-            return new Promise((resolve, reject) => {
-                jsmediatags.read(fileBuffer, {
-                    onSuccess: function(tag) {
-                        if (tag.tags.lyrics != null) {
-                            const lyric = tag.tags.lyrics;
-                            resolve([songAudio, moreInfo, lyric, netId]);
-                        }else{
-                            if (lyricDirectory !== "未设置") {
-                                let lyricData
-                                let lyric
-                                const lrcFilePath = path.join(lyricDirectory,audioName+'.lrc'); // 构建LRC文件的路径
-                                try {
-                                    // 尝试读取lyricDirectory文件夹下的 lrcFilePath
-                                    lyricData = fs.readFileSync(lrcFilePath, 'utf-8');
-                                    lyric = {
-                                        lyrics : lyricData
-                                    }
-                                } catch (error) {
-                                    // 如果读取LRC文件失败，设置歌词为“没有找到本地歌词”
-                                    lyric = {
-                                        lyrics : "[00:00.00]没有找到本地歌词"
-                                    }
-                                }
-                                resolve([songAudio, moreInfo, lyric, netId]);
-                            }else{
-                                let lyricData
-                                let lyric
-                                try {
-                                    // 尝试读取同文件夹下同名的LRC文件
-                                    lyricData = fs.readFileSync(lrcPath, 'utf-8');
-                                    lyric = {
-                                        lyrics : lyricData
-                                    }
-                                } catch (error) {
-                                    // 如果读取LRC文件失败，设置歌词为“没有找到本地歌词”
-                                    lyric = {
-                                        lyrics : "[00:00.00]没有找到本地歌词"
-                                    }
-                                }
-                                resolve([songAudio, moreInfo, lyric, netId]);
-                            }
+        // 歌词
+        const nodeTagLibSharp = await import('node-taglib-sharp');
+        const File = nodeTagLibSharp.File
+        const myFile = File.createFromPath(filePath)
+        const lyricsFromAudio = myFile.tag.lyrics
+        myFile.dispose()
+        if (lyricsFromAudio) {
+            console.log("embedded lyrics found")
+            return [songAudio, moreInfo, [lyricsFromAudio, "找到了音频内嵌歌词"], netId];
+        }else{
+            console.log("embedded lyrics [not] found, search for lrc file")
+            const songDirectory = path.dirname(filePath);
+            const songFileName = path.basename(filePath, path.extname(filePath));
 
-                        }
-                    },
-                    onError: function(error) {
-                        console.error('Error reading lyric in mp3:', error);
-                        reject(error);
-                    }
-                });
-            });
-        } else {
-            if(metadata.common.lyrics != null){
-                const lyric = metadata.common
-                return [songAudio, moreInfo, lyric, netId];
+            let lrcFilePath
+            if (lyricDirectory !== "未设置") {
+                lrcFilePath = path.join(lyricDirectory, `${songFileName}.lrc`);
             }else{
-                if (lyricDirectory !== "未设置") {
-                    let lyricData
-                    let lyric
-                    const lrcFilePath = path.join(lyricDirectory,audioName+'.lrc'); // 构建LRC文件的路径
+                lrcFilePath = path.join(songDirectory, `${songFileName}.lrc`);
+            }
 
-                    try {
-                        // 尝试读取lyricDirectory文件夹下的 lrcFilePath
-                        lyricData = fs.readFileSync(lrcFilePath, 'utf-8');
-                        lyric = {
-                            lyrics : [lyricData]
-                        }
-                    } catch (error) {
-                        // 如果读取LRC文件失败，设置歌词为“没有找到本地歌词”
-                        lyric = {
-                            lyrics : ["[00:00.00]没有找到本地歌词"]
-                        }
-                    }
-                    return [songAudio, moreInfo, lyric, netId];
-                }else{
-                    let lyricData
-                    let lyric
-                    try {
-                        // 尝试读取同文件夹下同名的LRC文件
-                        lyricData = fs.readFileSync(lrcPath, 'utf-8');
-                        lyric = {
-                            lyrics : [lyricData]
-                        }
-                    } catch (error) {
-                        // 如果读取同文件夹下同名的LRC文件失败，设置歌词为“没有找到本地歌词”
-                        lyric = {
-                            lyrics : ["[00:00.00]没有找到本地歌词"]
-                        }
-                    }
-                    return [songAudio, moreInfo, lyric, netId];
-                }
+            if (fs.existsSync(lrcFilePath)) {
+                // 读取歌词文件的歌词
+                const lyricsFromLrc = fs.readFileSync(lrcFilePath, 'utf-8');
+                return [songAudio, moreInfo, [lyricsFromLrc,"找到了本地歌词文件"], netId];
+            } else {
+                // 没有歌词文件，返回没有找到本地歌词
+                console.log(`File not found: ${lrcFilePath}`);
+                const lyricsFromLrc = "[00:00.00]没有找到本地歌词"
+                return [songAudio, moreInfo, [lyricsFromLrc,""], netId];
             }
         }
-
     } catch (error) {
         console.error('Error reading file in main process:', error);
         throw error;
@@ -876,6 +835,9 @@ ipcMain.handle('getSavingState', async (event) => {
                 "\"showTlyric\":true," +
                 "\"highlight\":true," +
                 "\"otherBlur\":false," +
+                "\"downloadOnlineImg\":true," +
+                "\"rotateCover\":true," +
+                "\"showSongInfo\":true," +
                 "\"boldLrc\":true," +
                 "\"showFormat\":true," +
                 "\"matchBlank\":true," +
@@ -890,16 +852,20 @@ ipcMain.handle('getSavingState', async (event) => {
                 "\"globalShortcut\":false," +
                 "\"deleteLocalFile\":false," +
                 "\"usePureColor\":false," +
+                "\"useBackCover\":false," +
                 "\"useEQ\":true," +
                 "\"onlineLrc\":true," +
                 "\"savedCurrentPlaytime\":0," +
                 "\"lyricDirectory\":\"未设置\"," +
+                "\"backCoverPath\":\"未设置\"," +
                 "\"pFont\":\"微软雅黑\"," +
                 "\"dFont\":\"微软雅黑\"," +
                 "\"dLyricColorPure\": \"#03A9F4\","+
                 "\"dLyricColor\": [\"#FFA6B7\",\"#1E2AD2\"]," +
                 "\"EQParam\": [0,0,0,0,0,0,0,0,0,0]," +
                 "\"biggerLyric\":10," +
+                "\"volumeChange\":3," +
+                "\"spectrumSpeed\":0.5," +
                 "\"blur\":40," +
                 "\"shortcuts\":{\n" +
                 "        \"local\":{\n" +
@@ -1132,7 +1098,7 @@ ipcMain.handle('getSongCover', async (event, filePath,type) => {
     try {
         const mm = await import('music-metadata');
         const metadata = await mm.parseFile(filePath);
-        const size = type === 1 ? 800 : 150
+        const size = type === 1 ? 800 : (type === 2 ? 150 : 200);
         const imageBuffer = await sharp(metadata.common.picture[0].data)
             .resize(size, size)
             .toBuffer()
@@ -1193,6 +1159,21 @@ ipcMain.handle('getSongCoverFromNet', async (event, filePath, netId, keywords) =
     }
 });
 
+//获取自定义背景图片
+ipcMain.handle('getBackCover', async (event, backCoverPath) => {
+    try {
+        if (!fs.existsSync(backCoverPath)) {
+            return null
+        }else{
+            const imageBuffer = await sharp(fs.readFileSync(backCoverPath))
+                .toBuffer()
+            return nativeImage.createFromBuffer(imageBuffer).toDataURL();
+        }
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+});
 
 //获取播放列表的封面base64数据
 ipcMain.handle('getPlaylistCover', async (event, playlistName) => {
@@ -1262,7 +1243,7 @@ ipcMain.handle('setPlaylistCover', async (event, playlistName) => {
 });
 
 // 选择一个临时封面
-ipcMain.handle('chooseCover', async (event) => {
+ipcMain.handle('chooseCover', async (event, flag) => {
     try {
         // 打开文件选择对话框，限制选择的文件为图片格式（png 或 jpg）
         const fileFilters = [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg'] }];
@@ -1275,13 +1256,18 @@ ipcMain.handle('chooseCover', async (event) => {
         if (filePaths && filePaths.length > 0) {
             const selectedFilePath = filePaths[0];
             const imageBuffer = fs.readFileSync(selectedFilePath);
-            const imageBuffer2 = await sharp(imageBuffer)
-                .resize(800, 800)
-                .toBuffer()
-            // const imageBuffer2 = metadata.common.picture[0].data
+            let imageBuffer2
+            if (flag) {
+                imageBuffer2 = await sharp(imageBuffer)
+                    .resize(800, 800)
+                    .toBuffer()
+            }else{
+                imageBuffer2 = await sharp(imageBuffer)
+                    .toBuffer()
+            }
             return [nativeImage.createFromBuffer(imageBuffer2).toDataURL(),selectedFilePath]
         } else {
-            return null; // 如果用户取消了选择，则返回 null
+            return null;
         }
     } catch (error) {
         console.error(error);
@@ -1296,9 +1282,6 @@ ipcMain.handle('editMetadata', async (event, data, lyricDirectory) => {
         const File = nodeTagLibSharp.File
         const filePath = data.nowSong.path
         const myFile = File.createFromPath(filePath)
-        const oldTitle = myFile.tag.title
-        const oldArtist = myFile.tag.performers[0]
-        const oldAlbum = myFile.tag.album
 
         // 修改标题、艺术家、专辑
         myFile.tag.title = data.nowSong.title
@@ -1307,7 +1290,9 @@ ipcMain.handle('editMetadata', async (event, data, lyricDirectory) => {
 
         // 修改音轨号、年份、注释、流派
         myFile.tag.genres = [data.moreInfo.genre]
-        myFile.tag.track = parseInt(data.moreInfo.trackNumber, 10)
+        if (parseInt(data.moreInfo.trackNumber, 10) >= 1) {
+            myFile.tag.track = parseInt(data.moreInfo.trackNumber, 10)
+        }
         myFile.tag.year = parseInt(data.moreInfo.year, 10)
         myFile.tag.comment = data.moreInfo.comment
 
@@ -1364,9 +1349,7 @@ ipcMain.handle('editMetadata', async (event, data, lyricDirectory) => {
         myFile.save()
         myFile.dispose()
 
-        // 修改音乐库，如果标题、艺术家或者专辑被改变
-        if (oldTitle !== data.nowSong.title || oldArtist !== data.nowSong.artist || oldAlbum !== data.nowSong.album) {
-            console.log("title or artist or album changed")
+        // 修改音乐库
             const libraryFilePath = path.join(app.getPath('appData'), 'Sonorbit', 'songsNoSameId.json');
             const libraryData = fs.readFileSync(libraryFilePath, 'utf8');
             const libraryObject = JSON.parse(libraryData);
@@ -1376,13 +1359,12 @@ ipcMain.handle('editMetadata', async (event, data, lyricDirectory) => {
                 libraryObject.songs[songIndexToUpdate].title = data.nowSong.title;
                 libraryObject.songs[songIndexToUpdate].artist = data.nowSong.artist;
                 libraryObject.songs[songIndexToUpdate].album = data.nowSong.album;
+                if (parseInt(data.moreInfo.trackNumber, 10) >= 1) {
+                    libraryObject.songs[songIndexToUpdate].trackNumber = parseInt(data.moreInfo.trackNumber, 10)
+                }
             }
             const updatedLibraryData = JSON.stringify(libraryObject, null, 2);
             fs.writeFileSync(libraryFilePath, updatedLibraryData, 'utf8');
-        }else{
-            console.log("Will not change song in Library")
-        }
-
     } catch (error) {
         console.error(error);
         return null;
@@ -1741,14 +1723,14 @@ ipcMain.handle('add-folders', async (event) => {
         if (!result.canceled) {
             if (result.filePaths.length === 1) {
                 handleMetadata('folder', result.filePaths[0]).then(() => {
-                    win.webContents.send('finishScan');
+                    win.webContents.send('finishScan', true);
                 }).catch(error => {
                     win.webContents.send('errorFile')
                     console.error('处理元数据时出错:', error);
                 });
             } else {
                 handleMetadata('folders', result.filePaths).then(() => {
-                    win.webContents.send('finishScan');
+                    win.webContents.send('finishScan', true);
                 }).catch(error => {
                     win.webContents.send('errorFile')
                     console.error('处理元数据时出错:', error);
@@ -1767,14 +1749,14 @@ ipcMain.handle('add-files', async (event) => {
             // event.sender.send('selected-files', result.filePaths);
             if (result.filePaths.length === 1) {
                 handleMetadata('file', result.filePaths[0]).then(() => {
-                    win.webContents.send('finishScan');
+                    win.webContents.send('finishScan', true);
                 }).catch(error => {
                     win.webContents.send('errorFile')
                     console.error('处理元数据时出错:', error);
                 });
             } else {
                 handleMetadata('files', result.filePaths).then(() => {
-                    win.webContents.send('finishScan');
+                    win.webContents.send('finishScan', true);
                 }).catch(error => {
                     win.webContents.send('errorFile')
                     console.error('处理元数据时出错:', error);
@@ -1786,68 +1768,123 @@ ipcMain.handle('add-files', async (event) => {
     });
 });
 
-// 处理外部拖拽的文件或者文件夹
-    ipcMain.handle('dragFile', async (event, filePaths) => {
-        if (filePaths.length === 1) {
-            const filePath = filePaths[0];
-            try {
-                const stats = fs.statSync(filePath);
-                if (stats.isFile()) {
-                    // 单个文件
-                    handleMetadata('file', filePath).then(() => {
-                        win.webContents.send('finishScan');
-                    }).catch(error => {
-                        win.webContents.send('errorFile')
-                        console.error('处理元数据时出错:', error);
-                    });
-                } else if (stats.isDirectory()) {
-                    // 单个文件夹
-                    handleMetadata('folder', filePath).then(() => {
-                        win.webContents.send('finishScan');
-                    }).catch(error => {
-                        console.error('处理元数据时出错:', error);
-                        win.webContents.send('errorFile')
-                    });
-                }
-            } catch (error) {
-                win.webContents.send('errorFile')
-                console.error(`Error while processing ${filePath}: ${error.message}`);
-            }
-        } else if (filePaths.length > 1) {
-            const firstFileType = fs.statSync(filePaths[0]).isFile() ? 'file' : 'folder';
+// 刷新音乐库数据
+ipcMain.handle('refreshLibrary', async () => {
+    const appDataPath = path.join(process.env.APPDATA, 'Sonorbit');
+    const songsJsonPath = path.join(appDataPath, 'songsNoSameId.json');
+    const existingData = await fs.promises.readFile(songsJsonPath, 'utf8');
+    let existingMetadata = JSON.parse(existingData);
+    try {
+        const mm = await import('music-metadata');
+        const updatedSongs = [];
 
-            // 检查是否都是一样的类型
-            if (filePaths.every(filePath => (fs.statSync(filePath).isFile() ? 'file' : 'folder') === firstFileType)) {
-                // 都是文件
-                if (firstFileType === 'file') {
-                    handleMetadata('files', filePaths).then(() => {
-                        win.webContents.send('finishScan');
-                    }).catch(error => {
-                        win.webContents.send('errorFile')
-                        console.error('处理元数据时出错:', error);
-                    });
-                }
-                // 都是文件夹
-                else if (firstFileType === 'folder') {
-                    handleMetadata('folders', filePaths).then(() => {
-                        win.webContents.send('finishScan');
-                    }).catch(error => {
-                        win.webContents.send('errorFile')
-                        console.error('处理元数据时出错:', error);
-                    });
-                }
-            } else {
-                console.log('Not same type: Cannot mix files and folders.');
-                win.webContents.send('finishScanErrorMix');
+        for (const song of existingMetadata.songs) {
+            if (fs.existsSync(song.path)) {
+                const metadata = await mm.parseFile(song.path);
+                const stats = await fs.promises.stat(song.path);
+                const fileSize = (stats.size / 1048576).toFixed(2) + "MB"
+                const cleanedMetadata = {
+                    common: {
+                        title: (metadata.common.title || '未知标题[ERROR]').trim(),
+                        artist: (metadata.common.artist || '未知艺术家[ERROR]').trim(),
+                        album: (metadata.common.album || '未知专辑[ERROR]').trim(),
+                        trackNumber: metadata.common.track.no || 0
+                    },
+                    format: {
+                        duration: metadata.format.duration || 0,
+                        bitrate: metadata.format.bitrate || 0,
+                        sampleRate: metadata.format.sampleRate || 0,
+                        bitsPerSample: metadata.format.bitsPerSample || 0
+                    }
+                };
+
+                song.title = cleanedMetadata.common.title
+                song.artist = cleanedMetadata.common.artist
+                song.album = cleanedMetadata.common.album
+                song.duration = formatDuration(cleanedMetadata.format.duration)
+                song.birate = formatBitrate(cleanedMetadata.format.bitrate)+"kbps"
+                song.sampleRate = formatSampleRate(cleanedMetadata.format.sampleRate)+"kHz"
+                song.bitsPerSample = cleanedMetadata.format.bitsPerSample ? (cleanedMetadata.format.bitsPerSample+"bit") : "无"
+                song.trackNumber = cleanedMetadata.common.trackNumber
+                song.fileSize = fileSize
+                updatedSongs.push(song);
             }
         }
-    });
+        existingMetadata.songs = updatedSongs;
+        await fs.promises.writeFile(songsJsonPath, JSON.stringify(existingMetadata, null, 2), 'utf8');
+        return ["刷新完成，即将跳转至音乐库", existingMetadata]
+    } catch (error) {
+        console.error(error);
+        return ["刷新失败，原因："+error, existingMetadata]
+    }
+});
+
+// 处理外部拖拽的文件或者文件夹
+ipcMain.handle('dragFile', async (event, filePaths) => {
+    if (filePaths.length === 1) {
+        const filePath = filePaths[0];
+        try {
+            const stats = fs.statSync(filePath);
+            if (stats.isFile()) {
+                // 单个文件
+                handleMetadata('file', filePath).then(() => {
+                    win.webContents.send('finishScan', true);
+                }).catch(error => {
+                    win.webContents.send('errorFile')
+                    console.error('处理元数据时出错:', error);
+                });
+            } else if (stats.isDirectory()) {
+                // 单个文件夹
+                handleMetadata('folder', filePath).then(() => {
+                    win.webContents.send('finishScan', true);
+                }).catch(error => {
+                    console.error('处理元数据时出错:', error);
+                    win.webContents.send('errorFile')
+                });
+            }
+        } catch (error) {
+            win.webContents.send('errorFile')
+            console.error(`Error while processing ${filePath}: ${error.message}`);
+        }
+    } else if (filePaths.length > 1) {
+        const firstFileType = fs.statSync(filePaths[0]).isFile() ? 'file' : 'folder';
+
+        // 检查是否都是一样的类型
+        if (filePaths.every(filePath => (fs.statSync(filePath).isFile() ? 'file' : 'folder') === firstFileType)) {
+            // 都是文件
+            if (firstFileType === 'file') {
+                handleMetadata('files', filePaths).then(() => {
+                    win.webContents.send('finishScan', true);
+                }).catch(error => {
+                    win.webContents.send('errorFile')
+                    console.error('处理元数据时出错:', error);
+                });
+            }
+            // 都是文件夹
+            else if (firstFileType === 'folder') {
+                handleMetadata('folders', filePaths).then(() => {
+                    win.webContents.send('finishScan', true);
+                }).catch(error => {
+                    win.webContents.send('errorFile')
+                    console.error('处理元数据时出错:', error);
+                });
+            }
+        } else {
+            console.log('Not same type: Cannot mix files and folders.');
+            win.webContents.send('finishScanErrorMix');
+        }
+    }
+});
+
 //支持的音频格式
 const isSupportedAudioFormat = (mimeType) => {
     const supportedMimeTypes = [
         'audio/mpeg',
         'audio/x-flac',
-        'audio/wave'
+        'audio/flac',
+        'audio/wave',
+        'audio/mp4',
+        'audio/ogg',
     ];
     return supportedMimeTypes.includes(mimeType);
 };
@@ -1868,7 +1905,6 @@ const handleMetadata = async (type,  sourcePaths) => {
 
             fs.writeFileSync(songsJsonPath, JSON.stringify(emptySongsArray, null, 2), 'utf-8');
         }
-        //C:\Users\30595\AppData\Roaming\Sonorbit\songsNoSameId
         const mm = await import('music-metadata');
         const existingData = await fs.promises.readFile(songsJsonPath, 'utf8');
         const existingMetadata = JSON.parse(existingData);
@@ -1877,6 +1913,7 @@ const handleMetadata = async (type,  sourcePaths) => {
                 const stats = await fs.promises.stat(filePath);
                 if (stats.isFile()) {
                     const mimeType = mime.lookup(filePath);
+                    console.log(mimeType)
                     if (isSupportedAudioFormat(mimeType)) {
                         const fileName = path.basename(filePath, path.extname(filePath));
                         const metadata = await mm.parseFile(filePath);
@@ -1887,7 +1924,8 @@ const handleMetadata = async (type,  sourcePaths) => {
                             common: {
                                 title: (metadata.common.title || '未知标题[ERROR]').trim(),
                                 artist: (metadata.common.artist || '未知艺术家[ERROR]').trim(),
-                                album: (metadata.common.album || '未知专辑[ERROR]').trim()
+                                album: (metadata.common.album || '未知专辑[ERROR]').trim(),
+                                trackNumber: metadata.common.track.no || 0
                             },
                             format: {
                                 duration: metadata.format.duration || 0,
@@ -1896,27 +1934,7 @@ const handleMetadata = async (type,  sourcePaths) => {
                                 bitsPerSample: metadata.format.bitsPerSample || 0
                             }
                         };
-                        function formatDuration(durationInSeconds) {
-                            const hours = Math.floor(durationInSeconds / 3600);
-                            const minutes = Math.floor((durationInSeconds % 3600) / 60);
-                            const seconds = Math.floor(durationInSeconds % 60);
-                            const milliseconds = Math.round((durationInSeconds % 1) * 1000);
 
-                            const formattedHours = hours > 0 ? hours.toString().padStart(2, '0') + ':' : '';
-                            const formattedMinutes = minutes.toString().padStart(2, '0');
-                            const formattedSeconds = seconds.toString().padStart(2, '0');
-                            const formattedMilliseconds = milliseconds.toString().padStart(3, '0');
-
-                            return `${formattedHours}${formattedMinutes}:${formattedSeconds}:${formattedMilliseconds}`;
-                        }
-                        function formatBitrate(bitrateInKbps) {
-                            const formattedBitrate = Math.floor(bitrateInKbps / 1000);
-                            return formattedBitrate.toString();
-                        }
-                        function formatSampleRate(sampleRate) {
-                            const formattedSampleRate = (sampleRate / 1000).toFixed(1);
-                            return formattedSampleRate;
-                        }
                         const formattedDuration = formatDuration(cleanedMetadata.format.duration)
                         const formattedBitrate = formatBitrate(cleanedMetadata.format.bitrate)
                         const formattedSampleRate = formatSampleRate(cleanedMetadata.format.sampleRate)
@@ -1935,6 +1953,7 @@ const handleMetadata = async (type,  sourcePaths) => {
                             bitrate: formattedBitrate+"kbps",
                             sampleRate: formattedSampleRate+"kHz",
                             bitsPerSample: formattedBitsPerSample,
+                            trackNumber: cleanedMetadata.common.trackNumber,
                             fileSize : fileSize,
                         };
                         const existingSongIndex = existingMetadata.songs.findIndex(song => song.id === newEntry.id);
@@ -1983,4 +2002,24 @@ const handleMetadata = async (type,  sourcePaths) => {
         console.error('Error handling metadata:', error);
     }
 };
+function formatDuration(durationInSeconds) {
+    const hours = Math.floor(durationInSeconds / 3600);
+    const minutes = Math.floor((durationInSeconds % 3600) / 60);
+    const seconds = Math.floor(durationInSeconds % 60);
+    const milliseconds = Math.round((durationInSeconds % 1) * 1000);
+
+    const formattedHours = hours > 0 ? hours.toString().padStart(2, '0') + ':' : '';
+    const formattedMinutes = minutes.toString().padStart(2, '0');
+    const formattedSeconds = seconds.toString().padStart(2, '0');
+    const formattedMilliseconds = milliseconds.toString().padStart(3, '0');
+
+    return `${formattedHours}${formattedMinutes}:${formattedSeconds}:${formattedMilliseconds}`;
+}
+function formatBitrate(bitrateInKbps) {
+    const formattedBitrate = Math.floor(bitrateInKbps / 1000);
+    return formattedBitrate.toString();
+}
+function formatSampleRate(sampleRate) {
+    return (sampleRate / 1000).toFixed(1);
+}
 

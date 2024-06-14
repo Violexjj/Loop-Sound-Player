@@ -50,6 +50,8 @@
                     </div>
                     <div class="playlist-option-delete" @click="showDeleteModal()">
                         从音乐库删除文件夹
+                    </div><div class="playlist-option-delete" @click="toNowPlayingFolder()">
+                        跳转至正在播放歌曲文件夹
                     </div>
                 </div>
 
@@ -97,6 +99,23 @@
                 this.showRenameAndDelete = false
                 this.showDelete = true
             },
+            toNowPlayingFolder(){
+                if (this.$store.getters.nowSong) {
+                    const nowSongFolderPath = this.$store.getters.nowSong.path.substring(0, this.$store.getters.nowSong.path.lastIndexOf('\\'));
+                    const existingIndex = this.folders.findIndex(folder => folder.path === nowSongFolderPath);
+                    if (existingIndex !== -1) {
+                        this.$store.state.selectedFolderPath = nowSongFolderPath
+                        this.SET_FILTER_TYPE('byFolder')
+                        setTimeout(()=>{
+                            this.$router.push({ name: 'SongsInFolder' });
+                        },5)
+                        setTimeout(()=>{
+                            this.$bus.$emit('openNowSongInFolder')
+                        },1000)
+                    }
+                }
+                this.showRenameAndDelete = false
+            },
             openFolderPosition(){
                 myAPI.openFolder(this.toChangeFolderPath)
                 this.showRenameAndDelete = false
@@ -113,8 +132,8 @@
             ...mapMutations(['SET_FILTER_TYPE','SET_SELECTED_PLAYLIST_NAME']),
 
             displaySongsInFolder(folderPath){
-                this.SET_FILTER_TYPE('byFolder')
                 this.$store.state.selectedFolderPath = folderPath
+                this.SET_FILTER_TYPE('byFolder')
                 if (this.$route.path !== "/SongsInFolder") {
                     this.$router.push({
                         name: "SongsInFolder",

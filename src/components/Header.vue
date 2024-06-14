@@ -77,7 +77,7 @@
         filter: brightness(20%)
     }
     .active {
-        box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
         background-color: rgba(255, 255, 255, 0.9);
         color: #333;
     }

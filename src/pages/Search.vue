@@ -35,7 +35,7 @@
 <!--        选项框-->
         <div v-if="showPlaylistModal" class="modal">
 
-            <div class="playlist-panel">
+            <div class="playlist-playlist-panel">
                 <!-- 关闭按钮 -->
                 <div class="modal-close" @click="closeModal()">
                     <div class="close-button ">
@@ -54,7 +54,7 @@
                         {{ `在音乐库中查看`}}
                     </div>
                     <div class="playlist-option2">
-                        {{ `添加至播放列表`}}
+                        {{ `添加至播放列表 ↓↓↓`}}
                     </div>
                     <div v-for="playlist in playlists" :key="playlist.name" class="playlist-option"
                          @click="addToPlaylist(playlist.name)">
@@ -146,13 +146,35 @@
         letter-spacing: 5px;
     }
     .playlist-options {
+        padding-right: 10px;
+        margin-right: 12px;
+        height: 88%;
+        overflow-y: scroll;
         margin-top: 40px;
     }
-    .playlist-option{font-weight: bold;
+    .playlist-options::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+        background-color: rgba(0, 0, 0, 0);
+        border-radius: 20px;
+    }
+
+    .playlist-options::-webkit-scrollbar-thumb {
+        background-color: #f0f0f0;
+        border-radius: 20px;
+    }
+
+    .playlist-options::-webkit-scrollbar-track {
+        background-color: rgba(255, 255, 255, 0);
+    }
+    .playlist-option{
+        font-weight: bold;
         padding: 10px;
         border-radius: 10px;
+        overflow-x: hidden;
     }
-    .playlist-option2{font-weight: bold;
+    .playlist-option2{
+        font-weight: bold;
         padding: 10px;
         border-radius: 10px;
     }
@@ -192,15 +214,15 @@
         border-color: white;
 
     }
-    .playlist-panel {
+    .playlist-playlist-panel {
         background-color: rgba(0, 0, 0, 0.3);
-        backdrop-filter: blur(20px);
         border-radius: 10px;
         padding: 10px;
         width: 80%;
         max-width: 400px;
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        height: 350px;
         position: relative;
+        backdrop-filter: blur(20px);
     }
     .modal {
         position: fixed;

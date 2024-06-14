@@ -7,7 +7,6 @@
 <script>
     import { Howl } from 'howler';
     import { mapState, mapGetters } from 'vuex';
-    import axios from 'axios'
     import { WebAudioApi } from './WebAudioApi';
 
     export default {
@@ -143,6 +142,13 @@
                         if (this.$store.state.isPlaying) {
                             this.analyseSpectrumData()
                         }
+                    }
+                }
+            },
+            '$store.state.spectrumSpeed':{
+                handler(value){
+                    if (this.analyser && value >= 0.0 && value <= 0.9) {
+                        this.analyser.smoothingTimeConstant = value
                     }
                 }
             },
@@ -285,18 +291,14 @@
                     this.howlerInstance.pause();
 
                     // 更新播放进度
-                    const newCurrentTime = (newProgress / 100) * this.howlerInstance.duration();
-                    this.howlerInstance.seek(newCurrentTime);
+                    this.howlerInstance.seek((newProgress / 100) * this.howlerInstance.duration());
 
                     // 继续播放音频
                     this.howlerInstance.play();
-                    this.$store.state.currentProgress = newProgress
                 }else{
                     this.$store.state.isPlaying = true
                     this.howlerInstance.pause();
-                    const newCurrentTime = (newProgress / 100) * this.howlerInstance.duration();
-                    this.howlerInstance.seek(newCurrentTime);
-                    this.$store.state.currentProgress = newProgress
+                    this.howlerInstance.seek((newProgress / 100) * this.howlerInstance.duration());
                 }
             },
             getDurationInSeconds() {
@@ -306,6 +308,8 @@
                     const seconds = parseInt(durationParts[1]);
                     const milliseconds = parseInt(durationParts[2]);
                     return minutes * 60 + seconds + milliseconds / 1000;
+                }else{
+                    return 0
                 }
             },
             startUpdatingProgress() {
@@ -320,13 +324,13 @@
                 this.progressUpdateInterval = setInterval(() => {
                     if (this.howlerInstance) {
                         const currentTime = this.howlerInstance.seek();
-                        const durationInSeconds = this.howlerInstance.duration();
+                        const durationInSeconds = this.getDurationInSeconds()
                         const newProgress = (currentTime / durationInSeconds) * 100;
                         if (!this.dragging) {
                             this.$store.commit('SET_CURRENT_PROGRESS', newProgress);
                         }
                     }
-                }, 200);
+                }, 300);
             },
             // 根据 歌曲配置好的 id 来搜索歌词
             async getNetLyricByNetId(){
@@ -473,45 +477,25 @@
                     this.$store.state.nowSongNetId = songAudioAndInfos[3]
 
                 // 获取歌词
-                if (songAudioAndInfos[1].format !== "MPEG") {
-                    //非mp3文件
-                            if (songAudioAndInfos[2].lyrics[0].includes("没有找到本地歌词")) {
-                                console.log("没有找到本地歌词")
-                                if (this.$store.state.onlineLrc) {
-                                    if (this.$store.state.nowSongNetId === -1) {
-                                        await this.getNetLyric()
-                                    }else{
-                                        await this.getNetLyricByNetId()
-                                    }
-                                }else{
-                                    this.$store.state.lyricOfNowSong = "[00:00.00]无本地歌词，请开启在线搜索歌词功能"
-                                }
-                            }else{
-                                this.$store.state.lyricOfNowSong= songAudioAndInfos[2].lyrics[0]
-                                console.log("找到了本地歌词")
-                            }
-                }
-                else{
-                            //mp3文件
-                            if (songAudioAndInfos[2].lyrics.includes("没有找到本地歌词")) {
-                                console.log("没有找到本地歌词")
-                                if (this.$store.state.onlineLrc) {
-                                        if (this.$store.state.nowSongNetId === -1) {
-                                            await this.getNetLyric()
-                                        }else{
-                                            await this.getNetLyricByNetId()
-                                        }
-                                }else{
-                                    this.$store.state.lyricOfNowSong = "[00:00.00]无本地歌词，请开启在线搜索歌词功能"
-                                }
-                            }else{
-                                this.$store.state.lyricOfNowSong= songAudioAndInfos[2].lyrics
-                                console.log("找到了本地歌词")
-                            }
+                if (songAudioAndInfos[2][0] !== "[00:00.00]没有找到本地歌词") {
+                    console.log(songAudioAndInfos[2][1])
+                    this.$store.state.lyricOfNowSong = songAudioAndInfos[2][0]
+                }else{
+                    console.log("没有找到本地歌词")
+                    if (this.$store.state.onlineLrc) {
+                        if (this.$store.state.nowSongNetId === -1) {
+                            await this.getNetLyric()
+                        }else{
+                            await this.getNetLyricByNetId()
+                        }
+                    }else{
+                        this.$store.state.lyricOfNowSong = "[00:00.00]无本地歌词，请开启在线搜索歌词功能"
+                    }
                 }
 
+
                 setTimeout(async () => {
-                    if (!this.$store.state.nowSongCover) {
+                    if (!this.$store.state.nowSongCover && this.$store.state.downloadOnlineImg) {
                         console.log("歌曲无封面，将自动下载。网易云 id："+songAudioAndInfos[3]+"，搜索关键词："+this.keywords)
                         const nowSongCover = await myAPI.getSongCoverFromNet(this.nowSong.path, songAudioAndInfos[3], this.keywords)
 
@@ -537,17 +521,19 @@
                 },1000)
 
 
-                const blob = new Blob([songAudio], { type: 'audio/flac' });
-                const blobUrl = URL.createObjectURL(blob);
+                // const blob = new Blob([songAudio], { type: 'audio/flac' });
+                // const blobUrl = URL.createObjectURL(blob);
                 if (path !== this.$store.getters.nowSong.path) {
                     return
                 }
+                const songURL = "audio:///"+this.$store.getters.nowSong.path
                 this.howlerInstance = new Howl({
-                    src: [blobUrl],
+                    src: [songURL],
                     format: ['flac'],
                     html5: true,
                     volume: this.volume / 100,
                     mute : this.isMute,
+                    pool: 1,
                     onend: () => {
                         this.$store.commit('SET_PLAYING_STATE', false);
                         if (this.nextSongs.length !== 0 && this.nextSongsIndex < this.nextSongs.length-1) {
@@ -595,6 +581,9 @@
                 });
 
                 if (this.isInitializing) {
+                    if (this.$store.state.backCoverPath !== "未设置") {
+                        this.$store.state.backCover = await myAPI.getBackCover(this.$store.state.backCoverPath)
+                    }
                     if (this.$store.state.savedCurrentPlaytime && path === this.$store.getters.nowSong.path) {
                         this.$store.commit('SET_CURRENT_PROGRESS', (this.$store.state.savedCurrentPlaytime / this.getDurationInSeconds()) * 100);
                         this.howlerInstance.seek(this.$store.state.savedCurrentPlaytime);
@@ -608,7 +597,7 @@
                             }
                         },500)
                         this.analyser = this.webAudioApi.analyser
-                        this.analyser.smoothingTimeConstant = 0.6
+                        this.analyser.smoothingTimeConstant = this.$store.state.spectrumSpeed
                         if (this.$store.state.showSpectrum) {
                             this.analyseSpectrumData()
                         }

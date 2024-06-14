@@ -13,7 +13,7 @@
                 <ul>
                     <li class="songOfAlbum" v-for="(song, index) in album.songs" :key="song.id"
                         @dblclick="changeQueueAndPlay(album.songs, index);clearShuffledIndex()">
-                        {{ song.title + " - " + song.artist}}
+                        {{ (song.trackNumber ? song.trackNumber + '. ' : '#. ')+song.title + " - " + song.artist}}
                     </li>
                 </ul>
             </div>

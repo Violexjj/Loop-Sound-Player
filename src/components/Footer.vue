@@ -5,12 +5,12 @@
                 <!-- 封面图片 -->
                 <div v-if="nowSong" class="image-wrapper">
                     <img
-                            v-if="this.$store.state.nowSongCover"
+                            v-if="this.$store.state.nowSongCover && showImg"
                             :src="this.$store.state.nowSongCover"
                             alt="Image"
                             ref="songImage"
                             class="image"
-                            :style="{ animationPlayState: this.isPlaying ? 'running' : 'paused' }"
+                            :style="{ animationPlayState: this.rotateCover && this.isPlaying ? 'running' : 'paused' }"
                             @click="toHome"
                             title="返回主页"
                     />
@@ -23,12 +23,20 @@
                 </div>
                 <!-- 播放模式按钮 -->
                 <div class="control-button" @click="changePlayMode">
-                    <div class="rotate-image" v-show="playMode === 0" title="队列循环"></div>
-                    <div class="random-image" v-show="playMode === 1" title="无序循环"></div>
-                    <div class="onesong-image" v-show="playMode === 2" title="单曲循环"></div>
+                    <div class="rotate-image" v-show="playMode === 0" aria-label="队列循环" data-microtip-position="top" role="tooltip"></div>
+                    <div class="random-image" v-show="playMode === 1" aria-label="无序循环" data-microtip-position="top" role="tooltip"></div>
+                    <div class="onesong-image" v-show="playMode === 2" aria-label="单曲循环" data-microtip-position="top" role="tooltip"></div>
                 </div>
                 <!-- 上一曲按钮 -->
-                <div class="control-button" @click="playLast(); triggerEvent1()" title="上一首">
+                <div
+                        class="control-button"
+                        @click="playLast(); triggerEvent1()"
+                        :aria-label="showSongInfo ? lastSongInfo : null"
+                        :data-microtip-position="showSongInfo ? 'top' : null"
+                        :data-microtip-size="showSongInfo ? 'fit' : null"
+                        :role="showSongInfo ? 'tooltip' : null"
+                        :title="!showSongInfo ? lastSongInfo : null"
+                >
                     <div class="prev-image"></div>
                 </div>
                 <!-- 暂停播放按钮 -->
@@ -43,7 +51,15 @@
                     ></div>
                 </div>
                 <!-- 下一曲按钮 -->
-                <div class="control-button" @click="playNext(); triggerEvent1()" title="下一首">
+                <div
+                        class="control-button"
+                        @click="playNext(); triggerEvent1()"
+                        :aria-label="showSongInfo ? nextSongInfo : null"
+                        :data-microtip-position="showSongInfo ? 'top' : null"
+                        :data-microtip-size="showSongInfo ? 'fit' : null"
+                        :role="showSongInfo ? 'tooltip' : null"
+                        :title="!showSongInfo ? nextSongInfo : null"
+                >
                     <div class="next-image"></div>
                 </div>
             </div>
@@ -516,8 +532,8 @@
                                 />
                             </div>
                             <div class="twoButtons">
-                                <div class="custom-button" style="width: 100px" @click="chooseCover()"><b>{{"选择图片"}}</b></div>
-                                <div class="custom-button" style="width: 100px" @click="delCover()"><b>{{"删除图片"}}</b></div>
+                                <div class="custom-button" style="width: 100px" @click="chooseCover()"><b>{{"选择封面"}}</b></div>
+                                <div class="custom-button" style="width: 100px" @click="delCover()"><b>{{"删除封面"}}</b></div>
                             </div>
                         </div>
 
@@ -691,7 +707,7 @@
         transition: 0.2s ease;
     }
     .circle-container:hover{
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: rgba(255, 255, 255, 0.2);
     }
     .circle-container:active {
         transform: scale(0.85);
@@ -895,6 +911,7 @@
         width: 50%;
         height: 85%;
         margin-left: 30px;
+        margin-right: 2px;
         overflow-y: auto;
         overflow-x: auto;
         display: flex;
@@ -1037,9 +1054,9 @@
         }
     }
     .image-container {
-        margin-left: 5px;
-        width: 55px;
-        height: 55px;
+        margin-left: 4px;
+        width: 56px;
+        height: 56px;
         border-radius: 100px;
         overflow: hidden;
         margin-right: 5px;
@@ -1201,18 +1218,38 @@
         border-radius: 10px;
         padding: 10px;
         width: 80%;
-
+        height: 350px;
         position: relative;
         backdrop-filter: blur(20px);
     }
 
     .playlist-options {
+        padding-right: 10px;
+        margin-right: 12px;
+        height: 88%;
+        overflow-y: scroll;
         margin-top: 40px;
+    }
+    .playlist-options::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+        background-color: rgba(0, 0, 0, 0);
+        border-radius: 20px;
+    }
+
+    .playlist-options::-webkit-scrollbar-thumb {
+        background-color: #f0f0f0;
+        border-radius: 20px;
+    }
+
+    .playlist-options::-webkit-scrollbar-track {
+        background-color: rgba(255, 255, 255, 0);
     }
     .playlist-option{
         font-weight: bold;
         padding: 10px;
         border-radius: 10px;
+        overflow-x: hidden;
     }
     .playlist-option:hover{
         cursor: pointer;
@@ -1254,6 +1291,8 @@
     import HowlerPlayer from './HowlerPlayer'
     import VueSlider from 'vue-slider-component';
     import 'vue-slider-component/theme/default.css'
+    import microtip from 'microtip/microtip.css'
+
 
     export default {
         name: "Footer",
@@ -1281,10 +1320,10 @@
             })
             myAPI.onDownVolume((_event) => {
                 if (!this.$store.state.blockSpace) {
-                    if (this.$store.state.volume <= 3) {
+                    if (this.$store.state.volume <= this.$store.state.volumeChange) {
                         this.$store.state.volume = 0
                     }else{
-                        this.$store.state.volume = this.$store.state.volume -3
+                        this.$store.state.volume = this.$store.state.volume -this.$store.state.volumeChange
                     }
                     if (this.$store.state.focusMode) {
                         this.$bus.$emit('showVolumeFocus')
@@ -1295,10 +1334,10 @@
             })
             myAPI.onUpVolume((_event) => {
                 if (!this.$store.state.blockSpace) {
-                    if (this.$store.state.volume >= 97) {
+                    if (this.$store.state.volume >= (100-this.$store.state.volumeChange)) {
                         this.$store.state.volume = 100
                     }else{
-                        this.$store.state.volume = this.$store.state.volume + 3
+                        this.$store.state.volume = this.$store.state.volume + this.$store.state.volumeChange
                     }
                     if (this.$store.state.focusMode) {
                         this.$bus.$emit('showVolumeFocus')
@@ -1344,10 +1383,10 @@
                 if (!this.globalShortcut) {
                     return
                 }
-                if (this.$store.state.volume <= 3) {
+                if (this.$store.state.volume <= this.$store.state.volumeChange) {
                     this.$store.state.volume = 0
                 }else{
-                    this.$store.state.volume = this.$store.state.volume -3
+                    this.$store.state.volume = this.$store.state.volume -this.$store.state.volumeChange
                 }
                 if (this.$store.state.focusMode) {
                     this.$bus.$emit('showVolumeFocus')
@@ -1359,10 +1398,10 @@
                 if (!this.globalShortcut) {
                     return
                 }
-                if (this.$store.state.volume >= 97) {
+                if (this.$store.state.volume >= (100-this.$store.state.volumeChange)) {
                     this.$store.state.volume = 100
                 }else{
-                    this.$store.state.volume = this.$store.state.volume + 3
+                    this.$store.state.volume = this.$store.state.volume + this.$store.state.volumeChange
                 }
                 if (this.$store.state.focusMode) {
                     this.$bus.$emit('showVolumeFocus')
@@ -1393,6 +1432,7 @@
                 isPrevButtonDisabled: false,
                 showInfoDialog : false,
                 timer: null,
+                showImg:true,
                 showMenu: false,
                 showEQ: false,
                 showEditMetadata: false,
@@ -1439,6 +1479,12 @@
             this.$bus.$on('showMoreInfo',this.showMoreInfo)
         },
         watch : {
+            rotateCover:{
+                handler(newVal) {
+                    this.showImg = false
+                    setTimeout(()=>{this.showImg = true},100)
+                },
+            },
             showEditMetadata:{
                 handler(newVal) {
                     this.$store.state.blockSpace = newVal
@@ -1493,6 +1539,61 @@
             }
         },
         computed : {
+            showSongInfo(){
+                return this.$store.state.showSongInfo
+            },
+            lastSongInfo(){
+                if (this.$store.state.queue.length === 0) {
+                    return "上一首"
+                }else if(this.$store.state.queue.length === 1){
+                    const song = this.$store.state.queue[0]
+                    return "上一首："+song.title+" - "+song.artist
+                }else{
+                    if (this.playMode !== 1) {
+                    //    队列循环或者单曲循环
+                        const index = this.$store.state.currentIndex-1 < 0 ? (this.$store.state.queue.length -1) : this.$store.state.currentIndex-1
+                        const song = this.$store.state.queue[index]
+                        return "上一首："+song.title+" - "+song.artist
+                    }else{
+                    //    无序循环
+                        if (this.$store.state.shuffledIndex.length === 0) {
+                            this.$store.commit("SHUFFLE_INDEX_LIST")
+                        }
+                        let lastShuffleIndex = this.$store.state.shuffledIndex[this.$store.state.currentIndex]-1
+                        if (lastShuffleIndex < 0) {
+                            lastShuffleIndex = this.$store.state.shuffledIndex.length -1
+                        }
+                        const song = this.$store.state.queue[this.$store.state.shuffledIndex.indexOf(lastShuffleIndex)]
+                        return "上一首："+song.title+" - "+song.artist
+                    }
+                }
+            },
+            nextSongInfo(){
+                if (this.$store.state.queue.length === 0) {
+                    return "下一首"
+                }else if(this.$store.state.queue.length === 1){
+                    const song = this.$store.state.queue[0]
+                    return "下一首："+song.title+" - "+song.artist
+                }else{
+                    if (this.playMode !== 1) {
+                        //    队列循环或者单曲循环
+                        const index = this.$store.state.currentIndex+1 >= this.$store.state.queue.length ? 0 : this.$store.state.currentIndex+1
+                        const song = this.$store.state.queue[index]
+                        return "下一首："+song.title+" - "+song.artist
+                    }else{
+                        //    无序循环
+                        if (this.$store.state.shuffledIndex.length === 0) {
+                            this.$store.commit("SHUFFLE_INDEX_LIST")
+                        }
+                        let nextShuffleIndex = this.$store.state.shuffledIndex[this.$store.state.currentIndex]+1
+                        if (nextShuffleIndex >= this.$store.state.shuffledIndex.length) {
+                            nextShuffleIndex = 0
+                        }
+                        const song = this.$store.state.queue[this.$store.state.shuffledIndex.indexOf(nextShuffleIndex)]
+                        return "下一首："+song.title+" - "+song.artist
+                    }
+                }
+            },
             EQParam(){
                 return this.$store.state.EQParam
             },
@@ -1569,10 +1670,11 @@
                 },
                 set(value) {
                     this.$bus.$emit('changeProgress', value>100?100:value);
+                    this.$store.state.currentPlayTime = (value/100) * this.$store.state.nowSongTime
                 },
             },
             ...mapGetters(['filteredSongs']),
-            ...mapState(['currentIndex'])
+            ...mapState(['currentIndex','rotateCover'])
         },
         methods: {
             saveEdit(){
@@ -1587,7 +1689,9 @@
                     this.$store.state.songDialogInfo.cover = this.toEditSongInfo.cover
 
                     this.$store.state.songDialogInfo.moreInfo.year = this.toEditSongInfo.moreInfo.year
-                    this.$store.state.songDialogInfo.moreInfo.trackNumber = this.toEditSongInfo.moreInfo.trackNumber
+                    if (this.toEditSongInfo.moreInfo.trackNumber >= 1) {
+                        this.$store.state.songDialogInfo.moreInfo.trackNumber = this.toEditSongInfo.moreInfo.trackNumber
+                    }
                     this.$store.state.songDialogInfo.moreInfo.genre = [this.toEditSongInfo.moreInfo.genre]
                     this.$store.state.songDialogInfo.moreInfo.comment = [this.toEditSongInfo.moreInfo.comment]
                 }
@@ -1597,6 +1701,9 @@
                     song2.title = this.toEditSongInfo.nowSong.title
                     song2.artist = this.toEditSongInfo.nowSong.artist
                     song2.album = this.toEditSongInfo.nowSong.album
+                    if (this.toEditSongInfo.moreInfo.trackNumber >= 1) {
+                        song2.trackNumber = this.toEditSongInfo.moreInfo.trackNumber
+                    }
                 }
                 // 修改音乐库的歌
                 const song = this.$store.state.songs.songs.find(song => song.id === this.toEditSongInfo.nowSong.id)
@@ -1604,6 +1711,9 @@
                     song.title = this.toEditSongInfo.nowSong.title
                     song.artist = this.toEditSongInfo.nowSong.artist
                     song.album = this.toEditSongInfo.nowSong.album
+                    if (this.toEditSongInfo.moreInfo.trackNumber >= 1) {
+                        song.trackNumber = this.toEditSongInfo.moreInfo.trackNumber
+                    }
                 }
 
 
@@ -1647,7 +1757,7 @@
                 this.insert = true
             },
             async chooseCover() {
-                const coverData = await myAPI.chooseCover()
+                const coverData = await myAPI.chooseCover(true)
                 const coverPath = coverData[1]
                 const cover = coverData[0]
                 this.toEditSongInfo.cover = cover?cover: this.toEditSongInfo.cover
@@ -1838,12 +1948,11 @@
                 this.showPlaylistModal = !this.showPlaylistModal
             },
             adjustVolumeWithWheel(event) {
-                event.preventDefault(); // 阻止滚轮默认行为
+                event.preventDefault();
 
-                const delta = -Math.sign(event.deltaY); // 获取滚轮滚动方向，1 表示上滚，-1 表示下滚
-                const step = 3; // 调整音量的步长
+                const delta = -Math.sign(event.deltaY);
 
-                let newVolume = this.volume + delta * step;
+                let newVolume = this.volume + delta * this.$store.state.volumeChange;
                 newVolume = Math.max(0, Math.min(100, newVolume)); // 确保音量在合法范围内
 
                 this.$store.commit('SET_VOLUME', newVolume);
@@ -1921,20 +2030,21 @@
                 this.SET_FILTER_TYPE('byPlaylist')
                 this.SET_SELECTED_PLAYLIST_NAME(playlistName)
                 let songs = this.filteredSongs
-                const index = 0
-                this.$store.commit('CLEAR_SHUFFLED_INDEX');
-                this.$store.commit('CHANGE_QUEUE_AND_PLAY', {songs, index});
-                if (this.$route.path !== "/") {
-                    this.$router.push({
-                        name: "Home",
-                    });
+                if (songs.length > 0) {
+                    const index = 0
+                    this.$store.commit('CLEAR_SHUFFLED_INDEX');
+                    this.$store.commit('CHANGE_QUEUE_AND_PLAY', {songs, index});
+                    if (this.$route.path !== "/") {
+                        this.$router.push({
+                            name: "Home",
+                        });
+                    }
+                    if (this.$store.state.showQueue) {
+                        setTimeout(()=>{
+                            this.$bus.$emit('songOnTop')
+                        },100)
+                    }
                 }
-                if (this.$store.state.showQueue) {
-                    setTimeout(()=>{
-                        this.$bus.$emit('songOnTop')
-                    },100)
-                }
-
                 this.showPlaylistModal = false
             }
         }

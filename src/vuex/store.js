@@ -106,26 +106,46 @@ const mutations = {
         };
 
         state.songs.songs.forEach(song => {
-            if (song.artist.toLowerCase().includes(keyword)) {
-                const existingArtist = state.searchResults.searchedArtists.find(artist => artist.name === song.artist);
 
-                if (!existingArtist) {
+            if (song.artist.toLowerCase().includes(keyword)) {
+                // 拆分多个艺术家
+                const artists = song.artist.split('/').map(artist => artist.trim());
+
+                // 处理组合艺术家
+                const existingCombinationArtist = state.searchResults.searchedArtists.find(artist => artist.name === song.artist);
+                if (!existingCombinationArtist) {
                     state.searchResults.searchedArtists.push({
                         name: song.artist,
                         songs: [song]
                     });
                 } else {
-                    existingArtist.songs.push(song);
+                    existingCombinationArtist.songs.push(song);
                 }
+
+                // 处理单个艺术家
+                artists.forEach(artist => {
+                    if (artist.toLowerCase().includes(keyword)) {
+                        const existingArtist = state.searchResults.searchedArtists.find(a => a.name === artist);
+
+                        if (!existingArtist) {
+                            state.searchResults.searchedArtists.push({
+                                name: artist,
+                                songs: [song]
+                            });
+                        } else {
+                            // 检查这首歌是否已经存在于该艺术家的歌曲列表中，避免重复添加
+                            if (!existingArtist.songs.find(s => s === song)) {
+                                existingArtist.songs.push(song);
+                            }
+                        }
+                    }
+                });
             }
 
             if (song.title.toLowerCase().includes(keyword)) {
                 state.searchResults.searchedSongs.push(song);
             }
 
-            // Process album name to extract only the album part
-            // const albumParts = song.album.split('-').map(part => part.trim());
-            // const albumName = albumParts.length > 1 ? albumParts[1] : albumParts[0];
 
             if (song.album.toLowerCase().includes(keyword)) {
                 const existingAlbum = state.searchResults.searchedAlbums.find(album => album.name === song.album);
@@ -477,6 +497,42 @@ const mutations = {
         }
     },
 
+    SET_SPECTRUM_SPEED(state, value){
+        if (value !== undefined) {
+            state.spectrumSpeed = value;
+        }
+    },
+
+    SET_SHOW_SONG_INFO(state, value){
+        if (value !== undefined) {
+            state.showSongInfo = value;
+        }
+    },
+    SET_USE_BACK_COVER(state, value){
+        if (value !== undefined) {
+            state.useBackCover = value;
+        }
+    },
+    SET_BACK_COVER_PATH(state, value){
+        if (value !== undefined) {
+            state.backCoverPath = value;
+        }
+    },
+    SET_ROTATE_COVER(state, value){
+        if (value !== undefined) {
+            state.rotateCover = value;
+        }
+    },
+    SET_VOLUME_CHANGE(state, value){
+        if (value !== undefined) {
+            state.volumeChange = value;
+        }
+    },
+    SET_DOWNLOAD_ONLINE_IMG(state, value){
+        if (value !== undefined) {
+            state.downloadOnlineImg = value;
+        }
+    },
     SET_MATCH_BLANK(state, value){
         if (value !== undefined) {
             state.matchBlank = value;
@@ -501,7 +557,7 @@ const mutations = {
 
 const state = {
     check: null,
-    nowVersion: "1.0.5",
+    nowVersion: "1.0.8",
     latestVersion: null,
     latestVersionInfo: "",
     errorMessage:"请开启自动检查更新",
@@ -509,6 +565,9 @@ const state = {
     miniMode: false,
     playlists : [],   //用户拥有的列表
     playlistsCovers: [],
+    backCoverPath: "C:\\Users\\30595\\Desktop\\原壁纸.jpg",
+    backCover: null,
+    useBackCover: false,
     defaultCover: null,
     selectedPlaylistName :'',
     //过滤方式
@@ -528,6 +587,7 @@ const state = {
     volume: 18,
     isMute : false,
     selectMode: false,
+    showSongInfo: true,
     currentProgress: 0,
     showIsExist : false,
     moreInfoOfNowSong : null,
@@ -535,10 +595,12 @@ const state = {
     homeLyric:[],
     currentPlayTime : 0,
     currentLyricIndex: 0,
+    nowSongTime:0,
     showLyrics : true,
     lyricFont : 20,
     lyricFont2 : 15,
     biggerLyric : 10,
+    volumeChange : 3,
     showQueue : true,
     nowSongCover : null,
     nowArtistCover : null,
@@ -559,6 +621,7 @@ const state = {
     deleteLocalFile : false,
     savedCurrentPlaytime : 0,
     onlineLrc:false,
+    downloadOnlineImg:true,
     lyricDirectory:"未设置",
     nowSongNetId: -1,
     indexInLibrary: -1,
@@ -590,6 +653,8 @@ const state = {
     dataArray:[],
     matchBlank: true,
     showSpectrum: false,
+    rotateCover: true,
+    spectrumSpeed: 0.5,
     pFont: "微软雅黑",
     dFont: "微软雅黑",
     shortcuts: {
@@ -658,10 +723,15 @@ const getters = {
             const artistsMap = new Map();
             // Group songs by artist name
             state.songs.songs.forEach((song) => {
-                if (!artistsMap.has(song.artist)) {
-                    artistsMap.set(song.artist, []);
-                }
-                artistsMap.get(song.artist).push(song);
+
+                const artists = song.artist.split('/');
+                artists.forEach((artist) => {
+                    artist = artist.trim()
+                    if (!artistsMap.has(artist)) {
+                        artistsMap.set(artist, []);
+                    }
+                    artistsMap.get(artist).push(song);
+                });
             });
             // Create artists array
             const artists = [];
@@ -693,7 +763,7 @@ const getters = {
             }
         }
         else {
-            return state.songs.songs; // Return all songs if no filter applied
+            return state.songs.songs;
         }
     },
     nowSong(state) {

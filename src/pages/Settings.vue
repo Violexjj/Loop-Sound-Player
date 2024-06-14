@@ -41,189 +41,254 @@
         <div v-show="showReboot" class="showReboot">
             {{info}}
         </div>
-        <h1 class="title">设置 & 说明</h1><br>
-        <hr style="border-top: 3px solid #ccc;margin-right: 30px">
-        <br>
-<!--        导入歌曲-->
-        <div class="button-container">
-            <div class="custom-button" @click="addFolders"><b>添加文件夹</b></div>
-            <div class="custom-button" @click="addFiles"><b>添加文件</b></div>
+
+
+<!--        导航栏-->
+        <div class="button-container2">
+            <div class="custom-button2" @click="section = 1" :class="{ 'active': section === 1 }" style="cursor: pointer;"><b> 常 规</b></div>
+            <div class="custom-button2" @click="section = 2" :class="{ 'active': section === 2 }" style="cursor: pointer;"><b>外 观</b></div>
+            <div class="custom-button2" @click="section = 3" :class="{ 'active': section === 3 }" style="cursor: pointer;"><b>歌 词</b></div>
+            <div class="custom-button2" @click="section = 4" :class="{ 'active': section === 4 }" style="cursor: pointer;"><b>快 捷 键</b></div>
+            <div class="custom-button2" @click="section = 5" :class="{ 'active': section === 5 }" style="cursor: pointer;"><b>关 于</b></div>
         </div>
         <br>
-        <br>
-        <hr style="border-top: 3px solid #ccc;margin-right: 30px">
-        <div class="version">
+        <hr style="border-top: 3px solid #ccc">
+
+
+        <!--        导入歌曲-->
+        <div class="button-container" style="margin-bottom: 20px;margin-top: 30px;" v-show="section === 1">
+            <div class="custom-button" @click="addFolders" style="cursor: pointer;"><b>添加文件夹</b></div>
+            <div class="custom-button" @click="addFiles" style="cursor: pointer;"><b>添加文件</b></div>
+            <div class="custom-button" @click="refreshLibrary" :style="{ cursor: allowLibraryRefresh ? 'pointer' : 'not-allowed' }"><b>刷新音乐库</b></div>
+        </div>
+
+        <div class="version" v-show="section===5">
             <h3>{{this.displayVersions}}</h3>
             <div v-if="latest" class="custom-button" @click="closeShowLatestInfoModal()"><b>更新信息</b></div>
         </div>
-        <hr style="border-top: 3px solid #ccc;margin-right: 30px">
+
         <table>
-            <tr style="height: 60px;">
+            <tr style="height: 60px;" v-show="section === 1">
                 <td>
                     <b style="font-size: 20px">启动时自动检查更新：</b>
                 </td>
                 <td>
-                    <div class="custom-switch" @click="setCheck">
+                    <div class="custom-switch" @click="handleChangeSet('check')">
                         <input type="checkbox" v-model="check" />
                         <label ></label>
                     </div>
                 </td>
             </tr>
-            <tr style="height: 60px;">
+            <tr style="height: 60px;" v-show="section === 1">
                 <td>
                     <b style="font-size: 20px">关闭时缩小到托盘：</b>
                 </td>
                 <td>
-                    <div class="custom-switch" @click="setExit">
+                    <div class="custom-switch" @click="handleChangeSet('exit')">
                         <input type="checkbox" v-model="exit" />
                         <label ></label>
                     </div>
                 </td>
             </tr>
-            <tr style="height: 60px;">
+            <tr style="height: 60px;" v-show="section === 1">
                 <td>
                     <b style="font-size: 20px">启用全局快捷键：</b>
                 </td>
                 <td>
-                    <div class="custom-switch" @click="setGlobalShortcut">
+                    <div class="custom-switch" @click="handleChangeSet('globalShortcut')">
                         <input type="checkbox" v-model="globalShortcut" />
                         <label ></label>
                     </div>
                 </td>
             </tr>
-            <tr style="height: 60px;">
+            <tr style="height: 60px;" v-show="section === 1">
                 <td>
                     <b style="font-size: 20px">切换队列后自动切换到主页：</b>
                 </td>
                 <td>
-                    <div class="custom-switch" @click="setToHomeAfterChangeQueue">
+                    <div class="custom-switch" @click="handleChangeSet('toHomeAfterChangeQueue')">
                         <input type="checkbox" v-model="toHomeAfterChangeQueue" />
                         <label ></label>
                     </div>
                 </td>
             </tr>
-            <tr style="height: 60px;">
+            <tr style="height: 60px;" v-show="section === 2">
+                <td>
+                    <b style="font-size: 20px">控制栏封面旋转：</b>
+                </td>
+                <td>
+                    <div class="custom-switch" @click="handleChangeSet('rotateCover')">
+                        <input type="checkbox" v-model="rotateCover" />
+                        <label ></label>
+                    </div>
+                </td>
+            </tr>
+            <tr style="height: 60px;" v-show="section === 2">
                 <td>
                     <b style="font-size: 20px">主页显示歌曲格式：</b>
                 </td>
                 <td>
-                    <div class="custom-switch" @click="setShowFormat">
+                    <div class="custom-switch" @click="handleChangeSet('showFormat')">
                         <input type="checkbox" v-model="showFormat" />
                         <label ></label>
                     </div>
                 </td>
             </tr>
-            <tr style="height: 60px;">
+            <tr style="height: 60px;" v-show="section === 2">
                 <td>
                     <b style="font-size: 20px">主页封面信息暗色背景：</b>
                 </td>
                 <td>
-                    <div class="custom-switch" @click="setInfoModal">
+                    <div class="custom-switch" @click="handleChangeSet('infoModal')">
                         <input type="checkbox" v-model="infoModal" />
                         <label ></label>
                     </div>
                 </td>
             </tr>
-            <tr style="height: 60px;">
+            <tr style="height: 60px;" v-show="section === 2">
                 <td>
                     <b style="font-size: 20px">主页歌词区域暗色背景：</b>
                 </td>
                 <td>
-                    <div class="custom-switch" @click="setLyricsModal">
+                    <div class="custom-switch" @click="handleChangeSet('lyricsModal')">
                         <input type="checkbox" v-model="lyricsModal" />
                         <label ></label>
                     </div>
                 </td>
             </tr>
-            <tr style="height: 60px;">
+            <tr style="height: 60px;" v-show="section === 2">
                 <td>
                     <b style="font-size: 20px">主页播放队列暗色背景：</b>
                 </td>
                 <td>
-                    <div class="custom-switch" @click="setQueueModal">
+                    <div class="custom-switch" @click="handleChangeSet('queueModal')">
                         <input type="checkbox" v-model="queueModal" />
                         <label ></label>
                     </div>
                 </td>
             </tr>
-            <tr style="height: 60px;">
+            <tr style="height: 60px;" v-show="section === 2">
+                <td>
+                    <b style="font-size: 20px">自定义背景：</b>
+                </td>
+                <td>
+                    <div class="custom-switch" @click="handleChangeSet('useBackCover')">
+                        <input type="checkbox" v-model="useBackCover" />
+                        <label ></label>
+                    </div>
+                </td>
+            </tr>
+            <tr style="height: 60px;" v-show="section === 2">
+                <td>
+                    <b style="font-size: 20px">自定义背景图片：{{this.$store.state.backCoverPath}}</b>
+                </td>
+                <td>
+                    <div class="custom-button align"  @click="changeBackCover(true)"><b>{{"设置图片"}}</b></div>
+                </td>
+                <td>
+                    <div class="custom-button align"  @click="changeBackCover(false)"><b>{{"重置图片"}}</b></div>
+                </td>
+            </tr>
+            <tr style="height: 60px;" v-show="section === 3">
                 <td>
                     <b style="font-size: 20px">歌词匹配空白行（换歌生效）：</b>
                 </td>
                 <td>
-                    <div class="custom-switch" @click="setMatchBlank">
+                    <div class="custom-switch" @click="handleChangeSet('matchBlank')">
                         <input type="checkbox" v-model="matchBlank" />
                         <label ></label>
                     </div>
                 </td>
             </tr>
-            <tr style="height: 60px;">
+            <tr style="height: 60px;" v-show="section === 3">
                 <td>
                     <b style="font-size: 20px">当前歌词背景高亮：</b>
                 </td>
                 <td>
-                    <div class="custom-switch" @click="setHighlight">
+                    <div class="custom-switch" @click="handleChangeSet('highlight')">
                         <input type="checkbox" v-model="highlight" />
                         <label ></label>
                     </div>
                 </td>
             </tr>
-            <tr style="height: 60px;">
+            <tr style="height: 60px;" v-show="section === 3">
                 <td>
                     <b style="font-size: 20px">其余歌词背景模糊：</b>
                 </td>
                 <td>
-                    <div class="custom-switch" @click="setOtherBlur">
+                    <div class="custom-switch" @click="handleChangeSet('otherBlur')">
                         <input type="checkbox" v-model="otherBlur" />
                         <label ></label>
                     </div>
                 </td>
             </tr>
-            <tr style="height: 60px;">
+            <tr style="height: 60px;" v-show="section === 3">
                 <td>
                     <b style="font-size: 20px">歌词字体加粗：</b>
                 </td>
                 <td>
-                    <div class="custom-switch" @click="setBoldLrc">
+                    <div class="custom-switch" @click="handleChangeSet('boldLrc')">
                         <input type="checkbox" v-model="boldLrc" />
                         <label ></label>
                     </div>
                 </td>
             </tr>
-            <tr style="height: 60px;">
+            <tr style="height: 60px;" v-show="section === 3">
                 <td>
                     <b style="font-size: 20px">显示翻译：</b>
                 </td>
                 <td>
-                    <div class="custom-switch" @click="setShowTlyric">
+                    <div class="custom-switch" @click="handleChangeSet('showTlyric')">
                         <input type="checkbox" v-model="showTlyric" />
                         <label ></label>
                     </div>
                 </td>
             </tr>
-            <tr style="height: 60px;">
+            <tr style="height: 60px;" v-show="section === 1">
+                <td>
+                    <b style="font-size: 20px">切换歌曲按钮弹出提示信息（非沉浸模式）：</b>
+                </td>
+                <td>
+                    <div class="custom-switch" @click="handleChangeSet('showSongInfo')">
+                        <input type="checkbox" v-model="showSongInfo" />
+                        <label ></label>
+                    </div>
+                </td>
+            </tr>
+            <tr style="height: 60px;" v-show="section === 1">
+                <td>
+                    <b style="font-size: 20px">播放歌曲无封面时自动下载</b>
+                </td>
+                <td>
+                    <div class="custom-switch" @click="handleChangeSet('downloadOnlineImg')">
+                        <input type="checkbox" v-model="downloadOnlineImg" />
+                        <label ></label>
+                    </div>
+                </td>
+            </tr>
+            <tr style="height: 60px;" v-show="section === 3">
                 <td>
                     <b style="font-size: 20px">歌曲为纯音乐 / 无歌词时自动隐藏歌词显示：</b>
                 </td>
                 <td>
-                    <div class="custom-switch" @click="setAutoHideLrc">
+                    <div class="custom-switch" @click="handleChangeSet('autoHideLrc')">
                         <input type="checkbox" v-model="autoHideLrc" />
                         <label ></label>
                     </div>
                 </td>
             </tr>
-            <tr style="height: 60px;">
+            <tr style="height: 60px;" v-show="section === 3">
                 <td>
                     <b style="font-size: 20px">无本地歌词自动搜索在线歌词并保存lrc文件：</b>
                 </td>
                 <td>
-                    <div class="custom-switch" @click="setOnlineLrc">
+                    <div class="custom-switch" @click="handleChangeSet('onlineLrc')">
                         <input type="checkbox" v-model="onlineLrc" />
                         <label ></label>
                     </div>
                 </td>
             </tr>
-            <tr style="height: 60px;">
+            <tr style="height: 60px;" v-show="section === 3">
                 <td>
                     <b style="font-size: 20px">桌面歌词使用渐变模板：</b>
                 </td>
@@ -234,7 +299,7 @@
                     </div>
                 </td>
             </tr>
-            <tr style="height: 60px;">
+            <tr style="height: 60px;" v-show="section === 3">
                 <td style="display:flex;align-items:center;margin-top: 10px">
                     <b style="font-size: 20px">桌面歌词颜色：</b>
                     <div v-show="!usePureColor" class="color-circle1" :style="{ 'background-image': `linear-gradient(135deg, ${dLyricColor[0]} 10%, ${dLyricColor[1]} 100%)` }"></div>
@@ -246,7 +311,17 @@
                     </div>
                 </td>
             </tr>
-            <tr style="height: 60px;">
+            <tr style="height: 60px;" v-show="section === 3">
+                <td>
+                    <b style="font-size: 20px">桌面歌词字体：</b>
+                </td>
+                <td colspan="2">
+                    <div class="fontTypeContainer">
+                        <input class="fontType" v-model="dFont" @focus="blockSpace(true)" @blur="blockSpace(false)">
+                    </div>
+                </td>
+            </tr>
+            <tr style="height: 60px;" v-show="section === 3">
                 <td>
                     <b style="font-size: 20px">歌词文件夹：{{this.$store.state.lyricDirectory}}</b>
                 </td>
@@ -257,7 +332,7 @@
                     <div class="custom-button align"  @click="changeLyricDirectory(false)"><b>{{"重置文件夹"}}</b></div>
                 </td>
             </tr>
-            <tr style="height: 60px;" >
+            <tr style="height: 60px;" v-show="section === 3">
                 <td>
                     <b style="font-size: 20px">歌词文本对齐方式：</b>
                 </td>
@@ -271,7 +346,7 @@
                     <div class="custom-button align" :class="{'activee':(this.$store.state.lyricAlignmentMode === 2)}" @click="changeLyricAlignmentMode(2)"><b>{{"右对齐"}}</b></div>
                 </td>
             </tr>
-            <tr style="height: 60px;" >
+            <tr style="height: 60px;" v-show="section === 1">
                 <td>
                     <b style="font-size: 20px">导航栏板块：</b>
                 </td>
@@ -285,27 +360,17 @@
                     <div class="custom-button align" :class="{'activee':(this.$store.state.showFolders === true)}" @click="changeShowHeader(2)"><b>{{"文件夹"}}</b></div>
                 </td>
             </tr>
-            <tr style="height: 60px;" >
+            <tr style="height: 60px;" v-show="section === 2">
                 <td>
                     <b style="font-size: 20px">播放器字体：</b>
                 </td>
-                <td colspan="3">
+                <td colspan="2">
                     <div class="fontTypeContainer">
                         <input class="fontType" v-model="pFont" @focus="blockSpace(true)" @blur="blockSpace(false)">
                     </div>
                 </td>
             </tr>
-            <tr style="height: 60px;" >
-                <td>
-                    <b style="font-size: 20px">桌面歌词字体：</b>
-                </td>
-                <td colspan="3">
-                    <div class="fontTypeContainer">
-                        <input class="fontType" v-model="dFont" @focus="blockSpace(true)" @blur="blockSpace(false)">
-                    </div>
-                </td>
-            </tr>
-            <tr style="height: 60px;" >
+            <tr style="height: 60px;" v-show="section === 3">
                 <td>
                     <b style="font-size: 20px">所有歌词字体大小：</b>
                 </td>
@@ -326,7 +391,7 @@
                     <div class="custom-button-font align"><b style="font-size: 25px">{{ this.$store.state.lyricFont-15 }}</b></div>
                 </td>
             </tr>
-            <tr style="height: 60px;" >
+            <tr style="height: 60px;" v-show="section === 3">
                 <td>
                     <b style="font-size: 20px">翻译歌词字体大小：</b>
                 </td>
@@ -347,7 +412,7 @@
                     <div class="custom-button-font align"><b style="font-size: 25px">{{ this.$store.state.lyricFont2-15 }}</b></div>
                 </td>
             </tr>
-            <tr style="height: 60px;" >
+            <tr style="height: 60px;" v-show="section === 3">
                 <td>
                     <b style="font-size: 20px">当前播放歌词字体放大：</b>
                 </td>
@@ -368,7 +433,7 @@
                     <div class="custom-button-font align"><b style="font-size: 25px">{{ this.$store.state.biggerLyric }}</b></div>
                 </td>
             </tr>
-            <tr style="height: 60px;" >
+            <tr style="height: 60px;" v-show="section === 2">
                 <td>
                     <b style="font-size: 20px">背景高斯模糊度：</b>
                 </td>
@@ -389,7 +454,7 @@
                     <div class="custom-button-font align"><b style="font-size: 25px">{{ this.$store.state.blur }}</b></div>
                 </td>
             </tr>
-            <tr style="height: 60px;" >
+            <tr style="height: 60px;" v-show="section === 2">
                 <td>
                     <b style="font-size: 20px">背景亮度：</b>
                 </td>
@@ -410,57 +475,104 @@
                     <div class="custom-button-font align"><b style="font-size: 25px">{{ this.$store.state.bright }}</b></div>
                 </td>
             </tr>
-
-
+            <tr style="height: 60px;" v-show="section === 2">
+                <td>
+                    <b style="font-size: 20px">频谱速度：</b>
+                </td>
+                <td colspan="2">
+                    <div style="padding-left: 15px;padding-right: 10px;padding-top: 5px">
+                        <vue-slider
+                                v-model="spectrumSpeed"
+                                :min="1"
+                                :max="10"
+                                :interval="1"
+                                :dot-size="12"
+                                :height="10"
+                                :duration="0.2"
+                        ></vue-slider>
+                    </div>
+                </td>
+                <td>
+                    <div class="custom-button-font align"><b style="font-size: 25px">{{ this.spectrumSpeed }}</b></div>
+                </td>
+            </tr>
+            <tr style="height: 60px;" v-show="section === 1">
+                <td>
+                    <b style="font-size: 20px">音量每次调节数值：</b>
+                </td>
+                <td colspan="2">
+                    <div style="padding-left: 15px;padding-right: 10px;padding-top: 5px">
+                        <vue-slider
+                                v-model="volumeChange"
+                                :min="1"
+                                :max="10"
+                                :interval="1"
+                                :dot-size="12"
+                                :height="10"
+                                :duration="0.2"
+                        ></vue-slider>
+                    </div>
+                </td>
+                <td>
+                    <div class="custom-button-font align"><b style="font-size: 25px">{{ this.volumeChange }}</b></div>
+                </td>
+            </tr>
         </table>
 
-        <br>
-        <hr style="border-top: 3px solid #ccc;margin-right: 30px">
-        <h1 class="title">属性说明</h1><br>
-        <span><b>• 本播放器仅为实践小项目，如若出现问题（页面爆红、白屏、无法播放）请联系我，QQ：3059557534。</b></span><br><br>
-        <span><b>• 技术栈为 Vue2 + Electron。</b></span><br><br>
-        <span><b>• 仅支持 FLAC、MP3、WAV 格式的音频文件。</b></span><br><br>
-        <span><b>• 若歌曲出现“未知标题[ERROR]”等字样，是歌曲标签有问题，请在属性信息功能中编辑完整标签。视频简介里也有可以批量匹配标签的工具。</b></span><br><br>
-        <span><b>• WAV 格式所有播放器默认都是缺少很多信息的，可以去操作说明第 4 点的文件夹里的“songsNoSameId.json”文件手动编辑信息。</b></span><br><br>
-        <span><b>• 目前由于性能问题，时间过长的歌曲（超过 1 小时）大概率会卡死，歌曲时长计算也会出错，请谅解。</b></span><br><br>
-        <hr style="border-top: 3px solid #ccc;margin-right: 30px">
+        <div v-show="section===5">
+            <hr style="border-top: 3px solid #ccc">
+            <h1 class="title">属性说明</h1><br>
+            <span><b>• 本播放器仅为实践小项目，如若出现问题（页面爆红、白屏、无法播放）请联系我，QQ：3059557534。</b></span><br><br>
+            <span><b>• Github 地址：https://github.com/Violexjj/Loop-Sound-Player（因检查更新来源是 Github，所以若检查失败请使用魔法）</b></span><br><br>
+            <span><b>• 技术栈为 Vue2 + Electron。</b></span><br><br>
+            <span><b>• 仅支持 FLAC、MP3、WAV、OGG、M4A 格式的音频文件。</b></span><br><br>
+            <span><b>• 若歌曲出现“未知标题[ERROR]”等字样，是歌曲标签有问题，请在属性信息功能中编辑完整标签。视频简介里也有可以批量匹配标签的工具。</b></span><br><br>
+            <span><b>• 目前由于性能问题，时间过长的歌曲（超过 1 小时）大概率会卡死，歌曲时长计算也会出错，请谅解。</b></span><br><br>
+            <span><b>• 目前软件的内存和 CPU 优化还不够完美，随着播放歌曲变多，CPU 占用会慢慢变大，所以不用的时候请直接退出播放器，或者用 Ctrl + R 强制刷新恢复播放器初始状态。</b></span><br><br>
+            <hr style="border-top: 3px solid #ccc">
+        </div>
 
-        <h1 class="title">操作说明</h1><br>
-        <span><b>• 支持外部拖拽单个或多个文件、文件夹添加音乐库，但不要同时拖拽文件和文件夹。</b></span><br><br>
-        <span><b>• 音乐库根据id（歌曲文件标签的标题+歌手）进行添加，因此无法添加这两个标签重复的歌曲。</b></span><br><br>
-        <span><b>• 最大化按钮左键是最大化，右键是全屏。</b></span><br><br>
-        <span><b>• 左键点击主页封面进入半沉浸模式，右键点击进入全沉浸模式。</b></span><br><br>
-        <span><b>• 如果要手动更改歌曲信息、播放列表信息等，请在 C:\Users\（本机用户）\AppData\Roaming\Sonorbit 文件夹下修改文件内容，但不要修改文件名。</b></span><br><br>
-        <span><b>• 从音乐库删除会一并删除播放列表中对应歌曲。</b></span><br><br>
-        <span><b>• 调节音量可以用音量条，还可在音量按钮处滚动鼠标，或者使用↑↓快捷键以及全局快捷键，每次滚动调节音量数为3。</b></span><br><br>
-        <span><b>• 点击底部控制栏最左边的圆形封面也可显示主页。</b></span><br><br>
-        <span><b>• 主页右边的播放队列不会随播放列表更新而更新，如果修改了播放列表数据请重新在底部控制栏切换播放列表。</b></span><br><br>
-        <span><b>• 播放列表右键可进行重命名、设置封面或者删除。</b></span><br><br>
-        <span><b>• 选择模式下，除手动排序，其他排序功能必须是未选中歌曲才可以使用。</b></span><br><br>
-        <span><b>• 选择模式下，播放列表选中一首歌曲可进行手动排序，输入要设置的新序号即可。音乐库不支持手动排序</b></span><br><br>
-        <span><b>• 搜索界面的歌曲搜索结果，双击播放，右键打开菜单。</b></span><br><br>
-        <hr style="border-top: 3px solid #ccc;margin-right: 30px">
+        <div v-show="section===5">
+            <h1 class="title">操作说明</h1><br>
+            <span><b>• 支持外部拖拽单个或多个文件、文件夹添加音乐库，但不要同时拖拽文件和文件夹。</b></span><br><br>
+            <span><b>• 音乐库根据id（歌曲文件标签的标题+歌手）进行添加，因此无法添加这两个标签重复的歌曲。</b></span><br><br>
+            <span><b>• 最大化按钮左键是最大化，右键是全屏。</b></span><br><br>
+            <span><b>• 左键点击主页封面进入半沉浸模式，右键点击进入全沉浸模式。</b></span><br><br>
+            <span><b>• 如果要手动更改歌曲信息、播放列表信息等，请在 C:\Users\（本机用户）\AppData\Roaming\Sonorbit 文件夹下修改文件内容，但不要修改文件名。</b></span><br><br>
+            <span><b>• 从音乐库删除会一并删除播放列表中对应歌曲。</b></span><br><br>
+            <span><b>• 调节音量可以用音量条，还可在音量按钮处滚动鼠标，或者使用↑↓快捷键以及全局快捷键。</b></span><br><br>
+            <span><b>• 点击底部控制栏最左边的圆形封面也可显示主页。</b></span><br><br>
+            <span><b>• 主页右边的播放队列不会随播放列表更新而更新，如果修改了播放列表数据请重新在底部控制栏切换播放列表。</b></span><br><br>
+            <span><b>• 播放列表右键可进行重命名、设置封面或者删除。</b></span><br><br>
+            <span><b>• 选择模式下，除手动排序，其他排序功能必须是未选中歌曲才可以使用。</b></span><br><br>
+            <span><b>• 选择模式下，播放列表选中一首歌曲可进行手动排序，输入要设置的新序号即可。音乐库不支持手动排序</b></span><br><br>
+            <span><b>• 搜索界面的歌曲搜索结果，双击播放，右键打开菜单。</b></span><br><br>
+            <hr style="border-top: 3px solid #ccc">
+        </div>
 
-        <h1 class="title">歌词说明</h1><br>
-        <span><b>• 建议先设置歌词文件夹！</b></span><br><br>
-        <span><b>• 歌词匹配优先级别：内嵌歌词 > 自定义的歌词文件夹 > 歌曲所在文件夹 > 在线搜索歌词。</b></span><br><br>
-        <span><b>• 在线搜索歌词使用歌曲标签“标题+艺术家”的格式搜索，如果匹配不满意，可以在音乐库、播放列表和文件夹板块进行精确匹配。</b></span><br><br>
-        <span><b>• 精确匹配需要输入歌曲ID，获取方法就是找到网易云对应的歌曲，复制链接，找到“song?”后面的id，输入对应的数字即可。</b></span><br><br>
-        <span><b>• 原则上，精确匹配是（ID正确）是一定能找到歌词的，除非网易云真的没有那首歌或者歌词。</b></span><br><br>
-        <span><b>• 在线搜索到歌词之后，会将lrc文件保存到自定义的文件夹，如果未设置会保存到歌曲同文件夹下。</b></span><br><br>
-        <hr style="border-top: 3px solid #ccc;margin-right: 30px">
-        <br>
-        <h1 class="title">快捷键说明</h1><br>
-        <span><b>• 右键重置快捷键；左键三秒内，按下单个 / 组合按键进行修改。</b></span><br><br>
-        <span><b>• 三秒之内只能修改一个快捷键，修改多个会变成一样。</b></span><br><br>
-        <span><b>• 组合按键只允许 Ctrl / Shift / Alt 加上一个其他按键，不允许用 fn 键。</b></span><br><br>
-        <span><b>• 组合按键必须以 Ctrl / Shift / Alt 开始。</b></span><br><br>
-        <span><b>• 局部快捷键的【全屏】、【最小化】、【强制刷新恢复】为软件系统自带，不可修改。</b></span><br><br>
-        <span><b>• 若按键冲突，只有最先设置的有效，建议先将其他按键重置。</b></span><br><br>
-        <span><b>• 若修改了快捷键无效，请重启播放器。</b></span><br><br>
-        <div class="custom-button-shortcuts" @click="recoveryShortcuts"><b>恢复默认快捷键</b></div>
+        <div v-show="section===5">
+            <h1 class="title">歌词说明</h1><br>
+            <span><b>• 建议先设置歌词文件夹！</b></span><br><br>
+            <span><b>• 歌词匹配优先级别：内嵌歌词 > 自定义的歌词文件夹 = 歌曲所在文件夹 > 在线搜索歌词。</b></span><br><br>
+            <span><b>• 在线搜索歌词使用歌曲标签“标题+艺术家”的格式搜索，如果匹配不满意，可以在音乐库、播放列表和文件夹板块进行精确匹配。</b></span><br><br>
+            <span><b>• 精确匹配需要输入歌曲ID，获取方法就是找到网易云对应的歌曲，复制链接，找到“song?”后面的id，输入对应的数字即可。</b></span><br><br>
+            <span><b>• 原则上，精确匹配是（ID正确）是一定能找到歌词的，除非网易云真的没有那首歌或者歌词。</b></span><br><br>
+            <span><b>• 在线搜索到歌词之后，会将lrc文件保存到自定义的文件夹，如果未设置会保存到歌曲同文件夹下。</b></span><br><br>
+            <hr style="border-top: 3px solid #ccc">
+        </div>
 
-        <div class="shortcuts-container">
+        <div v-show="section===5">
+            <h1 class="title">快捷键说明</h1><br>
+            <span><b>• 右键重置快捷键；左键三秒内，按下单个 / 组合按键进行修改。</b></span><br><br>
+            <span><b>• 三秒之内只能修改一个快捷键，修改多个会变成一样。</b></span><br><br>
+            <span><b>• 组合按键只允许 Ctrl / Shift / Alt 加上一个其他按键，不允许用 fn 键。</b></span><br><br>
+            <span><b>• 组合按键必须以 Ctrl / Shift / Alt 开始。</b></span><br><br>
+            <span><b>• 局部快捷键的【全屏】、【最小化】、【强制刷新恢复】为软件系统自带，不可修改。</b></span><br><br>
+            <span><b>• 若按键冲突，只有最先设置的有效，建议先将其他按键重置。</b></span><br><br>
+            <span><b>• 若修改了快捷键无效，请重启播放器。</b></span><br><br>
+        </div>
+        <div class="custom-button-shortcuts" style="margin-top: 20px" @click="recoveryShortcuts" v-show="section===4"><b>恢复默认快捷键</b></div>
+        <div class="shortcuts-container" v-show="section===4">
             <div class="shortcut-section">
                 <h1 class="快捷键">局部快捷键</h1><br>
                 <table class="queue-table">
@@ -668,6 +780,8 @@
                 </table>
             </div>
         </div>
+        <br>
+        <br>
     </div>
 </template>
 
@@ -872,6 +986,7 @@
         margin-left: 20px;
     }
     .shortcuts-container{
+        gap: 100px;
         display: flex;
     }
     .title{
@@ -928,7 +1043,7 @@
 
 
     .settings::-webkit-scrollbar {
-        width: 18px;
+        width: 0px;
         background-color: rgba(0, 0, 0, 0); /* 设置为半透明的背景颜色 */
         border-radius: 10px;
     }
@@ -947,7 +1062,14 @@
         display: flex;
         align-items: center;
         margin-top: 20px;
-        gap: 50px;
+        gap: 20px;
+    }
+    .button-container2 {
+        display: flex;
+        align-items: center;
+        justify-content: center; /* 使内容居中 */
+        margin-top: 20px;
+        gap: 30px;
     }
     .version {
         display: flex;
@@ -964,13 +1086,35 @@
         border-radius: 50px;
         text-align: center;
         line-height: 40px;
-        cursor: pointer;
         color: #f0f0f0;
         transition: 0.3s;
     }
     .custom-button:hover {
         border: 3px solid rgba(255,255,255,0.6);
         background-color: rgba(255,255,255,0.2);
+    }
+    .custom-button2 {
+        position: relative;
+        width: 100px;
+        height: 40px;
+        background: transparent;
+        border-radius: 50px;
+        border: 3px solid rgba(255,255,255,0);
+        text-align: center;
+        font-size: 17px;
+        letter-spacing: 1px;
+        line-height: 40px;
+        color: #f0f0f0;
+        transition: 0.3s;
+    }
+    .custom-button2:hover {
+        border: 3px solid rgba(255,255,255,0.5);
+        background-color: rgba(255,255,255,0.2);
+    }
+    .custom-button2.active {
+        border: 3px solid rgba(255,255,255,1);
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        background-color: rgba(255,255,255,0.3);
     }
     .custom-button-shortcuts {
         position: relative;
@@ -1034,8 +1178,8 @@
                     this.showReboot = false
                 },2000)
             })
-            myAPI.onFinishScan((_event) => {
-                this.finishScan()
+            myAPI.onFinishScan((_event,arg,arg2) => {
+                this.finishScan(arg,arg2)
             })
             myAPI.onCancelScan((_event) => {
                 this.info = "扫描已取消"
@@ -1047,6 +1191,7 @@
         },
         data(){
             return{
+                section:1,
                 folderPath : 0,
                 showReboot : false,
                 info : "",
@@ -1057,6 +1202,21 @@
             }
         },
         computed:{
+            ...mapState(['downloadOnlineImg','showTlyric','lyricDirectory','onlineLrc','deleteLocalFile','globalShortcut','exit','toHomeAfterChangeQueue', 'autoHideLrc','highlight','otherBlur','rotateCover','showFormat','queueModal','lyricsModal','infoModal']),
+            showSongInfo(){
+                return this.$store.state.showSongInfo
+            },
+            allowLibraryRefresh(){
+                return this.$store.state.songs.songs.length > 0
+            },
+            volumeChange:{
+                get(){
+                    return this.$store.state.volumeChange
+                },
+                set(value){
+                    this.$store.state.volumeChange = value
+                }
+            },
             pFont:{
                 get(){
                     return this.$store.state.pFont
@@ -1075,6 +1235,9 @@
             },
             matchBlank(){
                 return this.$store.state.matchBlank
+            },
+            useBackCover(){
+                return this.$store.state.useBackCover
             },
             boldLrc(){
                 return this.$store.state.boldLrc
@@ -1121,6 +1284,14 @@
                     this.$store.state.lyricFont2 = val+15
                 }
             },
+            spectrumSpeed:{
+                get(){
+                    return ((1-this.$store.state.spectrumSpeed) * 10).toFixed(0)
+                },
+                set(val){
+                    this.$store.state.spectrumSpeed = (1 - (val/10)).toFixed(1)
+                }
+            },
             check(){
               return this.$store.state.check
             },
@@ -1141,12 +1312,26 @@
             hasTranslation(){
               return this.$store.getters.nowSong.hasTranslation
             },
-            ...mapState(['showTlyric','lyricDirectory','onlineLrc','deleteLocalFile','globalShortcut','exit','toHomeAfterChangeQueue', 'autoHideLrc','highlight','otherBlur','showFormat','queueModal','lyricsModal','infoModal']),
             lyricAlignmentMode(){
                 return this.$store.state.lyricAlignmentMode
             }
         },
         methods : {
+            handleChangeSet(stateKey){
+                this.$store.state[stateKey] = !this.$store.state[stateKey]
+            },
+            async changeBackCover(flag) {
+                if (flag) {
+                    const coverData = await myAPI.chooseCover(false)
+                    if (coverData) {
+                        this.$store.state.backCover = coverData[0]
+                        this.$store.state.backCoverPath = coverData[1]
+                    }
+                }else{
+                    this.$store.state.backCover = null
+                    this.$store.state.backCoverPath = "未设置"
+                }
+            },
             blockSpace(isBlock){
                 this.$store.state.blockSpace = isBlock
                 if (!isBlock) {
@@ -1157,9 +1342,6 @@
                         this.$store.state.dFont = "微软雅黑"
                     }
                 }
-            },
-            handleChange(){
-                console.log(123123)
             },
             changeColor(color){
                 this.$store.state.dLyricColor = color
@@ -1346,63 +1528,8 @@
                 }
             },
             ...mapMutations(['CHANGE_LYRIC_ALIGNMENT_MODE']),
-            setToHomeAfterChangeQueue(){
-                this.$store.state.toHomeAfterChangeQueue = !this.$store.state.toHomeAfterChangeQueue
-            },
-            setFocusMode(){
-                this.$store.state.focusMode2 = !this.$store.state.focusMode2
-            },
-            setAutoHideLrc(){
-                this.$store.state.autoHideLrc = !this.$store.state.autoHideLrc
-            },
-            setExit(){
-                this.$store.state.exit = !this.$store.state.exit
-            },
-            setCheck(){
-                this.$store.state.check = !this.$store.state.check
-            },
-            setShowTlyric(){
-                this.$store.state.showTlyric = !this.$store.state.showTlyric
-                console.log(this.$store.state.showTlyric)
-            },
-            setGlobalShortcut(){
-                this.$store.state.globalShortcut = !this.$store.state.globalShortcut
-            },
-            setDeleteLocalFile(){
-                this.$store.state.deleteLocalFile = !this.$store.state.deleteLocalFile
-            },
-            setShowFormat(){
-                this.$store.state.showFormat = !this.$store.state.showFormat
-            },
-            setInfoModal(){
-                this.$store.state.infoModal = !this.$store.state.infoModal
-            },
-            setLyricsModal(){
-                this.$store.state.lyricsModal = !this.$store.state.lyricsModal
-            },
-            setMatchBlank(){
-                this.$store.state.matchBlank = !this.$store.state.matchBlank
-            },
-            setQueueModal(){
-                this.$store.state.queueModal = !this.$store.state.queueModal
-            },
-            setHighlight(){
-                this.$store.state.highlight = !this.$store.state.highlight
-            },
-            setOtherBlur(){
-                this.$store.state.otherBlur = !this.$store.state.otherBlur
-            },
-            setBoldLrc(){
-                this.$store.state.boldLrc = !this.$store.state.boldLrc
-            },
             changeLyricAlignmentMode(no){
                 this.CHANGE_LYRIC_ALIGNMENT_MODE(no)
-            },
-            setAllowWrap(){
-                this.$store.state.allowWrap = !this.$store.state.allowWrap
-            },
-            setOnlineLrc(){
-                this.$store.state.onlineLrc = !this.$store.state.onlineLrc
             },
             setUsePureColor(){
                 this.$store.state.usePureColor = !this.$store.state.usePureColor
@@ -1422,6 +1549,23 @@
                     myAPI.addFiles();
                 },500)
             },
+            async refreshLibrary(){
+                if (this.allowLibraryRefresh) {
+                    this.info = "刷新音乐库数据中"
+                    this.showReboot = true
+                    const songs = await myAPI.refreshLibrary()
+                    this.info = songs[0]
+                    this.$store.state.songs = songs[1]
+                    setTimeout(()=>{
+                        this.showReboot = false
+                        if (this.info === "刷新完成，即将跳转至音乐库" && this.$route.path !== "/Library") {
+                            this.$router.push({
+                                name: "Library",
+                            });
+                        }
+                    },1000)
+                }
+            },
             changeLyricDirectory(flag){
                 if (flag) {
                     myAPI.changeLyricDirectory().then(directory => {
@@ -1435,20 +1579,32 @@
                 }
 
             },
-            finishScan(){
+            finishScan(redirect,filePath){
                 this.info = "扫描结束，音乐库已更新，即将跳转至音乐库"
                 myAPI.getAllSongs().then(songs => {
                     this.$store.commit('SET_SONGS', songs);
-                });
-                setTimeout(()=>{
-                    this.showReboot = false
-                    if (this.$route.path !== "/Library") {
-                        this.$router.push({
-                            name: "Library",
-                        });
+                    if (redirect) {
+                        setTimeout(()=>{
+                            this.showReboot = false
+                            if (this.$route.path !== "/Library") {
+                                this.$router.push({
+                                    name: "Library",
+                                });
+                            }
+                        },500)
+                    }else{
+                        this.$store.state.queue.unshift(songs.find(song => song.path === filePath))
+                        this.$store.state.currentIndex = 0
+                        setTimeout(()=>{
+                            this.$store.state.isPlaying = true
+                            if (this.$route.path !== "/") {
+                                this.$router.push({
+                                    name: "Home",
+                                });
+                            }
+                        },500)
                     }
-                },350)
-
+                });
             }
         }
     }
@@ -1458,6 +1614,6 @@
 vuex里面加属性
 setting里面设置按钮修改属性
  App里面保存的时候添加
-vue的main.js启动时读取（要加mutation：SET...）
+vue的main.js启动时读取（要加mutation：SET_ ...）
 electron的main.js存入时添加
 -->

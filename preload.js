@@ -47,7 +47,7 @@ contextBridge.exposeInMainWorld('myAPI', {
     onLoop: (callback) => ipcRenderer.on('loop', callback),
     onRandom: (callback) => ipcRenderer.on('random', callback),
     onOne: (callback) => ipcRenderer.on('one', callback),
-    onFinishScan: (callback) => ipcRenderer.on('finishScan', callback),
+    onFinishScan: (callback, arg, arg2) => ipcRenderer.on('finishScan', callback,arg,arg2),
     onFinishScanErrorMix: (callback) => ipcRenderer.on('finishScanErrorMix', callback),
     onErrorFile: (callback) => ipcRenderer.on('errorFile', callback),
     onCancelScan: (callback) => ipcRenderer.on('cancelScan', callback),
@@ -220,6 +220,15 @@ contextBridge.exposeInMainWorld('myAPI', {
             throw error;
         }
     },
+    getBackCover: async (backCoverPath) => {
+        try {
+            const response = await ipcRenderer.invoke('getBackCover',backCoverPath);
+            return response;
+        } catch (error) {
+            console.error('Error reading cover:', error);
+            throw error;
+        }
+    },
 
     setPlaylistCover: async (playlistName) => {
         try {
@@ -231,9 +240,19 @@ contextBridge.exposeInMainWorld('myAPI', {
         }
     },
 
-    chooseCover: async () => {
+    refreshLibrary: async () => {
         try {
-            const response = await ipcRenderer.invoke('chooseCover');
+            const response = await ipcRenderer.invoke('refreshLibrary');
+            return response;
+        } catch (error) {
+            console.error('Error refresh library:', error);
+            throw error;
+        }
+    },
+
+    chooseCover: async (flag) => {
+        try {
+            const response = await ipcRenderer.invoke('chooseCover',flag);
             return response;
         } catch (error) {
             console.error('Error reading file:', error);

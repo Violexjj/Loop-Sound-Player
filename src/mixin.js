@@ -39,8 +39,22 @@ export  const mix6 = {
             const path = albumSongs[0].path
             const coverData = await window.myAPI.getSongCover(path,1);
             // 更新封面
+            if (albumSongs.length > 1) {
+                album.songs.sort((a, b) => {
+                    if ((!a.trackNumber || a.trackNumber === 0) && (!b.trackNumber || b.trackNumber === 0)) {
+                        return 0;
+                    }
+                    if (!a.trackNumber || a.trackNumber === 0) {
+                        return 1;
+                    }
+                    if (!b.trackNumber || b.trackNumber === 0) {
+                        return -1;
+                    }
+                    return a.trackNumber - b.trackNumber;
+                });
+            }
             this.$store.state.nowAlbumCover = coverData;
-            this.$router.push({
+            await this.$router.push({
                 name: 'AlbumDetail',
                 params: {
                     album: album,
@@ -71,7 +85,6 @@ export  const mix7 = {
 export  const mix5 = {
     //改变播放模式并播放
     methods: {
-
         setNextSongToPlay(song, index){
             if (this.$store.state.playNextSongs) {
                 this.$store.state.notChangeNextSong = true

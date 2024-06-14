@@ -77,7 +77,7 @@
                         <span class="index-style">{{ index+1 }}</span>
                     </div>
                     <div class="cover-container">
-                        <img :data-src="song.path" class="song-cover" ref="images">
+                        <img :data-src="song.path" class="song-cover" @click="setNextSongToPlay(filteredSongs, index)" ref="images">
                     </div>
                     <div class=" song-title ellipsis">  {{ song.title }}</div>
                     <div class=" song-artist ellipsis"><span :class="{'display': !selectMode}" @click="displayArtistDetail(song.artist)">{{ song.artist }}</span></div>
@@ -108,7 +108,7 @@
         </div>
         <!--添加到播放列表----------------------------->
         <div v-if="showPlaylistModal" class="modal">
-            <div class="playlist-panel">
+            <div class="playlist-playlist-panel">
                 <!-- 关闭按钮 -->
                 <div class="modal-close" @click="showPlaylistModal = false">
                     <div class="close-button ">
@@ -569,7 +569,7 @@
                     const toAddSongsId = [];
                     for (const index of this.selectedSongsIndex) {
                         const song = this.filteredSongs[index];
-                        toAddSongsId.push(song.id);
+                        toAddSongsId.unshift(song.id);
                     }
                     this.ADD_TO_PLAYLIST({ playlistName, songIds: toAddSongsId });
                     this.showPlaylistModal = false;
@@ -692,7 +692,7 @@
                 if (this.selectMode) {
                     return
                 }
-                const filteredArtistSong = this.$store.state.songs.songs.filter(song => song.artist === artistName);
+                const filteredArtistSong = this.$store.state.songs.songs.filter(song => song.artist.includes(artistName));
                 // 创建包含 name 和 songs 属性的对象
                 const artistDetail = {
                     name: artistName,
@@ -707,6 +707,20 @@
                     return
                 }
                 const filteredAlbumSong = this.$store.state.songs.songs.filter(song => song.album === albumName);
+                if (filteredAlbumSong.length > 1) {
+                    filteredAlbumSong.sort((a, b) => {
+                        if ((!a.trackNumber || a.trackNumber === 0) && (!b.trackNumber || b.trackNumber === 0)) {
+                            return 0;
+                        }
+                        if (!a.trackNumber || a.trackNumber === 0) {
+                            return 1;
+                        }
+                        if (!b.trackNumber || b.trackNumber === 0) {
+                            return -1;
+                        }
+                        return a.trackNumber - b.trackNumber;
+                    });
+                }
                 // 创建包含 name 和 songs 属性的对象
                 const albumDetail = {
                     name: albumName,
@@ -967,13 +981,22 @@
     }
     .playlist-panel {
         background-color: rgba(0, 0, 0, 0.3);
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(20px);
         border-radius: 10px;
         padding: 10px;
         width: 80%;
         max-width: 400px;
         position: relative;
+        backdrop-filter: blur(20px);
+    }
+    .playlist-playlist-panel {
+        background-color: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        padding: 10px;
+        width: 80%;
+        max-width: 400px;
+        height: 350px;
+        position: relative;
+        backdrop-filter: blur(20px);
     }
 
 
@@ -1010,16 +1033,37 @@
     }
 
     .playlist-options {
+        padding-right: 10px;
+        margin-right: 12px;
+        height: 88%;
+        overflow-y: scroll;
         margin-top: 40px;
+    }
+    .playlist-options::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+        background-color: rgba(0, 0, 0, 0);
+        border-radius: 20px;
+    }
+
+    .playlist-options::-webkit-scrollbar-thumb {
+        background-color: #f0f0f0;
+        border-radius: 20px;
+    }
+
+    .playlist-options::-webkit-scrollbar-track {
+        background-color: rgba(255, 255, 255, 0);
     }
     .playlist-option{
         font-weight: bold;
         padding: 10px;
         border-radius: 10px;
+        overflow-x: hidden;
     }
     .playlist-option-2{
         padding: 10px;
         border-radius: 10px;
+        overflow-x: hidden;
     }
     .playlist-option:hover{
         cursor: pointer;

@@ -76,14 +76,15 @@
                     >
                         <div :class="{'notAllowWrap':index !== currentLyricIndex}"
                              :style="{ fontSize: (index === currentLyricIndex) ? ($store.state.lyricFont + $store.state.biggerLyric) + 'px' : $store.state.lyricFont + 'px',
-                             filter: nowOtherBlur && index !== currentLyricIndex ? 'blur(' + Math.min(Math.abs((index - currentLyricIndex)/1.5), 5) + 'px)' : 'none'}"
+                             filter: nowOtherBlur && index !== currentLyricIndex ? 'blur(' + Math.min(Math.abs((index - currentLyricIndex) / 1.5), 5) + 'px) opacity(' + (1 - Math.min(Math.abs((index - currentLyricIndex)), 4) * 0.15) + ')' : 'none'}"
+
                              style="transition: 0.5s"
                              ref="text">{{line.text1}}
                         </div>
                         <div :class="{'notAllowWrap':index !== currentLyricIndex}"
                              style="margin-top: 5px;transition: 0.5s"
                              :style="{ fontSize: (index === currentLyricIndex) ? ($store.state.lyricFont2 + $store.state.biggerLyric) + 'px' : $store.state.lyricFont2 + 'px',
-                             filter: nowOtherBlur && index !== currentLyricIndex ? 'blur(' + Math.min(Math.abs((index - currentLyricIndex)/1.5), 5) + 'px)' : 'none'}"
+                             filter: nowOtherBlur && index !== currentLyricIndex ? 'blur(' + Math.min(Math.abs((index - currentLyricIndex) / 1.5), 5) + 'px) opacity(' + (1 - Math.min(Math.abs((index - currentLyricIndex)), 4) * 0.15) + ')' : 'none'}"
                              v-if="line.hasTranslation && line.text2!=='' && $store.state.showTlyric"
                              ref="text">{{line.text2}}
                         </div>
@@ -129,11 +130,11 @@
         data(){
             return {
                 songCover : null,
-                nowSongTime:0,
                 smoothSpeed:50,
                 initial: true,
                 nowOtherBlur: null,
                 blurTimeout: null,
+                nowSongTime: 0,
             };
         },
         computed: {
@@ -246,6 +247,7 @@
                         const seconds = parseInt(durationParts[1]);
                         const milliseconds = parseInt(durationParts[2]);
                         this.nowSongTime = minutes * 60 + seconds + milliseconds / 1000;
+                        this.$store.state.nowSongTime = minutes * 60 + seconds + milliseconds / 1000;
                         this.showCover = false
                         setTimeout(()=>{
                             this.showCover = true
@@ -351,22 +353,23 @@
                     setTimeout(()=>{
                         this.$store.state.isPlaying = true
                     },50)
-
                     this.initial = false
                 }
                 if (this.otherBlur) {
                     this.nowOtherBlur = true
                 }
+                this.$store.state.currentPlayTime = time
                 setTimeout(()=>{
                     const newProgress = (time / this.nowSongTime) * 100;
                     this.$bus.$emit('changeProgress', newProgress);
                 },10)
             },
+
             async displayArtistDetail(artistName){
                 if (this.focusMode) {
                     return
                 }
-                const filteredArtistSong = this.$store.state.songs.songs.filter(song => song.artist === artistName);
+                const filteredArtistSong = this.$store.state.songs.songs.filter(song => song.artist.includes(artistName));
                 // 创建包含 name 和 songs 属性的对象
                 const artistDetail = {
                     name: artistName,
@@ -393,6 +396,20 @@
                     return
                 }
                 const filteredAlbumSong = this.$store.state.songs.songs.filter(song => song.album === albumName);
+                if (filteredAlbumSong.length > 1) {
+                    filteredAlbumSong.sort((a, b) => {
+                        if ((!a.trackNumber || a.trackNumber === 0) && (!b.trackNumber || b.trackNumber === 0)) {
+                            return 0;
+                        }
+                        if (!a.trackNumber || a.trackNumber === 0) {
+                            return 1;
+                        }
+                        if (!b.trackNumber || b.trackNumber === 0) {
+                            return -1;
+                        }
+                        return a.trackNumber - b.trackNumber;
+                    });
+                }
                 // 创建包含 name 和 songs 属性的对象
                 const albumDetail = {
                     name: albumName,
@@ -400,6 +417,7 @@
                 };
                 await this.changeAlbumCover(albumDetail.songs,albumDetail);
             },
+
             async changeAlbumCover(albumSongs,album){
                 const path = albumSongs[0].path
                 const coverData = await myAPI.getSongCover(path,1);
@@ -692,7 +710,7 @@
         object-fit: contain;
         border-radius: 18px;
         cursor: pointer;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
     }
     .cover:active {
         transform: scale(0.9);
